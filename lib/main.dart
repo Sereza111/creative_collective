@@ -1,25 +1,77 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/home_screen.dart';
 import 'screens/tasks_screen.dart';
 import 'screens/finance_screen.dart';
 import 'screens/team_screen.dart';
 import 'screens/projects_screen.dart';
+import 'screens/auth/login_screen.dart';
 import 'theme/app_theme.dart';
+import 'providers/auth_provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+
     return MaterialApp(
       title: 'Creative Collective',
       theme: AppTheme.darkTheme,
-      home: const MainScreen(),
       debugShowCheckedModeBanner: false,
+      home: authState.isLoading
+          ? const SplashScreen()
+          : authState.isAuthenticated
+              ? const MainScreen()
+              : const LoginScreen(),
+    );
+  }
+}
+
+// Splash screen while checking auth
+class SplashScreen extends StatelessWidget {
+  const SplashScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.voidBlack,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.security,
+              size: 80,
+              color: AppTheme.tombstoneWhite,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'CREATIVE COLLECTIVE',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w300,
+                color: AppTheme.tombstoneWhite,
+                letterSpacing: 4,
+                fontFamily: 'serif',
+              ),
+            ),
+            const SizedBox(height: 40),
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.tombstoneWhite),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

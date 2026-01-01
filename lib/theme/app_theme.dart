@@ -17,6 +17,7 @@ class AppTheme {
   // Очень приглушенные акценты (едва заметные)
   static const Color subtleAccent = Color(0xFF8A8A8A);     // Еле заметный акцент
   static const Color ghostWhite = Color(0xFFEEEEEE);       // Призрачно-белый
+  static const Color bloodRed = Color(0xFF8B0000);         // Темно-красный для ошибок
   
   // ===== LEGACY COLORS (для совместимости) =====
   static const Color cyberBlue = subtleAccent;

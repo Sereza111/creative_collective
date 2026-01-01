@@ -24,6 +24,16 @@ class Finance {
           .toList(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'balance': balance,
+      'total_earned': totalEarned,
+      'transactions': transactions.map((t) => t.toJson()).toList(),
+    };
+  }
 }
 
 class Transaction {
@@ -49,5 +59,15 @@ class Transaction {
       description: json['description'],
       date: DateTime.parse(json['date']),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'type': type,
+      'amount': amount,
+      'description': description,
+      'date': date.toIso8601String(),
+    };
   }
 }

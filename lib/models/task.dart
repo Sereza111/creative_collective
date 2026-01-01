@@ -31,4 +31,17 @@ class Task {
       projectId: json['project_id'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'status': status,
+      'assigned_to': assignedTo,
+      'due_date': dueDate.toIso8601String(),
+      'priority': priority,
+      'project_id': projectId,
+    };
+  }
 }

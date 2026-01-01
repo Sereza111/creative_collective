@@ -1,100 +1,246 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
+import '../providers/tasks_provider.dart';
+import 'forms/add_task_screen.dart';
+import 'package:intl/intl.dart';
 
-class TasksScreen extends StatelessWidget {
+class TasksScreen extends ConsumerStatefulWidget {
   const TasksScreen({Key? key}) : super(key: key);
 
   @override
+  ConsumerState<TasksScreen> createState() => _TasksScreenState();
+}
+
+class _TasksScreenState extends ConsumerState<TasksScreen> {
+  String _selectedFilter = 'all';
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(tasksProvider.notifier).loadTasks();
+    });
+  }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'todo':
+        return 'Ожидает';
+      case 'in_progress':
+        return 'В работе';
+      case 'review':
+        return 'На проверке';
+      case 'done':
+        return 'Завершено';
+      case 'cancelled':
+        return 'Отменено';
+      default:
+        return status;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final tasksState = ref.watch(tasksProvider);
+    
+    // Filter tasks based on selected filter
+    final filteredTasks = _selectedFilter == 'all'
+        ? tasksState.tasks
+        : tasksState.tasks.where((task) => task.status == _selectedFilter).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('ЗАДАЧИ'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              ref.read(tasksProvider.notifier).loadTasks();
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Добавить задачу'),
-                  backgroundColor: AppTheme.shadowGray,
-                  behavior: SnackBarBehavior.floating,
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddTaskScreen(),
                 ),
               );
             },
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+      body: Column(
         children: [
-          AppTheme.fadeInAnimation(
-            child: AppTheme.gothicTitle('Текущие'),
-          ),
-          const SizedBox(height: 32),
-          AppTheme.gothicDivider(),
-          const SizedBox(height: 32),
-          
-          AppTheme.slideUpAnimation(
-            offset: 15,
-            child: _buildTaskCard(
-              context,
-              'Создать биту для видеоклипа',
-              'В работе',
-              '2025-12-15',
-              3,
+          // Filter chips
+          Container(
+            height: 60,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _buildFilterChip('all', 'Все'),
+                const SizedBox(width: 10),
+                _buildFilterChip('todo', 'Ожидает'),
+                const SizedBox(width: 10),
+                _buildFilterChip('in_progress', 'В работе'),
+                const SizedBox(width: 10),
+                _buildFilterChip('done', 'Завершено'),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
           
-          AppTheme.slideUpAnimation(
-            offset: 15,
-            duration: const Duration(milliseconds: 900),
-            child: _buildTaskCard(
-              context,
-              'Записать вокал',
-              'Ожидает',
-              '2025-12-20',
-              5,
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          AppTheme.slideUpAnimation(
-            offset: 15,
-            duration: const Duration(milliseconds: 1000),
-            child: _buildTaskCard(
-              context,
-              'Микс и мастеринг',
-              'Завершено',
-              '2025-12-10',
-              2,
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          AppTheme.slideUpAnimation(
-            offset: 15,
-            duration: const Duration(milliseconds: 1100),
-            child: _buildTaskCard(
-              context,
-              'Цветокоррекция видео',
-              'В работе',
-              '2025-12-18',
-              4,
-            ),
+          Expanded(
+            child: tasksState.isLoading
+                ? Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppTheme.tombstoneWhite,
+                      ),
+                    ),
+                  )
+                : tasksState.error != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: AppTheme.bloodRed,
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                'Ошибка загрузки задач',
+                                style: TextStyle(
+                                  color: AppTheme.tombstoneWhite,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w300,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                tasksState.error!,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: AppTheme.mistGray,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              AppTheme.gothicButton(
+                                text: 'Повторить',
+                                onPressed: () {
+                                  ref.read(tasksProvider.notifier).loadTasks();
+                                },
+                                isPrimary: true,
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : filteredTasks.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.inbox_outlined,
+                                    size: 64,
+                                    color: AppTheme.mistGray,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Text(
+                                    'Нет задач',
+                                    style: TextStyle(
+                                      color: AppTheme.tombstoneWhite,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w300,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    _selectedFilter == 'all'
+                                        ? 'Создайте первую задачу'
+                                        : 'Нет задач с выбранным статусом',
+                                    style: TextStyle(
+                                      color: AppTheme.mistGray,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: () async {
+                              await ref.read(tasksProvider.notifier).loadTasks();
+                            },
+                            backgroundColor: AppTheme.shadowGray,
+                            color: AppTheme.tombstoneWhite,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.all(20),
+                              itemCount: filteredTasks.length,
+                              itemBuilder: (context, index) {
+                                final task = filteredTasks[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: AppTheme.slideUpAnimation(
+                                    offset: 15,
+                                    duration: Duration(
+                                      milliseconds: 800 + (index * 100),
+                                    ),
+                                    child: _buildTaskCard(context, task),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTaskCard(
-    BuildContext context,
-    String title,
-    String status,
-    String dueDate,
-    int priority,
-  ) {
+  Widget _buildFilterChip(String value, String label) {
+    final isSelected = _selectedFilter == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedFilter = value;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.tombstoneWhite : AppTheme.shadowGray,
+          border: Border.all(
+            color: isSelected ? AppTheme.tombstoneWhite : AppTheme.dimGray,
+          ),
+          borderRadius: BorderRadius.zero,
+        ),
+        child: Text(
+          label.toUpperCase(),
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: isSelected ? AppTheme.voidBlack : AppTheme.mistGray,
+            letterSpacing: 1.5,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTaskCard(BuildContext context, task) {
+    final dateFormat = DateFormat('dd.MM.yyyy');
+    
     return AppTheme.animatedGothicCard(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -106,7 +252,7 @@ class TasksScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    title.toUpperCase(),
+                    task.title.toUpperCase(),
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w300,
@@ -118,9 +264,24 @@ class TasksScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                AppTheme.gothicBadge(status),
+                AppTheme.gothicBadge(_getStatusText(task.status)),
               ],
             ),
+            
+            if (task.description.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                task.description,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.mistGray,
+                  height: 1.5,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+            
             const SizedBox(height: 20),
             Container(
               height: 1,
@@ -130,57 +291,8 @@ class TasksScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildInfoItem('Дедлайн', dueDate),
-                _buildInfoItem('Приоритет', priority.toString()),
-              ],
-            ),
-            const SizedBox(height: 20),
-            // Прогресс
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'ПРОГРЕСС',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w300,
-                        color: AppTheme.mistGray,
-                        letterSpacing: 2.0,
-                        fontFamily: 'serif',
-                      ),
-                    ),
-                    Text(
-                      status == 'Завершено' ? '100%' : status == 'В работе' ? '65%' : '0%',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w300,
-                        color: AppTheme.ashGray,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  height: 2,
-                  decoration: BoxDecoration(
-                    color: AppTheme.shadowGray.withOpacity(0.3),
-                    borderRadius: BorderRadius.zero,
-                  ),
-                  child: FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: status == 'Завершено' ? 1.0 : status == 'В работе' ? 0.65 : 0.0,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: AppTheme.ashGray,
-                        borderRadius: BorderRadius.zero,
-                      ),
-                    ),
-                  ),
-                ),
+                _buildInfoItem('Дедлайн', dateFormat.format(task.dueDate)),
+                _buildInfoItem('Приоритет', task.priority.toString()),
               ],
             ),
           ],

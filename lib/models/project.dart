@@ -37,4 +37,19 @@ class Project {
       spent: (json['spent'] as num).toDouble(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'status': status,
+      'start_date': startDate.toIso8601String(),
+      'end_date': endDate.toIso8601String(),
+      'team_members': teamMembers,
+      'progress': progress,
+      'budget': budget,
+      'spent': spent,
+    };
+  }
 }
