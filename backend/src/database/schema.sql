@@ -241,11 +241,13 @@ BEGIN
     SET balance = balance + NEW.amount,
         total_earned = total_earned + NEW.amount
     WHERE id = NEW.finance_id;
-  ELSEIF NEW.type IN ('spent', 'penalty') THEN
-    UPDATE finances 
-    SET balance = balance - NEW.amount,
-        total_spent = total_spent + NEW.amount
-    WHERE id = NEW.finance_id;
+  ELSE
+    IF NEW.type IN ('spent', 'penalty') THEN
+      UPDATE finances 
+      SET balance = balance - NEW.amount,
+          total_spent = total_spent + NEW.amount
+      WHERE id = NEW.finance_id;
+    END IF;
   END IF;
 END//
 
