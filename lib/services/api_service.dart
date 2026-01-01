@@ -7,7 +7,7 @@ import '../models/user.dart';
 import 'secure_storage_service.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://85.198.103.11:3000/api/v1';
+  static const String baseUrl = 'http://85.198.103.11:8080/api/v1'; // Используем порт 8080
   
   // Get headers with authorization
   static Future<Map<String, String>> _getHeaders() async {
