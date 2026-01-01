@@ -228,28 +228,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================
--- ТРИГГЕРЫ для автоматического обновления финансов
+-- ТРИГГЕРЫ отключены (вызывают проблемы при автоматической инициализации)
+-- При необходимости можно добавить вручную через MySQL консоль
 -- =============================================
-DELIMITER //
-
-CREATE TRIGGER after_transaction_insert
-AFTER INSERT ON transactions
-FOR EACH ROW
-BEGIN
-  IF NEW.type IN ('earned', 'bonus') THEN
-    UPDATE finances 
-    SET balance = balance + NEW.amount,
-        total_earned = total_earned + NEW.amount
-    WHERE id = NEW.finance_id;
-  ELSE
-    IF NEW.type IN ('spent', 'penalty') THEN
-      UPDATE finances 
-      SET balance = balance - NEW.amount,
-          total_spent = total_spent + NEW.amount
-      WHERE id = NEW.finance_id;
-    END IF;
-  END IF;
-END//
-
-DELIMITER ;
 
