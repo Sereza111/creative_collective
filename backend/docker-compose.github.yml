@@ -32,7 +32,7 @@ services:
     container_name: creative_collective_api
     restart: unless-stopped
     ports:
-      - "${API_PORT:-3000}:3000"
+      - "3000:3000"  # Явно указываем порт без переменной
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 3000
