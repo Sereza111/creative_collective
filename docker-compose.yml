@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # Только MySQL для начала - проверим что хотя бы база работает
+  # MySQL Database
   mysql:
     image: mysql:8.0
     container_name: creative_collective_db
@@ -17,16 +17,22 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - creative_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # API без сборки - просто готовый образ Node + монтируем код из репо
+  # Node.js API Server - собирается через Dockerfile
   api:
-    image: node:18-alpine
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: creative_collective_api:latest
     container_name: creative_collective_api
     restart: unless-stopped
-    working_dir: /app
-    command: sh -c "cd backend && npm install && node src/server.js"
     ports:
-      - "3000:3000"
+      - "8080:3000"
     environment:
       NODE_ENV: production
       PORT: 3000
@@ -35,15 +41,14 @@ services:
       DB_USER: creative_user
       DB_PASSWORD: root
       DB_NAME: creative_collective
-      JWT_SECRET: creative_collective_secret_key_2025
+      JWT_SECRET: creative_collective_secret_key_2025_change_in_production
       JWT_EXPIRES_IN: 7d
       JWT_REFRESH_SECRET: creative_collective_refresh_secret_2025
       JWT_REFRESH_EXPIRES_IN: 30d
       CORS_ORIGIN: "*"
-    volumes:
-      - ./backend:/app/backend
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     networks:
       - creative_network
 
