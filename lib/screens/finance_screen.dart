@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
+import '../providers/finance_provider.dart';
+import '../providers/auth_provider.dart';
+import '../models/transaction.dart' as app_transaction;
+import 'forms/add_transaction_screen.dart';
 
-class FinanceScreen extends StatelessWidget {
+class FinanceScreen extends ConsumerWidget {
   const FinanceScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final financeAsync = ref.watch(financeProvider);
+    final transactionsAsync = ref.watch(transactionsProvider);
+    final currencyFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('ФИНАНСЫ'),
@@ -13,153 +23,189 @@ class FinanceScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Добавить транзакцию'),
-                  backgroundColor: AppTheme.shadowGray,
-                  behavior: SnackBarBehavior.floating,
-                ),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddTransactionScreen()),
               );
             },
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Баланс
-            AppTheme.fadeInAnimation(
-              child: AppTheme.animatedGothicCard(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'БАЛАНС',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w300,
-                          color: AppTheme.mistGray,
-                          letterSpacing: 3.0,
-                          fontFamily: 'serif',
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(financeProvider.notifier).refresh();
+          await ref.read(transactionsProvider.notifier).refresh();
+        },
+        backgroundColor: AppTheme.charcoal,
+        color: AppTheme.ghostWhite,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Баланс
+              financeAsync.when(
+                data: (finance) {
+                  if (finance == null) {
+                    return const Center(child: Text('Нет данных'));
+                  }
+                  return AppTheme.fadeInAnimation(
+                    child: AppTheme.animatedGothicCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'БАЛАНС',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w300,
+                                color: AppTheme.mistGray,
+                                letterSpacing: 3.0,
+                                fontFamily: 'serif',
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              currencyFormat.format(finance.balance),
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w200,
+                                color: AppTheme.ghostWhite,
+                                fontFamily: 'serif',
+                                letterSpacing: 2.0,
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                            Container(
+                              height: 1,
+                              color: AppTheme.dimGray.withOpacity(0.3),
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _buildBalanceInfo('Заработано', currencyFormat.format(finance.totalEarned)),
+                                Container(
+                                  width: 1,
+                                  height: 32,
+                                  color: AppTheme.dimGray.withOpacity(0.3),
+                                ),
+                                _buildBalanceInfo('Потрачено', currencyFormat.format(finance.totalSpent)),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 20),
-                      Text(
-                        '₽ 45,250',
-                        style: TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.w200,
-                          color: AppTheme.ghostWhite,
-                          fontFamily: 'serif',
-                          letterSpacing: 2.0,
-                        ),
+                    ),
+                  );
+                },
+                loading: () => AppTheme.animatedGothicCard(
+                  child: const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(child: CircularProgressIndicator(color: AppTheme.ashGray)),
+                  ),
+                ),
+                error: (error, stack) => AppTheme.animatedGothicCard(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Center(
+                      child: Text(
+                        'Ошибка загрузки: $error',
+                        style: const TextStyle(color: AppTheme.bloodRed),
                       ),
-                      const SizedBox(height: 32),
-                      Container(
-                        height: 1,
-                        color: AppTheme.dimGray.withOpacity(0.3),
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildBalanceInfo('Заработано', '₽ 125,000'),
-                          Container(
-                            width: 1,
-                            height: 32,
-                            color: AppTheme.dimGray.withOpacity(0.3),
-                          ),
-                          _buildBalanceInfo('Потрачено', '₽ 79,750'),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            
-            const SizedBox(height: 48),
-            AppTheme.gothicDivider(),
-            const SizedBox(height: 48),
-            
-            // История
-            AppTheme.fadeInAnimation(
-              duration: const Duration(milliseconds: 1000),
-              child: Text(
-                'ИСТОРИЯ',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w300,
-                  color: AppTheme.ashGray,
-                  letterSpacing: 4.0,
-                  fontFamily: 'serif',
+              
+              const SizedBox(height: 48),
+              AppTheme.gothicDivider(),
+              const SizedBox(height: 48),
+              
+              // История
+              AppTheme.fadeInAnimation(
+                duration: const Duration(milliseconds: 1000),
+                child: Text(
+                  'ИСТОРИЯ',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w300,
+                    color: AppTheme.ashGray,
+                    letterSpacing: 4.0,
+                    fontFamily: 'serif',
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            
-            AppTheme.slideUpAnimation(
-              offset: 15,
-              child: _buildTransactionItem(
-                'Оплата проекта "Видеоклип"',
-                '+₽ 8,000',
-                '15.12.2025',
-                true,
+              const SizedBox(height: 24),
+              
+              transactionsAsync.when(
+                data: (transactions) {
+                  if (transactions.isEmpty) {
+                    return AppTheme.animatedGothicCard(
+                      child: const Padding(
+                        padding: EdgeInsets.all(40),
+                        child: Center(
+                          child: Text(
+                            'НЕТ ТРАНЗАКЦИЙ',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppTheme.mistGray,
+                              letterSpacing: 2.0,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  
+                  return Column(
+                    children: transactions.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final transaction = entry.value;
+                      final dateFormat = DateFormat('dd.MM.yyyy');
+                      final amountText = transaction.isPositive 
+                        ? '+${currencyFormat.format(transaction.amount)}'
+                        : '-${currencyFormat.format(transaction.amount)}';
+                      
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: AppTheme.slideUpAnimation(
+                          offset: 15,
+                          duration: Duration(milliseconds: 800 + (index * 100)),
+                          child: _buildTransactionItem(
+                            transaction.description ?? transaction.category ?? 'Транзакция',
+                            amountText,
+                            dateFormat.format(transaction.date),
+                            transaction.isPositive,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: CircularProgressIndicator(color: AppTheme.ashGray),
+                  ),
+                ),
+                error: (error, stack) => AppTheme.animatedGothicCard(
+                  child: Padding(
+                    padding: const EdgeInsets.all(40),
+                    child: Center(
+                      child: Text(
+                        'Ошибка загрузки транзакций',
+                        style: const TextStyle(color: AppTheme.bloodRed),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            
-            AppTheme.slideUpAnimation(
-              offset: 15,
-              duration: const Duration(milliseconds: 900),
-              child: _buildTransactionItem(
-                'Бонус за выполнение',
-                '+₽ 500',
-                '14.12.2025',
-                true,
-              ),
-            ),
-            const SizedBox(height: 12),
-            
-            AppTheme.slideUpAnimation(
-              offset: 15,
-              duration: const Duration(milliseconds: 1000),
-              child: _buildTransactionItem(
-                'Adobe Creative Cloud',
-                '-₽ 2,000',
-                '12.12.2025',
-                false,
-              ),
-            ),
-            const SizedBox(height: 12),
-            
-            AppTheme.slideUpAnimation(
-              offset: 15,
-              duration: const Duration(milliseconds: 1100),
-              child: _buildTransactionItem(
-                'Оплата за анимацию',
-                '+₽ 12,500',
-                '10.12.2025',
-                true,
-              ),
-            ),
-            const SizedBox(height: 12),
-            
-            AppTheme.slideUpAnimation(
-              offset: 15,
-              duration: const Duration(milliseconds: 1200),
-              child: _buildTransactionItem(
-                'Покупка плагинов',
-                '-₽ 1,500',
-                '08.12.2025',
-                false,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

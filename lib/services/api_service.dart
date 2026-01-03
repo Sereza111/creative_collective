@@ -271,15 +271,39 @@ class ApiService {
     }
   }
 
-  static Future<void> createTransaction(Map<String, dynamic> transactionData) async {
+  static Future<List<dynamic>> getTransactions(String userId) async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/finance/$userId/transactions'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data'];
+      }
+      return [];
+    } else {
+      throw Exception('Ошибка загрузки транзакций');
+    }
+  }
+
+  static Future<dynamic> createTransaction(String userId, Map<String, dynamic> transactionData) async {
     final headers = await _getHeaders();
     final response = await http.post(
-      Uri.parse('$baseUrl/finance/transactions'),
+      Uri.parse('$baseUrl/finance/$userId/transactions'),
       headers: headers,
       body: jsonEncode(transactionData),
     );
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data'];
+      }
+      throw Exception(data['message'] ?? 'Ошибка создания транзакции');
+    } else {
       final error = jsonDecode(response.body);
       throw Exception(error['message'] ?? 'Ошибка создания транзакции');
     }
