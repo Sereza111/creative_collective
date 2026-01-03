@@ -56,36 +56,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         color: AppTheme.tombstoneWhite,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppTheme.fadeInAnimation(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppTheme.fadeInAnimation(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                     AppTheme.gothicTitle(
                       authState.user?.username ?? 'Пользователь',
                     ),
-                    const SizedBox(height: 16),
-                    Text(
+                  const SizedBox(height: 16),
+                  Text(
                       authState.user?.role == 'admin' 
                           ? 'АДМИНИСТРАТОР' 
                           : 'Creative Collective',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.mistGray,
-                        fontStyle: FontStyle.italic,
-                        letterSpacing: 2.0,
-                      ),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppTheme.mistGray,
+                      fontStyle: FontStyle.italic,
+                      letterSpacing: 2.0,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 48),
-              AppTheme.gothicDivider(),
-              const SizedBox(height: 48),
-              
-              // Статистика
+            ),
+            const SizedBox(height: 48),
+            AppTheme.gothicDivider(),
+            const SizedBox(height: 48),
+            
+            // Статистика
               if (tasksState.isLoading || projectsState.isLoading)
                 Center(
                   child: Padding(
@@ -98,79 +98,79 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 )
               else ...[
-                AppTheme.slideUpAnimation(
-                  child: _buildStatCard(
-                    context,
-                    'Активные задачи',
+            AppTheme.slideUpAnimation(
+              child: _buildStatCard(
+                context,
+                'Активные задачи',
                     '$activeTasks',
-                    Icons.circle_outlined,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                AppTheme.slideUpAnimation(
-                  duration: const Duration(milliseconds: 900),
-                  child: _buildStatCard(
-                    context,
+                Icons.circle_outlined,
+              ),
+            ),
+            const SizedBox(height: 20),
+            AppTheme.slideUpAnimation(
+              duration: const Duration(milliseconds: 900),
+              child: _buildStatCard(
+                context,
                     'Проекты',
                     '${activeProjects.length}',
                     Icons.change_history_outlined,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                AppTheme.slideUpAnimation(
-                  duration: const Duration(milliseconds: 1000),
-                  child: _buildStatCard(
-                    context,
+              ),
+            ),
+            const SizedBox(height: 20),
+            AppTheme.slideUpAnimation(
+              duration: const Duration(milliseconds: 1000),
+              child: _buildStatCard(
+                context,
                     'Всего задач',
                     '${tasksState.tasks.length}',
                     Icons.square_outlined,
-                  ),
-                ),
+              ),
+            ),
               ],
-              
-              const SizedBox(height: 48),
-              AppTheme.gothicDivider(),
-              const SizedBox(height: 48),
-              
-              // Действия
-              AppTheme.fadeInAnimation(
-                duration: const Duration(milliseconds: 1400),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AppTheme.gothicButton(
-                      text: 'Dashboard',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const DashboardScreen(),
-                          ),
-                        );
-                      },
-                      isPrimary: true,
-                    ),
-                    const SizedBox(height: 16),
-                    AppTheme.gothicButton(
+            
+            const SizedBox(height: 48),
+            AppTheme.gothicDivider(),
+            const SizedBox(height: 48),
+            
+            // Действия
+            AppTheme.fadeInAnimation(
+              duration: const Duration(milliseconds: 1400),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AppTheme.gothicButton(
+                    text: 'Dashboard',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DashboardScreen(),
+                        ),
+                      );
+                    },
+                    isPrimary: true,
+                  ),
+                  const SizedBox(height: 16),
+                  AppTheme.gothicButton(
                       text: 'Обновить данные',
                       onPressed: () async {
                         await ref.read(tasksProvider.notifier).loadTasks();
                         await ref.read(projectsProvider.notifier).loadProjects();
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
                               content: Text('Данные обновлены'),
-                              backgroundColor: AppTheme.shadowGray,
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
+                          backgroundColor: AppTheme.shadowGray,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
                         }
-                      },
-                      isPrimary: false,
-                    ),
-                  ],
-                ),
+                    },
+                    isPrimary: false,
+                  ),
+                ],
               ),
+            ),
 
               // Error messages
               if (tasksState.error != null) ...[
@@ -233,31 +233,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(width: 20),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w300,
-                      color: AppTheme.mistGray,
-                      letterSpacing: 2.0,
-                      fontFamily: 'serif',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w300,
+                        color: AppTheme.mistGray,
+                        letterSpacing: 2.0,
+                        fontFamily: 'serif',
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w200,
-                      color: AppTheme.tombstoneWhite,
-                      fontFamily: 'serif',
-                      letterSpacing: 1.0,
+                    const SizedBox(height: 8),
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w200,
+                        color: AppTheme.tombstoneWhite,
+                        fontFamily: 'serif',
+                        letterSpacing: 1.0,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
               ),
             ),
           ],

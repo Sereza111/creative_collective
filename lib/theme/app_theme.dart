@@ -8,6 +8,8 @@ class AppTheme {
   static const Color deepBlack = Color(0xFF0D0D0D);        // Глубокий чёрный
   static const Color voidBlack = Color(0xFF1A1A1A);        // Чёрная бездна
   static const Color shadowGray = Color(0xFF2A2A2A);       // Тень
+  static const Color charcoal = Color(0xFF1A1A1A);         // Угольный (алиас для voidBlack)
+  static const Color darkerCharcoal = Color(0xFF0D0D0D);   // Темнее угольного (алиас для deepBlack)
   
   static const Color tombstoneWhite = Color(0xFFD4D4D4);   // Белый как камень
   static const Color ashGray = Color(0xFFA8A8A8);          // Пепельно-серый

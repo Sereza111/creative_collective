@@ -3,6 +3,7 @@ class Finance {
   final String userId;
   final double balance;
   final double totalEarned;
+  final double totalSpent;
   final List<Transaction> transactions;
 
   Finance({
@@ -10,6 +11,7 @@ class Finance {
     required this.userId,
     required this.balance,
     required this.totalEarned,
+    required this.totalSpent,
     required this.transactions,
   });
 
@@ -19,9 +21,10 @@ class Finance {
       userId: json['user_id'],
       balance: (json['balance'] as num).toDouble(),
       totalEarned: (json['total_earned'] as num).toDouble(),
-      transactions: (json['transactions'] as List)
-          .map((t) => Transaction.fromJson(t))
-          .toList(),
+      totalSpent: (json['total_spent'] as num).toDouble(),
+      transactions: (json['transactions'] as List?)
+          ?.map((t) => Transaction.fromJson(t))
+          .toList() ?? [],
     );
   }
 
@@ -31,6 +34,7 @@ class Finance {
       'user_id': userId,
       'balance': balance,
       'total_earned': totalEarned,
+      'total_spent': totalSpent,
       'transactions': transactions.map((t) => t.toJson()).toList(),
     };
   }

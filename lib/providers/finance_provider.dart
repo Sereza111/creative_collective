@@ -19,7 +19,7 @@ class FinanceNotifier extends StateNotifier<AsyncValue<Finance?>> {
   Future<void> loadFinance() async {
     try {
       state = const AsyncValue.loading();
-      final user = ref.read(authProvider).value;
+      final user = ref.read(authProvider).user;
       if (user != null) {
         final finance = await ApiService.getFinance(user.id);
         state = AsyncValue.data(finance);
@@ -49,7 +49,7 @@ class TransactionsNotifier extends StateNotifier<AsyncValue<List<app_transaction
   Future<void> loadTransactions() async {
     try {
       state = const AsyncValue.loading();
-      final user = ref.read(authProvider).value;
+      final user = ref.read(authProvider).user;
       if (user != null) {
         final data = await ApiService.getTransactions(user.id);
         final transactions = data.map((json) => app_transaction.Transaction.fromJson(json)).toList();
@@ -66,7 +66,7 @@ class TransactionsNotifier extends StateNotifier<AsyncValue<List<app_transaction
 
   Future<void> addTransaction(Map<String, dynamic> transactionData) async {
     try {
-      final user = ref.read(authProvider).value;
+      final user = ref.read(authProvider).user;
       if (user != null) {
         await ApiService.createTransaction(user.id, transactionData);
         await loadTransactions();
