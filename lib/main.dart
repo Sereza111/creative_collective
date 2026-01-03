@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/home_screen.dart';
 import 'screens/tasks_screen.dart';
 import 'screens/finance_screen.dart';
-import 'screens/team_screen.dart';
+import 'screens/profile_screen.dart';
 import 'screens/projects_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'theme/app_theme.dart';
@@ -92,7 +92,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     const TasksScreen(),
     const ProjectsScreen(),
     const FinanceScreen(),
-    const TeamScreen(),
+    const ProfileScreen(),
   ];
 
   final List<NavigationItem> _navigationItems = [
@@ -100,7 +100,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     NavigationItem(icon: Icons.checklist_outlined, activeIcon: Icons.checklist, label: 'Задачи'),
     NavigationItem(icon: Icons.folder_outlined, activeIcon: Icons.folder, label: 'Проекты'),
     NavigationItem(icon: Icons.account_balance_wallet_outlined, activeIcon: Icons.account_balance_wallet, label: 'Финансы'),
-    NavigationItem(icon: Icons.people_outline, activeIcon: Icons.people, label: 'Команда'),
+    NavigationItem(icon: Icons.person_outline, activeIcon: Icons.person, label: 'Профиль'),
   ];
 
   @override
