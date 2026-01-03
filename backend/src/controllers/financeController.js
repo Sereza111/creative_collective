@@ -25,11 +25,10 @@ exports.getUserFinance = async (req, res) => {
     
     // Получаем последние транзакции
     const transactions = await query(
-      `SELECT t.*, p.name as project_name
+      `SELECT t.*
        FROM transactions t
-       LEFT JOIN projects p ON t.project_id = p.id
        WHERE t.finance_id = ?
-       ORDER BY t.transaction_date DESC
+       ORDER BY t.date DESC
        LIMIT 10`,
       [finances[0].id]
     );
@@ -80,12 +79,12 @@ exports.getUserTransactions = async (req, res) => {
     }
     
     if (start_date) {
-      whereConditions.push('t.transaction_date >= ?');
+      whereConditions.push('t.date >= ?');
       params.push(start_date);
     }
     
     if (end_date) {
-      whereConditions.push('t.transaction_date <= ?');
+      whereConditions.push('t.date <= ?');
       params.push(end_date);
     }
     
@@ -98,11 +97,10 @@ exports.getUserTransactions = async (req, res) => {
     const total = countResult[0].total;
     
     const transactions = await query(
-      `SELECT t.*, p.name as project_name
+      `SELECT t.*
        FROM transactions t
-       LEFT JOIN projects p ON t.project_id = p.id
        ${whereClause}
-       ORDER BY t.transaction_date DESC
+       ORDER BY t.date DESC
        LIMIT ? OFFSET ?`,
       [...params, limitNum, offset]
     );
@@ -136,17 +134,27 @@ exports.createTransaction = async (req, res) => {
     const transactionId = generateUUID();
     
     await query(
-      `INSERT INTO transactions (id, finance_id, type, amount, description, project_id, category, transaction_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
-      [transactionId, finance_id, type, amount, description, project_id, category]
+      `INSERT INTO transactions (id, finance_id, type, amount, description, category, date)
+       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+      [transactionId, finance_id, type, amount, description, category]
     );
     
-    // Триггер автоматически обновит баланс
+    // Обновляем баланс вручную (триггеры удалены)
+    if (type === 'earned' || type === 'bonus') {
+      await query(
+        `UPDATE finances SET balance = balance + ?, total_earned = total_earned + ? WHERE id = ?`,
+        [amount, amount, finance_id]
+      );
+    } else if (type === 'spent' || type === 'penalty') {
+      await query(
+        `UPDATE finances SET balance = balance - ?, total_spent = total_spent + ? WHERE id = ?`,
+        [amount, amount, finance_id]
+      );
+    }
     
     const newTransaction = await query(
-      `SELECT t.*, p.name as project_name
+      `SELECT t.*
        FROM transactions t
-       LEFT JOIN projects p ON t.project_id = p.id
        WHERE t.id = ?`,
       [transactionId]
     );
@@ -191,7 +199,7 @@ exports.getFinanceStats = async (req, res) => {
     let params = [finance_id];
     
     if (start_date && end_date) {
-      dateCondition = 'AND transaction_date BETWEEN ? AND ?';
+      dateCondition = 'AND date BETWEEN ? AND ?';
       params.push(start_date, end_date);
     }
     
@@ -214,21 +222,9 @@ exports.getFinanceStats = async (req, res) => {
       params
     );
     
-    // Статистика по проектам
-    const projectStats = await query(
-      `SELECT p.id, p.name, SUM(t.amount) as total, COUNT(*) as count
-       FROM transactions t
-       LEFT JOIN projects p ON t.project_id = p.id
-       WHERE t.finance_id = ? ${dateCondition} AND t.project_id IS NOT NULL
-       GROUP BY p.id, p.name
-       ORDER BY total DESC`,
-      params
-    );
-    
     successResponse(res, {
       by_type: typeStats,
-      by_category: categoryStats,
-      by_project: projectStats
+      by_category: categoryStats
     });
     
   } catch (error) {
