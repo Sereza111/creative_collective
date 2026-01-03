@@ -6,7 +6,7 @@ const { successResponse, errorResponse, generateUUID } = require('../utils/helpe
 // Регистрация нового пользователя
 exports.register = async (req, res) => {
   try {
-    const { email, username, password, first_name, last_name, role = 'member' } = req.body;
+    const { email, username, password, full_name, role = 'member' } = req.body;
     
     // Проверяем, существует ли пользователь
     const existingUser = await query(
@@ -19,14 +19,14 @@ exports.register = async (req, res) => {
     }
     
     // Хешируем пароль
-    const password_hash = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
     
     // Создаем пользователя
     const userId = generateUUID();
     await query(
-      `INSERT INTO users (id, email, username, password_hash, first_name, last_name, role) 
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [userId, email, username, password_hash, first_name, last_name, role]
+      `INSERT INTO users (id, email, username, password, full_name, role) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [userId, email, username, hashedPassword, full_name || null, role]
     );
     
     // Создаем финансовый аккаунт для пользователя
@@ -59,8 +59,7 @@ exports.register = async (req, res) => {
         id: userId,
         email,
         username,
-        first_name,
-        last_name,
+        full_name,
         role
       },
       accessToken,
@@ -91,12 +90,12 @@ exports.login = async (req, res) => {
     const user = users[0];
     
     // Проверяем статус
-    if (user.status !== 'active') {
+    if (!user.is_active) {
       return errorResponse(res, 'Аккаунт заблокирован', 403);
     }
     
     // Проверяем пароль
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     
     if (!isPasswordValid) {
       return errorResponse(res, 'Неверный email или пароль', 401);
