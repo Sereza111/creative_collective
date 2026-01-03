@@ -5,8 +5,8 @@ const { successResponse, errorResponse, generateUUID, getPagination, paginatedRe
 exports.getAllTasks = async (req, res) => {
   try {
     const { 
-      page = 1, 
-      limit = 20, 
+      page = '1', 
+      limit = '20', 
       project_id, 
       status, 
       assigned_to, 
@@ -14,7 +14,7 @@ exports.getAllTasks = async (req, res) => {
       search 
     } = req.query;
     
-    const { limit: limitNum, offset } = getPagination(page, limit);
+    const { limit: limitNum, offset } = getPagination(parseInt(page) || 1, parseInt(limit) || 20);
     
     let whereConditions = [];
     let params = [];
