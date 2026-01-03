@@ -5,7 +5,7 @@ const { successResponse, errorResponse, generateUUID } = require('../utils/helpe
 exports.getAllTeams = async (req, res) => {
   try {
     const teams = await query(
-      `SELECT t.*, u.username as owner_name, u.first_name as owner_first_name,
+      `SELECT t.*, u.username as owner_name, u.full_name as owner_full_name,
               (SELECT COUNT(*) FROM team_members tm WHERE tm.team_id = t.id) as members_count
        FROM teams t
        LEFT JOIN users u ON t.owner_id = u.id
@@ -26,7 +26,7 @@ exports.getTeamById = async (req, res) => {
     const { id } = req.params;
     
     const teams = await query(
-      `SELECT t.*, u.username as owner_name, u.first_name as owner_first_name
+      `SELECT t.*, u.username as owner_name, u.full_name as owner_full_name
        FROM teams t
        LEFT JOIN users u ON t.owner_id = u.id
        WHERE t.id = ?`,
@@ -39,7 +39,7 @@ exports.getTeamById = async (req, res) => {
     
     // Получаем участников
     const members = await query(
-      `SELECT tm.*, u.username, u.first_name, u.last_name, u.avatar_url, u.email, u.role as user_role
+      `SELECT tm.*, u.username, u.full_name, u.avatar, u.email, u.role as user_role
        FROM team_members tm
        LEFT JOIN users u ON tm.user_id = u.id
        WHERE tm.team_id = ?

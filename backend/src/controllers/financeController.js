@@ -12,7 +12,7 @@ exports.getUserFinance = async (req, res) => {
     }
     
     const finances = await query(
-      `SELECT f.*, u.username, u.first_name, u.last_name 
+      `SELECT f.*, u.username, u.full_name 
        FROM finances f
        LEFT JOIN users u ON f.user_id = u.id
        WHERE f.user_id = ?`,

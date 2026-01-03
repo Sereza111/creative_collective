@@ -17,7 +17,7 @@ const authenticate = async (req, res, next) => {
     
     // Проверяем, существует ли пользователь
     const users = await query(
-      'SELECT id, email, username, first_name, last_name, role, status FROM users WHERE id = ?',
+      'SELECT id, email, username, full_name, role, is_active FROM users WHERE id = ?',
       [decoded.userId]
     );
     
@@ -30,7 +30,7 @@ const authenticate = async (req, res, next) => {
     
     const user = users[0];
     
-    if (user.status !== 'active') {
+    if (!user.is_active) {
       return res.status(403).json({
         success: false,
         message: 'Аккаунт заблокирован'
@@ -91,8 +91,8 @@ const optionalAuth = async (req, res, next) => {
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const users = await query(
-        'SELECT id, email, username, first_name, last_name, role FROM users WHERE id = ? AND status = ?',
-        [decoded.userId, 'active']
+        'SELECT id, email, username, full_name, role FROM users WHERE id = ? AND is_active = TRUE',
+        [decoded.userId]
       );
       
       if (users.length > 0) {

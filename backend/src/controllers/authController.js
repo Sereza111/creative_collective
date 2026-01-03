@@ -131,10 +131,9 @@ exports.login = async (req, res) => {
         id: user.id,
         email: user.email,
         username: user.username,
-        first_name: user.first_name,
-        last_name: user.last_name,
+        full_name: user.full_name,
         role: user.role,
-        avatar_url: user.avatar_url
+        avatar: user.avatar
       },
       accessToken,
       refreshToken
@@ -219,8 +218,8 @@ exports.me = async (req, res) => {
     const userId = req.user.id;
     
     const users = await query(
-      `SELECT u.id, u.email, u.username, u.first_name, u.last_name, u.avatar_url, 
-              u.role, u.bio, u.phone, u.created_at,
+      `SELECT u.id, u.email, u.username, u.full_name, u.avatar, 
+              u.role, u.created_at,
               f.balance, f.total_earned, f.total_spent
        FROM users u
        LEFT JOIN finances f ON f.user_id = u.id
