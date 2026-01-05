@@ -14,10 +14,12 @@ const formatDateForMySQL = (date) => {
 
 // Пагинация
 const getPagination = (page = 1, limit = 10) => {
-  const offset = (page - 1) * limit;
+  const pageNum = parseInt(page) || 1;
+  const limitNum = parseInt(limit) || 10;
+  const offset = (pageNum - 1) * limitNum;
   return {
-    limit: parseInt(limit),
-    offset: parseInt(offset)
+    limit: limitNum,
+    offset: offset
   };
 };
 
