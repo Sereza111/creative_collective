@@ -34,7 +34,7 @@ async function testConnection() {
 // Функция для выполнения запросов
 async function query(sql, params) {
   try {
-    const [results] = await pool.execute(sql, params);
+    const [results] = await pool.query(sql, params);
     return results;
   } catch (error) {
     console.error('Database query error:', error);
