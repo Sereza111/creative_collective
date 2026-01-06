@@ -16,8 +16,6 @@ exports.getAllTasks = async (req, res) => {
     
     const { limit: limitNum, offset } = getPagination(parseInt(page) || 1, parseInt(limit) || 20);
     
-    console.log('[DEBUG] Tasks Pagination values:', { page, limit, limitNum, offset, types: { limitNum: typeof limitNum, offset: typeof offset } });
-    
     let whereConditions = [];
     let params = [];
     
@@ -57,9 +55,6 @@ exports.getAllTasks = async (req, res) => {
     );
     const total = countResult[0].total;
     
-    const finalParams = [...params, limitNum, offset];
-    console.log('[DEBUG] Tasks Final query params:', finalParams, 'Types:', finalParams.map(p => typeof p));
-    
     // Получение задач
     const tasks = await query(
       `SELECT t.*, 
@@ -74,7 +69,7 @@ exports.getAllTasks = async (req, res) => {
        ${whereClause}
        ORDER BY t.due_date ASC, t.priority DESC
        LIMIT ? OFFSET ?`,
-      finalParams
+      [...params, limitNum, offset]
     );
     
     successResponse(res, paginatedResponse(tasks, total, page, limit));

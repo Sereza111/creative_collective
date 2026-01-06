@@ -14,8 +14,6 @@ exports.getAllProjects = async (req, res) => {
     
     const { limit: limitNum, offset } = getPagination(parseInt(page) || 1, parseInt(limit) || 20);
     
-    console.log('[DEBUG] Pagination values:', { page, limit, limitNum, offset, types: { limitNum: typeof limitNum, offset: typeof offset } });
-    
     let whereConditions = [];
     let params = [];
     
@@ -44,9 +42,6 @@ exports.getAllProjects = async (req, res) => {
     );
     const total = countResult[0].total;
     
-    const finalParams = [...params, limitNum, offset];
-    console.log('[DEBUG] Final query params:', finalParams, 'Types:', finalParams.map(p => typeof p));
-    
     const projects = await query(
       `SELECT p.*, 
               t.name as team_name,
@@ -59,7 +54,7 @@ exports.getAllProjects = async (req, res) => {
        ${whereClause}
        ORDER BY p.created_at DESC
        LIMIT ? OFFSET ?`,
-      finalParams
+      [...params, limitNum, offset]
     );
     
     successResponse(res, paginatedResponse(projects, total, page, limit));
