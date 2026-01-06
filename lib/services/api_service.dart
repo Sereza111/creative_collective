@@ -129,8 +129,14 @@ class ApiService {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['success'] == true && data['data'] != null) {
-        final List<dynamic> tasks = data['data']['data'] ?? data['data'];
-        return tasks.map((task) => Task.fromJson(task)).toList();
+        // Check if data['data'] is a List or an object with pagination
+        final tasksData = data['data'];
+        if (tasksData is List) {
+          return tasksData.map((task) => Task.fromJson(task)).toList();
+        } else if (tasksData is Map && tasksData['data'] is List) {
+          final List<dynamic> tasks = tasksData['data'];
+          return tasks.map((task) => Task.fromJson(task)).toList();
+        }
       }
       return [];
     } else {
@@ -206,8 +212,14 @@ class ApiService {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['success'] == true && data['data'] != null) {
-        final List<dynamic> projects = data['data']['data'] ?? data['data'];
-        return projects.map((project) => Project.fromJson(project)).toList();
+        // Check if data['data'] is a List or an object with pagination
+        final projectsData = data['data'];
+        if (projectsData is List) {
+          return projectsData.map((project) => Project.fromJson(project)).toList();
+        } else if (projectsData is Map && projectsData['data'] is List) {
+          final List<dynamic> projects = projectsData['data'];
+          return projects.map((project) => Project.fromJson(project)).toList();
+        }
       }
       return [];
     } else {

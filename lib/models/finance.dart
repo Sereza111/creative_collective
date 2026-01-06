@@ -19,13 +19,24 @@ class Finance {
     return Finance(
       id: json['id'],
       userId: json['user_id'],
-      balance: (json['balance'] as num).toDouble(),
-      totalEarned: (json['total_earned'] as num).toDouble(),
-      totalSpent: (json['total_spent'] as num).toDouble(),
-      transactions: (json['transactions'] as List?)
-          ?.map((t) => Transaction.fromJson(t))
-          .toList() ?? [],
+      balance: _parseDouble(json['balance']),
+      totalEarned: _parseDouble(json['total_earned']),
+      totalSpent: _parseDouble(json['total_spent']),
+      transactions: (json['recent_transactions'] ?? json['transactions'] ?? [])
+          is List
+          ? ((json['recent_transactions'] ?? json['transactions']) as List)
+              .map((t) => Transaction.fromJson(t))
+              .toList()
+          : [],
     );
+  }
+
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
   }
 
   Map<String, dynamic> toJson() {
@@ -57,11 +68,13 @@ class Transaction {
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
     return Transaction(
-      id: json['id'],
-      type: json['type'],
-      amount: (json['amount'] as num).toDouble(),
-      description: json['description'],
-      date: DateTime.parse(json['date']),
+      id: json['id'] ?? '',
+      type: json['type'] ?? 'earned',
+      amount: Finance._parseDouble(json['amount']),
+      description: json['description'] ?? '',
+      date: json['date'] != null 
+          ? DateTime.tryParse(json['date']) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 
