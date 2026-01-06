@@ -56,6 +56,21 @@ class ProjectsNotifier extends StateNotifier<ProjectsState> {
     }
   }
 
+  Future<void> updateProject(String projectId, Map<String, dynamic> projectData) async {
+    try {
+      final updatedProject = await ApiService.updateProject(projectId, projectData);
+      final updatedProjects = state.projects.map((project) {
+        return project.id == projectId ? updatedProject : project;
+      }).toList();
+      state = state.copyWith(projects: updatedProjects);
+    } catch (e) {
+      state = state.copyWith(
+        error: e.toString().replaceAll('Exception: ', ''),
+      );
+      rethrow;
+    }
+  }
+
   Future<void> deleteProject(String projectId) async {
     try {
       await ApiService.deleteProject(projectId);
