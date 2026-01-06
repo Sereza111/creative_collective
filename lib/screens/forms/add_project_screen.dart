@@ -126,6 +126,9 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
           'spent': 0,
         });
 
+        // Reload projects list
+        await ref.read(projectsProvider.notifier).loadProjects();
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

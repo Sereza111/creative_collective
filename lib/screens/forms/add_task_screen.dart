@@ -105,6 +105,9 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
           'due_date': _selectedDueDate!.toIso8601String(),
         });
 
+        // Reload tasks list
+        await ref.read(tasksProvider.notifier).loadTasks();
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
