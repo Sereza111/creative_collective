@@ -29,8 +29,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final authState = ref.watch(authProvider);
     final tasksState = ref.watch(tasksProvider);
     final projectsState = ref.watch(projectsProvider);
-    final activeProjects = ref.watch(activeProjectsProvider);
-    final activeTasks = tasksState.tasks.where((t) => 
+    final activeProjects = ref.watch(activeProjectsProvider) ?? [];
+    final activeTasks = (tasksState.tasks ?? []).where((t) => 
       t.status == 'todo' || t.status == 'in_progress'
     ).length;
 
@@ -122,7 +122,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _buildStatCard(
                 context,
                     'Всего задач',
-                    '${tasksState.tasks.length}',
+                    '${tasksState.tasks?.length ?? 0}',
                     Icons.square_outlined,
               ),
             ),
