@@ -184,26 +184,6 @@ class ApiService {
     }
   }
 
-  static Future<Task> updateTask(String taskId, Map<String, dynamic> taskData) async {
-    final headers = await _getHeaders();
-    final response = await http.put(
-      Uri.parse('$baseUrl/tasks/$taskId'),
-      headers: headers,
-      body: jsonEncode(taskData),
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['success'] == true && data['data'] != null) {
-        return Task.fromJson(data['data']);
-      }
-      throw Exception(data['message'] ?? 'Ошибка обновления задачи');
-    } else {
-      final error = jsonDecode(response.body);
-      throw Exception(error['message'] ?? 'Ошибка обновления задачи');
-    }
-  }
-
   static Future<void> deleteTask(String taskId) async {
     final headers = await _getHeaders();
     final response = await http.delete(

@@ -74,21 +74,6 @@ class TasksNotifier extends StateNotifier<TasksState> {
     }
   }
 
-  Future<void> updateTask(String taskId, Map<String, dynamic> taskData) async {
-    try {
-      final updatedTask = await ApiService.updateTask(taskId, taskData);
-      final updatedTasks = state.tasks.map((task) {
-        return task.id == taskId ? updatedTask : task;
-      }).toList();
-      state = state.copyWith(tasks: updatedTasks);
-    } catch (e) {
-      state = state.copyWith(
-        error: e.toString().replaceAll('Exception: ', ''),
-      );
-      rethrow;
-    }
-  }
-
   Future<void> deleteTask(String taskId) async {
     try {
       await ApiService.deleteTask(taskId);
