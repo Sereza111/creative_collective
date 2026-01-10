@@ -25,16 +25,22 @@ class Project {
 
   factory Project.fromJson(Map<String, dynamic> json) {
     return Project(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
-      status: json['status'],
-      startDate: DateTime.parse(json['start_date']),
-      endDate: DateTime.parse(json['end_date']),
-      teamMembers: List<String>.from(json['team_members']),
-      progress: json['progress'],
-      budget: (json['budget'] as num).toDouble(),
-      spent: (json['spent'] as num).toDouble(),
+      id: json['id'] ?? '',
+      name: json['name'] ?? 'Без названия',
+      description: json['description'] ?? '',
+      status: json['status'] ?? 'planning',
+      startDate: json['start_date'] != null 
+          ? DateTime.parse(json['start_date']) 
+          : DateTime.now(),
+      endDate: json['end_date'] != null 
+          ? DateTime.parse(json['end_date']) 
+          : DateTime.now().add(const Duration(days: 30)),
+      teamMembers: json['team_members'] != null 
+          ? List<String>.from(json['team_members']) 
+          : [],
+      progress: json['progress'] ?? 0,
+      budget: json['budget'] != null ? (json['budget'] as num).toDouble() : 0.0,
+      spent: json['spent'] != null ? (json['spent'] as num).toDouble() : 0.0,
     );
   }
 

@@ -21,14 +21,16 @@ class Task {
 
   factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
-      status: json['status'],
-      assignedTo: json['assigned_to'],
-      dueDate: DateTime.parse(json['due_date']),
-      priority: json['priority'],
-      projectId: json['project_id'],
+      id: json['id'] ?? '',
+      title: json['title'] ?? 'Без названия',
+      description: json['description'] ?? '',
+      status: json['status'] ?? 'todo',
+      assignedTo: json['assigned_to'] ?? '',
+      dueDate: json['due_date'] != null 
+          ? DateTime.parse(json['due_date']) 
+          : DateTime.now().add(const Duration(days: 7)),
+      priority: json['priority'] ?? 3,
+      projectId: json['project_id'] ?? '',
     );
   }
 
