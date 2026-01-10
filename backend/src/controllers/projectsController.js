@@ -144,7 +144,7 @@ exports.createProject = async (req, res) => {
     // Автоматически добавляем создателя как участника
     await query(
       'INSERT INTO project_members (id, project_id, user_id, role) VALUES (?, ?, ?, ?)',
-      [generateUUID(), projectId, created_by, 'Project Manager']
+      [generateUUID(), projectId, created_by, 'owner']
     );
     
     const newProject = await query('SELECT * FROM projects WHERE id = ?', [projectId]);
