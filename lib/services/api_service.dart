@@ -118,29 +118,46 @@ class ApiService {
   // =============================================
 
   static Future<List<Task>> getTasks({String? projectId, String? status}) async {
-    final queryParams = <String, String>{};
-    if (projectId != null) queryParams['project_id'] = projectId;
-    if (status != null) queryParams['status'] = status;
-    
-    final uri = Uri.parse('$baseUrl/tasks').replace(queryParameters: queryParams);
-    final headers = await _getHeaders();
-    final response = await http.get(uri, headers: headers);
+    try {
+      final queryParams = <String, String>{};
+      if (projectId != null) queryParams['project_id'] = projectId;
+      if (status != null) queryParams['status'] = status;
+      
+      final uri = Uri.parse('$baseUrl/tasks').replace(queryParameters: queryParams);
+      final headers = await _getHeaders();
+      final response = await http.get(uri, headers: headers).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw Exception('Превышено время ожидания ответа от сервера'),
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['success'] == true && data['data'] != null) {
-        // Check if data['data'] is a List or an object with pagination
-        final tasksData = data['data'];
-        if (tasksData is List) {
-          return tasksData.map((task) => Task.fromJson(task)).toList();
-        } else if (tasksData is Map && tasksData['data'] is List) {
-          final List<dynamic> tasks = tasksData['data'];
-          return tasks.map((task) => Task.fromJson(task)).toList();
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data == null) {
+          print('API returned null data for tasks');
+          return [];
         }
+        
+        if (data['success'] == true) {
+          final tasksData = data['data'];
+          
+          if (tasksData == null) {
+            return [];
+          }
+          
+          if (tasksData is List) {
+            return tasksData.map((task) => Task.fromJson(task)).toList();
+          } else if (tasksData is Map && tasksData['data'] != null) {
+            final List<dynamic> tasks = tasksData['data'] ?? [];
+            return tasks.map((task) => Task.fromJson(task)).toList();
+          }
+        }
+        return [];
+      } else {
+        throw Exception('Ошибка загрузки задач: ${response.statusCode}');
       }
-      return [];
-    } else {
-      throw Exception('Ошибка загрузки задач: ${response.statusCode}');
+    } catch (e) {
+      print('Error in getTasks: $e');
+      rethrow;
     }
   }
 
@@ -202,26 +219,39 @@ class ApiService {
   // =============================================
 
   static Future<List<Project>> getProjects({String? status}) async {
-    final queryParams = <String, String>{};
-    if (status != null) queryParams['status'] = status;
-    
-    final uri = Uri.parse('$baseUrl/projects').replace(queryParameters: queryParams);
-    final headers = await _getHeaders();
-    final response = await http.get(uri, headers: headers);
+    try {
+      final queryParams = <String, String>{};
+      if (status != null) queryParams['status'] = status;
+      
+      final uri = Uri.parse('$baseUrl/projects').replace(queryParameters: queryParams);
+      final headers = await _getHeaders();
+      final response = await http.get(uri, headers: headers).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw Exception('Превышено время ожидания ответа от сервера'),
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['success'] == true && data['data'] != null) {
-        // Check if data['data'] is a List or an object with pagination
-        final projectsData = data['data'];
-        if (projectsData is List) {
-          return projectsData.map((project) => Project.fromJson(project)).toList();
-        } else if (projectsData is Map && projectsData['data'] is List) {
-          final List<dynamic> projects = projectsData['data'];
-          return projects.map((project) => Project.fromJson(project)).toList();
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data == null) {
+          print('API returned null data');
+          return [];
         }
-      }
-      return [];
+        
+        if (data['success'] == true) {
+          final projectsData = data['data'];
+          
+          if (projectsData == null) {
+            return [];
+          }
+          
+          if (projectsData is List) {
+            return projectsData.map((project) => Project.fromJson(project)).toList();
+          } else if (projectsData is Map && projectsData['data'] != null) {
+            final List<dynamic> projects = projectsData['data'] ?? [];
+            return projects.map((project) => Project.fromJson(project)).toList();
+          }
+        }
+        return [];
     } else {
       throw Exception('Ошибка загрузки проектов: ${response.statusCode}');
     }
@@ -304,20 +334,40 @@ class ApiService {
   }
 
   static Future<List<dynamic>> getTransactions(String userId) async {
-    final headers = await _getHeaders();
-    final response = await http.get(
-      Uri.parse('$baseUrl/finance/$userId/transactions'),
-      headers: headers,
-    );
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/finance/$userId/transactions'),
+        headers: headers,
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw Exception('Превышено время ожидания ответа от сервера'),
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['success'] == true && data['data'] != null) {
-        return data['data'];
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data == null) {
+          print('API returned null data for transactions');
+          return [];
+        }
+        
+        if (data['success'] == true) {
+          final transactionsData = data['data'];
+          if (transactionsData == null) {
+            return [];
+          }
+          
+          if (transactionsData is List) {
+            return transactionsData;
+          }
+        }
+        return [];
+      } else {
+        throw Exception('Ошибка загрузки транзакций: ${response.statusCode}');
       }
-      return [];
-    } else {
-      throw Exception('Ошибка загрузки транзакций');
+    } catch (e) {
+      print('Error in getTransactions: $e');
+      rethrow;
     }
   }
 
