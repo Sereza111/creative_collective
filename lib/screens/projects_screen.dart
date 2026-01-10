@@ -15,13 +15,26 @@ class ProjectsScreen extends ConsumerStatefulWidget {
 
 class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
   String _selectedFilter = 'all';
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
     Future.microtask(() {
       ref.read(projectsProvider.notifier).loadProjects();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   String _getStatusText(String status) {
@@ -62,10 +75,18 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
   Widget build(BuildContext context) {
     final projectsState = ref.watch(projectsProvider);
     
-    // Filter projects based on selected filter
-    final filteredProjects = _selectedFilter == 'all'
+    // Filter projects based on selected filter and search query
+    var filteredProjects = _selectedFilter == 'all'
         ? projectsState.projects
         : projectsState.projects.where((project) => project.status == _selectedFilter).toList();
+    
+    // Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      filteredProjects = filteredProjects.where((project) {
+        return project.name.toLowerCase().contains(_searchQuery) ||
+               (project.description?.toLowerCase().contains(_searchQuery) ?? false);
+      }).toList();
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -92,6 +113,24 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
       ),
       body: Column(
         children: [
+          // Search field
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: AppTheme.gothicTextField(
+              controller: _searchController,
+              hintText: 'Поиск проектов...',
+              prefixIcon: const Icon(Icons.search, size: 20),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 20),
+                      onPressed: () {
+                        _searchController.clear();
+                      },
+                    )
+                  : null,
+            ),
+          ),
+          
           // Filter chips
           Container(
             height: 60,
