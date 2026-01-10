@@ -252,8 +252,12 @@ class ApiService {
           }
         }
         return [];
-    } else {
-      throw Exception('Ошибка загрузки проектов: ${response.statusCode}');
+      } else {
+        throw Exception('Ошибка загрузки проектов: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getProjects: $e');
+      rethrow;
     }
   }
 
