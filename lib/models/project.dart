@@ -38,10 +38,26 @@ class Project {
       teamMembers: json['team_members'] != null 
           ? List<String>.from(json['team_members']) 
           : [],
-      progress: json['progress'] ?? 0,
-      budget: json['budget'] != null ? (json['budget'] as num).toDouble() : 0.0,
-      spent: json['spent'] != null ? (json['spent'] as num).toDouble() : 0.0,
+      progress: _parseInt(json['progress']),
+      budget: _parseDouble(json['budget']),
+      spent: _parseDouble(json['spent']),
     );
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
   }
 
   Map<String, dynamic> toJson() {

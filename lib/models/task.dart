@@ -29,9 +29,17 @@ class Task {
       dueDate: json['due_date'] != null 
           ? DateTime.parse(json['due_date']) 
           : DateTime.now().add(const Duration(days: 7)),
-      priority: json['priority'] ?? 3,
+      priority: _parseInt(json['priority']),
       projectId: json['project_id'] ?? '',
     );
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 3;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 3;
+    return 3;
   }
 
   Map<String, dynamic> toJson() {
