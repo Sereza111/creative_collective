@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../providers/projects_provider.dart';
 import 'forms/add_project_screen.dart';
+import 'project_detail_screen.dart';
 import 'package:intl/intl.dart';
 
 class ProjectsScreen extends ConsumerStatefulWidget {
@@ -259,8 +260,17 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
     final dateFormat = DateFormat('dd.MM.yyyy');
     final budgetFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
     
-    return AppTheme.animatedGothicCard(
-      child: Padding(
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProjectDetailScreen(project: project),
+          ),
+        );
+      },
+      child: AppTheme.animatedGothicCard(
+        child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,6 +416,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

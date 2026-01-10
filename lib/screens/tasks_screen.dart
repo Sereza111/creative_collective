@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../providers/tasks_provider.dart';
 import 'forms/add_task_screen.dart';
+import 'task_detail_screen.dart';
 import 'package:intl/intl.dart';
 
 class TasksScreen extends ConsumerStatefulWidget {
@@ -241,8 +242,17 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   Widget _buildTaskCard(BuildContext context, task) {
     final dateFormat = DateFormat('dd.MM.yyyy');
     
-    return AppTheme.animatedGothicCard(
-      child: Padding(
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TaskDetailScreen(task: task),
+          ),
+        );
+      },
+      child: AppTheme.animatedGothicCard(
+        child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,6 +307,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
