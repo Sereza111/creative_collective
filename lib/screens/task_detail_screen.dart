@@ -454,7 +454,11 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                 // Кнопка сохранения
                 AppTheme.gothicButton(
                   text: _isEditing ? 'СОХРАНЕНИЕ...' : 'СОХРАНИТЬ ИЗМЕНЕНИЯ',
-                  onPressed: _isEditing ? null : () => _saveTask(),
+                  onPressed: () {
+                    if (!_isEditing) {
+                      _saveTask();
+                    }
+                  },
                   isPrimary: true,
                 ),
               ],

@@ -535,7 +535,11 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                 // Кнопка сохранения
                 AppTheme.gothicButton(
                   text: _isEditing ? 'СОХРАНЕНИЕ...' : 'СОХРАНИТЬ ИЗМЕНЕНИЯ',
-                  onPressed: _isEditing ? null : () => _saveProject(),
+                  onPressed: () {
+                    if (!_isEditing) {
+                      _saveProject();
+                    }
+                  },
                   isPrimary: true,
                 ),
               ],
