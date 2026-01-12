@@ -327,4 +327,105 @@ class AppTheme {
       ),
     );
   }
+
+  static Widget gothicTextField({
+    required TextEditingController controller,
+    String? hintText,
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+    int maxLines = 1,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      validator: validator,
+      style: const TextStyle(
+        color: tombstoneWhite,
+        fontSize: 14,
+        fontWeight: FontWeight.w300,
+      ),
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: TextStyle(
+          color: mistGray,
+          fontSize: 14,
+          fontWeight: FontWeight.w300,
+        ),
+        prefixIcon: prefixIcon != null
+            ? IconTheme(
+                data: IconThemeData(color: mistGray),
+                child: prefixIcon,
+              )
+            : null,
+        suffixIcon: suffixIcon != null
+            ? IconTheme(
+                data: IconThemeData(color: mistGray),
+                child: suffixIcon,
+              )
+            : null,
+        filled: true,
+        fillColor: shadowGray,
+        border: OutlineInputBorder(
+          borderSide: BorderSide(color: dimGray),
+          borderRadius: BorderRadius.zero,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: dimGray),
+          borderRadius: BorderRadius.zero,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: tombstoneWhite, width: 1),
+          borderRadius: BorderRadius.zero,
+        ),
+        errorBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: bloodRed),
+          borderRadius: BorderRadius.zero,
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: bloodRed, width: 1),
+          borderRadius: BorderRadius.zero,
+        ),
+        contentPadding: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  static Widget gothicDropdown<T>({
+    required T value,
+    required List<DropdownMenuItem<T>> items,
+    required void Function(T?) onChanged,
+  }) {
+    return DropdownButtonFormField<T>(
+      value: value,
+      items: items,
+      onChanged: onChanged,
+      style: const TextStyle(
+        color: tombstoneWhite,
+        fontSize: 14,
+        fontWeight: FontWeight.w300,
+      ),
+      dropdownColor: shadowGray,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: shadowGray,
+        border: OutlineInputBorder(
+          borderSide: BorderSide(color: dimGray),
+          borderRadius: BorderRadius.zero,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: dimGray),
+          borderRadius: BorderRadius.zero,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: tombstoneWhite, width: 1),
+          borderRadius: BorderRadius.zero,
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+      icon: Icon(Icons.arrow_drop_down, color: mistGray),
+    );
+  }
 }

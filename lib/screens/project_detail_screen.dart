@@ -312,7 +312,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                AppTheme.gothicDropdown<String>(
+                AppTheme.gothicDropdown(
                   value: _selectedStatus,
                   items: const [
                     DropdownMenuItem(value: 'planning', child: Text('Планирование')),
@@ -535,7 +535,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                 // Кнопка сохранения
                 AppTheme.gothicButton(
                   text: _isEditing ? 'СОХРАНЕНИЕ...' : 'СОХРАНИТЬ ИЗМЕНЕНИЯ',
-                  onPressed: _isEditing ? null : _saveProject,
+                  onPressed: _isEditing ? null : () => _saveProject(),
                   isPrimary: true,
                 ),
               ],

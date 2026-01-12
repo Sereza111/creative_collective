@@ -281,7 +281,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                AppTheme.gothicDropdown<String>(
+                AppTheme.gothicDropdown(
                   value: _selectedStatus,
                   items: const [
                     DropdownMenuItem(value: 'todo', child: Text('К выполнению')),
@@ -311,7 +311,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                AppTheme.gothicDropdown<int>(
+                AppTheme.gothicDropdown(
                   value: _selectedPriority,
                   items: const [
                     DropdownMenuItem(value: 1, child: Text('🔴 Высокий')),
@@ -454,7 +454,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                 // Кнопка сохранения
                 AppTheme.gothicButton(
                   text: _isEditing ? 'СОХРАНЕНИЕ...' : 'СОХРАНИТЬ ИЗМЕНЕНИЯ',
-                  onPressed: _isEditing ? null : _saveTask,
+                  onPressed: _isEditing ? null : () => _saveTask(),
                   isPrimary: true,
                 ),
               ],

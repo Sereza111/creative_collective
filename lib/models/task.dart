@@ -7,6 +7,8 @@ class Task {
   final DateTime dueDate;
   final int priority; // 1-5
   final String projectId;
+  final DateTime createdAt;
+  final String? assignedFullName;
 
   Task({
     required this.id,
@@ -17,6 +19,8 @@ class Task {
     required this.dueDate,
     required this.priority,
     required this.projectId,
+    required this.createdAt,
+    this.assignedFullName,
   });
 
   factory Task.fromJson(Map<String, dynamic> json) {
@@ -31,6 +35,10 @@ class Task {
           : DateTime.now().add(const Duration(days: 7)),
       priority: _parseInt(json['priority']),
       projectId: json['project_id'] ?? '',
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at']) 
+          : DateTime.now(),
+      assignedFullName: json['assigned_full_name'],
     );
   }
 
