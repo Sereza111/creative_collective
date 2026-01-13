@@ -7,13 +7,13 @@ exports.getUserFinance = async (req, res) => {
     const { user_id } = req.params;
     
     // Проверяем доступ (пользователь может видеть только свои финансы, кроме админов)
-    if (req.user.role !== 'admin' && req.user.id !== user_id) {
+    if (req.user.role !== 'admin' && req.user.id !== parseInt(user_id)) {
       return errorResponse(res, 'Недостаточно прав', 403);
     }
     
     const finances = await query(
       `SELECT f.*, u.full_name 
-       FROM finances f
+       FROM finance f
        LEFT JOIN users u ON f.user_id = u.id
        WHERE f.user_id = ?`,
       [user_id]
@@ -27,10 +27,10 @@ exports.getUserFinance = async (req, res) => {
     const transactions = await query(
       `SELECT t.*
        FROM transactions t
-       WHERE t.finance_id = ?
+       WHERE t.user_id = ?
        ORDER BY t.date DESC
        LIMIT 10`,
-      [finances[0].id]
+      [user_id]
     );
     
     successResponse(res, {
@@ -51,14 +51,14 @@ exports.getUserTransactions = async (req, res) => {
     const { page = 1, limit = 20, type, category, start_date, end_date } = req.query;
     
     // Проверяем доступ
-    if (req.user.role !== 'admin' && req.user.id !== user_id) {
+    if (req.user.role !== 'admin' && req.user.id !== parseInt(user_id)) {
       return errorResponse(res, 'Недостаточно прав', 403);
     }
     
     const { limit: limitNum, offset } = getPagination(page, limit);
     
     // Получаем finance_id
-    const finances = await query('SELECT id FROM finances WHERE user_id = ?', [user_id]);
+    const finances = await query('SELECT id FROM finance WHERE user_id = ?', [user_id]);
     if (finances.length === 0) {
       return errorResponse(res, 'Финансовая информация не найдена', 404);
     }
@@ -125,7 +125,7 @@ exports.createTransaction = async (req, res) => {
     }
     
     // Получаем finance_id
-    const finances = await query('SELECT id FROM finances WHERE user_id = ?', [user_id]);
+    const finances = await query('SELECT id FROM finance WHERE user_id = ?', [user_id]);
     if (finances.length === 0) {
       return errorResponse(res, 'Финансовая информация не найдена', 404);
     }
@@ -188,7 +188,7 @@ exports.getFinanceStats = async (req, res) => {
       return errorResponse(res, 'Недостаточно прав', 403);
     }
     
-    const finances = await query('SELECT id FROM finances WHERE user_id = ?', [user_id]);
+    const finances = await query('SELECT id FROM finance WHERE user_id = ?', [user_id]);
     if (finances.length === 0) {
       return errorResponse(res, 'Финансовая информация не найдена', 404);
     }

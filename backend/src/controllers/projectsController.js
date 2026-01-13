@@ -124,23 +124,22 @@ exports.createProject = async (req, res) => {
       end_date, 
       progress = 0, 
       budget = 0, 
-      spent = 0, 
-      team_id 
+      spent = 0
     } = req.body;
     const created_by = req.user.id;
     
-    const projectId = generateUUID();
-    
-    await query(
-      `INSERT INTO projects (id, name, description, status, start_date, end_date, progress, budget, spent, team_id, created_by) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [projectId, name, description, status, start_date, end_date, progress, budget, spent, team_id, created_by]
+    const result = await query(
+      `INSERT INTO projects (name, description, status, start_date, end_date, progress, budget, spent, created_by) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name, description, status, start_date, end_date, progress, budget, spent, created_by]
     );
+    
+    const projectId = result.insertId;
     
     // Автоматически добавляем создателя как участника
     await query(
-      'INSERT INTO project_members (id, project_id, user_id, role) VALUES (?, ?, ?, ?)',
-      [generateUUID(), projectId, created_by, 'owner']
+      'INSERT INTO project_members (project_id, user_id, role) VALUES (?, ?, ?)',
+      [projectId, created_by, 'owner']
     );
     
     const newProject = await query('SELECT * FROM projects WHERE id = ?', [projectId]);
