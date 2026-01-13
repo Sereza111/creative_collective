@@ -22,17 +22,18 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     // Создаем пользователя
-    const userId = generateUUID();
-    await query(
-      `INSERT INTO users (id, email, password, full_name, role) 
-       VALUES (?, ?, ?, ?, ?)`,
-      [userId, email, hashedPassword, full_name || null, role]
+    const userResult = await query(
+      `INSERT INTO users (email, password, full_name, role) 
+       VALUES (?, ?, ?, ?)`,
+      [email, hashedPassword, full_name || null, role]
     );
+    
+    const userId = userResult.insertId;
     
     // Создаем финансовый аккаунт для пользователя
     await query(
-      'INSERT INTO finance (id, user_id, balance, total_earned, total_spent) VALUES (?, ?, 0, 0, 0)',
-      [generateUUID(), userId]
+      'INSERT INTO finance (user_id, balance, total_earned, total_spent) VALUES (?, 0, 0, 0)',
+      [userId]
     );
     
     // Генерируем токены
@@ -50,8 +51,8 @@ exports.register = async (req, res) => {
     
     // Сохраняем refresh token
     await query(
-      'INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY))',
-      [generateUUID(), userId, refreshToken]
+      'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY))',
+      [userId, refreshToken]
     );
     
     successResponse(res, {
@@ -121,8 +122,8 @@ exports.login = async (req, res) => {
     
     // Сохраняем refresh token
     await query(
-      'INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY))',
-      [generateUUID(), user.id, refreshToken]
+      'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY))',
+      [user.id, refreshToken]
     );
     
     successResponse(res, {
