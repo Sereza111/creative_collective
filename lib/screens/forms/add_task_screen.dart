@@ -263,7 +263,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                   ),
                 )
               else
-                DropdownButtonFormField<String>(
+                DropdownButtonFormField<int>(
                   value: _selectedProjectId,
                   decoration: InputDecoration(
                     labelText: 'ПРОЕКТ',
