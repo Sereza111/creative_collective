@@ -132,7 +132,7 @@ exports.login = async (req, res) => {
         email: user.email,
         full_name: user.full_name,
         role: user.role,
-        avatar: user.avatar
+        avatar_url: user.avatar_url
       },
       accessToken,
       refreshToken
@@ -217,7 +217,7 @@ exports.me = async (req, res) => {
     const userId = req.user.id;
     
     const users = await query(
-      `SELECT u.id, u.email, u.full_name, u.avatar, 
+      `SELECT u.id, u.email, u.full_name, u.avatar_url, 
               u.role, u.created_at,
               f.balance, f.total_earned, f.total_spent
        FROM users u
