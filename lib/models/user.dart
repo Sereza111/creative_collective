@@ -1,45 +1,42 @@
 class User {
-  final String id;
+  final int id;
   final String email;
-  final String username;
   final String? fullName;
-  final String? avatar;
+  final String? avatarUrl;
   final String role;
   final bool isActive;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final DateTime? lastLogin;
 
   User({
     required this.id,
     required this.email,
-    required this.username,
     this.fullName,
-    this.avatar,
+    this.avatarUrl,
     required this.role,
     this.isActive = true,
-    required this.createdAt,
-    required this.updatedAt,
+    this.createdAt,
+    this.updatedAt,
     this.lastLogin,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] ?? '',
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
       email: json['email'] ?? '',
-      username: json['username'] ?? '',
       fullName: json['full_name'],
-      avatar: json['avatar'],
+      avatarUrl: json['avatar_url'],
       role: json['role'] ?? 'member',
       isActive: json['is_active'] ?? true,
       createdAt: json['created_at'] != null 
-          ? DateTime.parse(json['created_at']) 
-          : DateTime.now(),
+          ? DateTime.tryParse(json['created_at']) 
+          : null,
       updatedAt: json['updated_at'] != null 
-          ? DateTime.parse(json['updated_at']) 
-          : DateTime.now(),
+          ? DateTime.tryParse(json['updated_at']) 
+          : null,
       lastLogin: json['last_login'] != null 
-          ? DateTime.parse(json['last_login']) 
+          ? DateTime.tryParse(json['last_login']) 
           : null,
     );
   }
@@ -48,23 +45,21 @@ class User {
     return {
       'id': id,
       'email': email,
-      'username': username,
       'full_name': fullName,
-      'avatar': avatar,
+      'avatar_url': avatarUrl,
       'role': role,
       'is_active': isActive,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
       'last_login': lastLogin?.toIso8601String(),
     };
   }
 
   User copyWith({
-    String? id,
+    int? id,
     String? email,
-    String? username,
     String? fullName,
-    String? avatar,
+    String? avatarUrl,
     String? role,
     bool? isActive,
     DateTime? createdAt,
@@ -74,9 +69,8 @@ class User {
     return User(
       id: id ?? this.id,
       email: email ?? this.email,
-      username: username ?? this.username,
       fullName: fullName ?? this.fullName,
-      avatar: avatar ?? this.avatar,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
       role: role ?? this.role,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,

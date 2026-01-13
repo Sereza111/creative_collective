@@ -81,9 +81,9 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                           borderRadius: BorderRadius.zero,
                         ),
-                        child: user.avatar != null
+                        child: user.avatarUrl != null
                             ? Image.network(
-                                user.avatar!,
+                                user.avatarUrl!,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return const Icon(
@@ -104,7 +104,7 @@ class ProfileScreen extends ConsumerWidget {
                       
                       // Имя пользователя
                       Text(
-                        user.username.toUpperCase(),
+                        (user.fullName ?? user.email.split('@')[0]).toUpperCase(),
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w300,
@@ -115,7 +115,7 @@ class ProfileScreen extends ConsumerWidget {
                         textAlign: TextAlign.center,
                       ),
                       
-                      if (user.fullName != null) ...[
+                      if (user.fullName != null && user.email != user.fullName) ...[
                         const SizedBox(height: 8),
                         Text(
                           user.fullName!,
