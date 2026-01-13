@@ -45,7 +45,7 @@ exports.getAllProjects = async (req, res) => {
     const projects = await query(
       `SELECT p.*, 
               t.name as team_name,
-              u.username as created_by_name,
+              u.full_name as created_by_name,
               (SELECT COUNT(*) FROM project_members pm WHERE pm.project_id = p.id) as members_count,
               (SELECT COUNT(*) FROM tasks WHERE project_id = p.id) as tasks_count
        FROM projects p
@@ -73,7 +73,7 @@ exports.getProjectById = async (req, res) => {
     const projects = await query(
       `SELECT p.*, 
               t.name as team_name,
-              u.username as created_by_name,
+              u.full_name as created_by_name,
               u.full_name as created_by_full_name
        FROM projects p
        LEFT JOIN teams t ON p.team_id = t.id
@@ -88,7 +88,7 @@ exports.getProjectById = async (req, res) => {
     
     // Получаем участников проекта
     const members = await query(
-      `SELECT pm.*, u.username, u.full_name, u.avatar, u.role as user_role
+      `SELECT pm.*, u.full_name, u.avatar_url, u.role as user_role
        FROM project_members pm
        LEFT JOIN users u ON pm.user_id = u.id
        WHERE pm.project_id = ?`,
@@ -97,7 +97,7 @@ exports.getProjectById = async (req, res) => {
     
     // Получаем задачи проекта
     const tasks = await query(
-      `SELECT t.*, u.username as assigned_to_name
+      `SELECT t.*, u.full_name as assigned_to_name
        FROM tasks t
        LEFT JOIN users u ON t.assigned_to = u.id
        WHERE t.project_id = ?

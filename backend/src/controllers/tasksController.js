@@ -59,9 +59,9 @@ exports.getAllTasks = async (req, res) => {
     const tasks = await query(
       `SELECT t.*, 
               p.name as project_name,
-              u.username as assigned_to_name,
+              u.full_name as assigned_to_name,
               u.full_name as assigned_full_name,
-              c.username as created_by_name
+              c.full_name as created_by_name
        FROM tasks t
        LEFT JOIN projects p ON t.project_id = p.id
        LEFT JOIN users u ON t.assigned_to = u.id
@@ -89,9 +89,9 @@ exports.getTaskById = async (req, res) => {
       `SELECT t.*, 
               p.name as project_name,
               p.status as project_status,
-              u.username as assigned_to_name,
+              u.full_name as assigned_to_name,
               u.full_name as assigned_full_name,
-              c.username as created_by_name
+              c.full_name as created_by_name
        FROM tasks t
        LEFT JOIN projects p ON t.project_id = p.id
        LEFT JOIN users u ON t.assigned_to = u.id
@@ -106,7 +106,7 @@ exports.getTaskById = async (req, res) => {
     
     // Получаем комментарии
     const comments = await query(
-      `SELECT c.*, u.username, u.full_name, u.avatar
+      `SELECT c.*, u.full_name, u.avatar_url
        FROM comments c
        LEFT JOIN users u ON c.user_id = u.id
        WHERE c.entity_type = 'task' AND c.entity_id = ?
