@@ -57,16 +57,8 @@ exports.getUserTransactions = async (req, res) => {
     
     const { limit: limitNum, offset } = getPagination(page, limit);
     
-    // Получаем finance_id
-    const finances = await query('SELECT id FROM finance WHERE user_id = ?', [user_id]);
-    if (finances.length === 0) {
-      return errorResponse(res, 'Финансовая информация не найдена', 404);
-    }
-    
-    const finance_id = finances[0].id;
-    
-    let whereConditions = ['t.finance_id = ?'];
-    let params = [finance_id];
+    let whereConditions = ['t.user_id = ?'];
+    let params = [user_id];
     
     if (type) {
       whereConditions.push('t.type = ?');
@@ -124,31 +116,24 @@ exports.createTransaction = async (req, res) => {
       return errorResponse(res, 'Недостаточно прав', 403);
     }
     
-    // Получаем finance_id
-    const finances = await query('SELECT id FROM finance WHERE user_id = ?', [user_id]);
-    if (finances.length === 0) {
-      return errorResponse(res, 'Финансовая информация не найдена', 404);
-    }
-    
-    const finance_id = finances[0].id;
-    const transactionId = generateUUID();
-    
-    await query(
-      `INSERT INTO transactions (id, finance_id, type, amount, description, category, date)
-       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-      [transactionId, finance_id, type, amount, description, category]
+    const result = await query(
+      `INSERT INTO transactions (user_id, type, amount, description, category, date)
+       VALUES (?, ?, ?, ?, ?, NOW())`,
+      [user_id, type, amount, description, category]
     );
     
+    const transactionId = result.insertId;
+    
     // Обновляем баланс вручную (триггеры удалены)
-    if (type === 'earned' || type === 'bonus') {
+    if (type === 'income') {
       await query(
-        `UPDATE finances SET balance = balance + ?, total_earned = total_earned + ? WHERE id = ?`,
-        [amount, amount, finance_id]
+        `UPDATE finance SET balance = balance + ?, total_earned = total_earned + ? WHERE user_id = ?`,
+        [amount, amount, user_id]
       );
-    } else if (type === 'spent' || type === 'penalty') {
+    } else if (type === 'expense') {
       await query(
-        `UPDATE finances SET balance = balance - ?, total_spent = total_spent + ? WHERE id = ?`,
-        [amount, amount, finance_id]
+        `UPDATE finance SET balance = balance - ?, total_spent = total_spent + ? WHERE user_id = ?`,
+        [amount, amount, user_id]
       );
     }
     
@@ -193,10 +178,8 @@ exports.getFinanceStats = async (req, res) => {
       return errorResponse(res, 'Финансовая информация не найдена', 404);
     }
     
-    const finance_id = finances[0].id;
-    
     let dateCondition = '';
-    let params = [finance_id];
+    let params = [user_id];
     
     if (start_date && end_date) {
       dateCondition = 'AND date BETWEEN ? AND ?';
@@ -207,7 +190,7 @@ exports.getFinanceStats = async (req, res) => {
     const typeStats = await query(
       `SELECT type, SUM(amount) as total, COUNT(*) as count
        FROM transactions
-       WHERE finance_id = ? ${dateCondition}
+       WHERE user_id = ? ${dateCondition}
        GROUP BY type`,
       params
     );
@@ -216,7 +199,7 @@ exports.getFinanceStats = async (req, res) => {
     const categoryStats = await query(
       `SELECT category, SUM(amount) as total, COUNT(*) as count
        FROM transactions
-       WHERE finance_id = ? ${dateCondition} AND category IS NOT NULL
+       WHERE user_id = ? ${dateCondition} AND category IS NOT NULL
        GROUP BY category
        ORDER BY total DESC`,
       params
