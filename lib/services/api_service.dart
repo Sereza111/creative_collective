@@ -42,7 +42,8 @@ class ApiService {
         );
         // Save user ID
         if (data['data']['user'] != null) {
-          await SecureStorageService.saveUserId(data['data']['user']['id']);
+          final userId = data['data']['user']['id'];
+          await SecureStorageService.saveUserId(userId.toString());
         }
         return data['data'];
       }
@@ -56,7 +57,6 @@ class ApiService {
   static Future<Map<String, dynamic>> register({
     required String email,
     required String password,
-    required String username,
     String? fullName,
   }) async {
     final response = await http.post(
@@ -65,7 +65,6 @@ class ApiService {
       body: jsonEncode({
         'email': email,
         'password': password,
-        'username': username,
         'full_name': fullName,
       }),
     );
@@ -80,7 +79,8 @@ class ApiService {
         );
         // Save user ID
         if (data['data']['user'] != null) {
-          await SecureStorageService.saveUserId(data['data']['user']['id']);
+          final userId = data['data']['user']['id'];
+          await SecureStorageService.saveUserId(userId.toString());
         }
         return data['data'];
       }

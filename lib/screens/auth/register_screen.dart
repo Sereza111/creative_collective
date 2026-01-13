@@ -13,7 +13,6 @@ class RegisterScreen extends ConsumerStatefulWidget {
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final _usernameController = TextEditingController();
   final _fullNameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -23,7 +22,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   void dispose() {
     _emailController.dispose();
-    _usernameController.dispose();
     _fullNameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -36,7 +34,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         await ref.read(authProvider.notifier).register(
           email: _emailController.text.trim(),
           password: _passwordController.text,
-          username: _usernameController.text.trim(),
           fullName: _fullNameController.text.trim().isEmpty 
               ? null 
               : _fullNameController.text.trim(),
@@ -87,48 +84,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 20),
-
-                // Username field
-                TextFormField(
-                  controller: _usernameController,
-                  style: TextStyle(color: AppTheme.tombstoneWhite),
-                  decoration: InputDecoration(
-                    labelText: 'ИМЯ ПОЛЬЗОВАТЕЛЯ',
-                    labelStyle: TextStyle(
-                      color: AppTheme.mistGray,
-                      letterSpacing: 2,
-                      fontSize: 12,
-                    ),
-                    prefixIcon: Icon(Icons.person_outline, color: AppTheme.mistGray),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: AppTheme.dimGray),
-                      borderRadius: BorderRadius.zero,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: AppTheme.tombstoneWhite, width: 2),
-                      borderRadius: BorderRadius.zero,
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: AppTheme.bloodRed),
-                      borderRadius: BorderRadius.zero,
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: AppTheme.bloodRed, width: 2),
-                      borderRadius: BorderRadius.zero,
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Введите имя пользователя';
-                    }
-                    if (value.length < 3) {
-                      return 'Минимум 3 символа';
-                    }
-                    return null;
-                  },
-                ),
-
                 const SizedBox(height: 20),
 
                 // Full name field (optional)

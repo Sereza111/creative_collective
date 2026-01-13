@@ -82,7 +82,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> register({
     required String email,
     required String password,
-    required String username,
     String? fullName,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
@@ -90,7 +89,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final data = await ApiService.register(
         email: email,
         password: password,
-        username: username,
         fullName: fullName,
       );
       final user = User.fromJson(data['user']);
