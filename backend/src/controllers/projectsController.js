@@ -44,12 +44,10 @@ exports.getAllProjects = async (req, res) => {
     
     const projects = await query(
       `SELECT p.*, 
-              t.name as team_name,
               u.full_name as created_by_name,
               (SELECT COUNT(*) FROM project_members pm WHERE pm.project_id = p.id) as members_count,
               (SELECT COUNT(*) FROM tasks WHERE project_id = p.id) as tasks_count
        FROM projects p
-       LEFT JOIN teams t ON p.team_id = t.id
        LEFT JOIN users u ON p.created_by = u.id
        ${whereClause}
        ORDER BY p.created_at DESC
@@ -72,11 +70,9 @@ exports.getProjectById = async (req, res) => {
     
     const projects = await query(
       `SELECT p.*, 
-              t.name as team_name,
               u.full_name as created_by_name,
               u.full_name as created_by_full_name
        FROM projects p
-       LEFT JOIN teams t ON p.team_id = t.id
        LEFT JOIN users u ON p.created_by = u.id
        WHERE p.id = ?`,
       [id]
