@@ -65,7 +65,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                     AppTheme.gothicTitle(
-                      authState.user?.username ?? 'Пользователь',
+                      authState.user?.fullName ?? authState.user?.email.split('@')[0] ?? 'Пользователь',
                     ),
                   const SizedBox(height: 16),
                   Text(

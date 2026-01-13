@@ -248,15 +248,20 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      _buildInfoRow(
-                        'Дата регистрации',
-                        DateFormat('dd.MM.yyyy').format(user.createdAt),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildInfoRow(
-                        'Последнее обновление',
-                        DateFormat('dd.MM.yyyy').format(user.updatedAt),
-                      ),
+                      if (user.createdAt != null) ...[
+                        _buildInfoRow(
+                          'Дата регистрации',
+                          DateFormat('dd.MM.yyyy').format(user.createdAt!),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      if (user.updatedAt != null) ...[
+                        _buildInfoRow(
+                          'Последнее обновление',
+                          DateFormat('dd.MM.yyyy').format(user.updatedAt!),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       if (user.lastLogin != null) ...[
                         const SizedBox(height: 12),
                         _buildInfoRow(

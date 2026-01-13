@@ -21,7 +21,7 @@ class FinanceNotifier extends StateNotifier<AsyncValue<Finance?>> {
       state = const AsyncValue.loading();
       final user = ref.read(authProvider).user;
       if (user != null) {
-        final finance = await ApiService.getFinance(user.id);
+        final finance = await ApiService.getFinance(user.id.toString());
         state = AsyncValue.data(finance);
       }
     } catch (e, stack) {
@@ -51,7 +51,7 @@ class TransactionsNotifier extends StateNotifier<AsyncValue<List<app_transaction
       state = const AsyncValue.loading();
       final user = ref.read(authProvider).user;
       if (user != null) {
-        final data = await ApiService.getTransactions(user.id);
+        final data = await ApiService.getTransactions(user.id.toString());
         final transactions = data.map((json) => app_transaction.Transaction.fromJson(json)).toList();
         state = AsyncValue.data(transactions);
       }
@@ -68,7 +68,7 @@ class TransactionsNotifier extends StateNotifier<AsyncValue<List<app_transaction
     try {
       final user = ref.read(authProvider).user;
       if (user != null) {
-        await ApiService.createTransaction(user.id, transactionData);
+        await ApiService.createTransaction(user.id.toString(), transactionData);
         await loadTransactions();
         // Обновляем финансовую информацию
         await ref.read(financeProvider.notifier).refresh();
