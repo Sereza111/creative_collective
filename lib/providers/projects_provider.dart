@@ -56,9 +56,9 @@ class ProjectsNotifier extends StateNotifier<ProjectsState> {
     }
   }
 
-  Future<void> updateProject(String projectId, Map<String, dynamic> projectData) async {
+  Future<void> updateProject(int projectId, Map<String, dynamic> projectData) async {
     try {
-      final updatedProject = await ApiService.updateProject(projectId, projectData);
+      final updatedProject = await ApiService.updateProject(projectId.toString(), projectData);
       final updatedProjects = state.projects.map((project) {
         return project.id == projectId ? updatedProject : project;
       }).toList();
@@ -71,9 +71,9 @@ class ProjectsNotifier extends StateNotifier<ProjectsState> {
     }
   }
 
-  Future<void> deleteProject(String projectId) async {
+  Future<void> deleteProject(int projectId) async {
     try {
-      await ApiService.deleteProject(projectId);
+      await ApiService.deleteProject(projectId.toString());
       final updatedProjects = state.projects.where((project) => project.id != projectId).toList();
       state = state.copyWith(projects: updatedProjects);
     } catch (e) {

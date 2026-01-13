@@ -17,7 +17,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   
-  String? _selectedProjectId;
+  int? _selectedProjectId;
   String _selectedStatus = 'todo';
   int _selectedPriority = 3;
   DateTime? _selectedDueDate;
