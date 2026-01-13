@@ -1,5 +1,5 @@
 class Project {
-  final String id;
+  final int id;
   final String name;
   final String description;
   final String status; // 'planning', 'active', 'on_hold', 'completed'
@@ -25,7 +25,7 @@ class Project {
 
   factory Project.fromJson(Map<String, dynamic> json) {
     return Project(
-      id: json['id'] ?? '',
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
       name: json['name'] ?? 'Без названия',
       description: json['description'] ?? '',
       status: json['status'] ?? 'planning',
