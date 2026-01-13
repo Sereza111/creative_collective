@@ -6,16 +6,16 @@ const { successResponse, errorResponse, generateUUID } = require('../utils/helpe
 // Регистрация нового пользователя
 exports.register = async (req, res) => {
   try {
-    const { email, username, password, full_name, role = 'member' } = req.body;
+    const { email, password, full_name, role = 'member' } = req.body;
     
     // Проверяем, существует ли пользователь
     const existingUser = await query(
-      'SELECT id FROM users WHERE email = ? OR username = ?',
-      [email, username]
+      'SELECT id FROM users WHERE email = ?',
+      [email]
     );
     
     if (existingUser.length > 0) {
-      return errorResponse(res, 'Пользователь с таким email или username уже существует', 409);
+      return errorResponse(res, 'Пользователь с таким email уже существует', 409);
     }
     
     // Хешируем пароль
@@ -24,14 +24,14 @@ exports.register = async (req, res) => {
     // Создаем пользователя
     const userId = generateUUID();
     await query(
-      `INSERT INTO users (id, email, username, password, full_name, role) 
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [userId, email, username, hashedPassword, full_name || null, role]
+      `INSERT INTO users (id, email, password, full_name, role) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [userId, email, hashedPassword, full_name || null, role]
     );
     
     // Создаем финансовый аккаунт для пользователя
     await query(
-      'INSERT INTO finances (id, user_id, balance, total_earned, total_spent) VALUES (?, ?, 0, 0, 0)',
+      'INSERT INTO finance (id, user_id, balance, total_earned, total_spent) VALUES (?, ?, 0, 0, 0)',
       [generateUUID(), userId]
     );
     
@@ -58,7 +58,6 @@ exports.register = async (req, res) => {
       user: {
         id: userId,
         email,
-        username,
         full_name,
         role
       },
@@ -79,8 +78,8 @@ exports.login = async (req, res) => {
     
     // Находим пользователя
     const users = await query(
-      'SELECT * FROM users WHERE email = ? OR username = ?',
-      [email, email]
+      'SELECT * FROM users WHERE email = ?',
+      [email]
     );
     
     if (users.length === 0) {
@@ -130,7 +129,6 @@ exports.login = async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        username: user.username,
         full_name: user.full_name,
         role: user.role,
         avatar: user.avatar
@@ -218,11 +216,11 @@ exports.me = async (req, res) => {
     const userId = req.user.id;
     
     const users = await query(
-      `SELECT u.id, u.email, u.username, u.full_name, u.avatar, 
+      `SELECT u.id, u.email, u.full_name, u.avatar, 
               u.role, u.created_at,
               f.balance, f.total_earned, f.total_spent
        FROM users u
-       LEFT JOIN finances f ON f.user_id = u.id
+       LEFT JOIN finance f ON f.user_id = u.id
        WHERE u.id = ?`,
       [userId]
     );

@@ -17,7 +17,7 @@ const authenticate = async (req, res, next) => {
     
     // Проверяем, существует ли пользователь
     const users = await query(
-      'SELECT id, email, username, full_name, role, is_active FROM users WHERE id = ?',
+      'SELECT id, email, full_name, role, is_active FROM users WHERE id = ?',
       [decoded.userId]
     );
     
@@ -91,7 +91,7 @@ const optionalAuth = async (req, res, next) => {
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const users = await query(
-        'SELECT id, email, username, full_name, role FROM users WHERE id = ? AND is_active = TRUE',
+        'SELECT id, email, full_name, role FROM users WHERE id = ? AND is_active = TRUE',
         [decoded.userId]
       );
       
