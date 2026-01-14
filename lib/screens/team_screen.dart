@@ -1,226 +1,205 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
+import '../providers/teams_provider.dart';
+import 'forms/add_team_screen.dart';
 
-class TeamScreen extends StatelessWidget {
+class TeamScreen extends ConsumerStatefulWidget {
   const TeamScreen({Key? key}) : super(key: key);
 
   @override
+  ConsumerState<TeamScreen> createState() => _TeamScreenState();
+}
+
+class _TeamScreenState extends ConsumerState<TeamScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => ref.read(teamsProvider.notifier).loadTeams());
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final teamsState = ref.watch(teamsProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('КОМАНДА'),
+        title: const Text('КОМАНДЫ'),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Добавить члена команды'),
-                  backgroundColor: AppTheme.shadowGray,
-                  behavior: SnackBarBehavior.floating,
-                ),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddTeamScreen()),
               );
             },
+            tooltip: 'Создать команду',
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          AppTheme.fadeInAnimation(
-            child: AppTheme.gothicTitle('Участники'),
-          ),
-          const SizedBox(height: 32),
-          AppTheme.gothicDivider(),
-          const SizedBox(height: 32),
-          
-          AppTheme.slideUpAnimation(
-            offset: 15,
-            child: _buildTeamMember(
-              context,
-              'Денис',
-              'Программист',
-              'Full Stack Developer',
-              ['Flutter', 'React', 'Node.js'],
-              true,
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          AppTheme.slideUpAnimation(
-            offset: 15,
-            duration: const Duration(milliseconds: 900),
-            child: _buildTeamMember(
-              context,
-              'Иван',
-              'Битмейкер',
-              'Music Producer',
-              ['FL Studio', 'Ableton', 'Logic Pro'],
-              true,
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          AppTheme.slideUpAnimation(
-            offset: 15,
-            duration: const Duration(milliseconds: 1000),
-            child: _buildTeamMember(
-              context,
-              'Мария',
-              'Дизайнер',
-              'UI/UX Designer',
-              ['Figma', 'Photoshop', 'Illustrator'],
-              true,
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          AppTheme.slideUpAnimation(
-            offset: 15,
-            duration: const Duration(milliseconds: 1100),
-            child: _buildTeamMember(
-              context,
-              'Алексей',
-              'Монтажер',
-              'Video Editor',
-              ['Premiere Pro', 'After Effects'],
-              false,
-            ),
-          ),
-        ],
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(teamsProvider.notifier).loadTeams(),
+        backgroundColor: AppTheme.shadowGray,
+        color: AppTheme.tombstoneWhite,
+        child: teamsState.isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.tombstoneWhite),
+                ),
+              )
+            : teamsState.error != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline, size: 64, color: AppTheme.bloodRed),
+                          const SizedBox(height: 20),
+                          Text(
+                            'Ошибка: ${teamsState.error}',
+                            style: TextStyle(color: AppTheme.bloodRed),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 20),
+                          AppTheme.gothicButton(
+                            text: 'Попробовать снова',
+                            onPressed: () => ref.read(teamsProvider.notifier).loadTeams(),
+                            isPrimary: true,
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : teamsState.teams.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.group_outlined, size: 64, color: AppTheme.mistGray),
+                            const SizedBox(height: 20),
+                            Text(
+                              'Нет команд',
+                              style: TextStyle(
+                                color: AppTheme.tombstoneWhite,
+                                fontSize: 18,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Создайте первую команду',
+                              style: TextStyle(color: AppTheme.mistGray),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(20),
+                        itemCount: teamsState.teams.length,
+                        itemBuilder: (context, index) {
+                          final team = teamsState.teams[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: AppTheme.slideUpAnimation(
+                              offset: 15,
+                              duration: Duration(milliseconds: 800 + (index * 100)),
+                              child: _buildTeamCard(team),
+                            ),
+                          );
+                        },
+                      ),
       ),
     );
   }
 
-  Widget _buildTeamMember(
-    BuildContext context,
-    String name,
-    String role,
-    String subtitle,
-    List<String> skills,
-    bool isAvailable,
-  ) {
+  Widget _buildTeamCard(team) {
     return AppTheme.animatedGothicCard(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Team header
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: AppTheme.dimGray.withOpacity(0.5),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.zero,
-                  ),
-                  child: Center(
-                    child: Text(
-                      name[0].toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w200,
-                        color: AppTheme.ashGray,
-                        fontFamily: 'serif',
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 20),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        name.toUpperCase(),
+                        team.name.toUpperCase(),
                         style: const TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w300,
+                          fontWeight: FontWeight.w400,
                           color: AppTheme.tombstoneWhite,
-                          letterSpacing: 2.5,
+                          letterSpacing: 1.5,
                           fontFamily: 'serif',
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        role.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w300,
-                          color: AppTheme.ashGray,
-                          letterSpacing: 1.5,
+                      if (team.description != null && team.description!.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          team.description!,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.mistGray,
+                            height: 1.5,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w300,
-                          color: AppTheme.mistGray,
-                          fontStyle: FontStyle.italic,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
-                AppTheme.gothicBadge(
-                  isAvailable ? 'Свободен' : 'Занят',
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppTheme.dimGray),
+                    borderRadius: BorderRadius.zero,
+                  ),
+                  child: Text(
+                    '${team.membersCount} участников',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w400,
+                      color: AppTheme.mistGray,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
                 ),
               ],
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Container(
               height: 1,
               color: AppTheme.dimGray.withOpacity(0.3),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             
-            // Навыки
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // Owner info
+            Row(
               children: [
                 Text(
-                  'НАВЫКИ',
+                  'ВЛАДЕЛЕЦ:',
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w300,
                     color: AppTheme.mistGray,
                     letterSpacing: 2.0,
-                    fontFamily: 'serif',
                   ),
                 ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: skills.map((skill) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: AppTheme.dimGray.withOpacity(0.4),
-                          width: 1,
-                        ),
-                        borderRadius: BorderRadius.zero,
-                      ),
-                      child: Text(
-                        skill.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w300,
-                          color: AppTheme.ashGray,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                const SizedBox(width: 12),
+                Text(
+                  team.ownerName ?? 'Неизвестно',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.ashGray,
+                  ),
                 ),
               ],
             ),
@@ -230,3 +209,4 @@ class TeamScreen extends StatelessWidget {
     );
   }
 }
+

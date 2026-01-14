@@ -4,6 +4,7 @@ import '../models/task.dart';
 import '../models/project.dart';
 import '../models/finance.dart';
 import '../models/user.dart';
+import '../models/team.dart';
 import 'secure_storage_service.dart';
 
 class ApiService {
@@ -419,21 +420,102 @@ class ApiService {
   // TEAMS
   // =============================================
   
-  static Future<List<dynamic>> getTeams() async {
+  static Future<List<Team>> getTeams() async {
     final headers = await _getHeaders();
     final response = await http.get(
       Uri.parse('$baseUrl/teams'),
       headers: headers,
-    );
+    ).timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['success'] == true && data['data'] != null) {
-        return data['data'];
+        final teamsList = data['data'] is List ? data['data'] : [data['data']];
+        return teamsList.map<Team>((json) => Team.fromJson(json)).toList();
       }
       return [];
     } else {
       throw Exception('Ошибка загрузки команд');
+    }
+  }
+
+  static Future<Team> createTeam(Map<String, dynamic> teamData) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/teams'),
+      headers: headers,
+      body: jsonEncode(teamData),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return Team.fromJson(data['data']);
+      }
+      throw Exception(data['message'] ?? 'Ошибка создания команды');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка создания команды');
+    }
+  }
+
+  static Future<Team> updateTeam(int teamId, Map<String, dynamic> teamData) async {
+    final headers = await _getHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/teams/$teamId'),
+      headers: headers,
+      body: jsonEncode(teamData),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return Team.fromJson(data['data']);
+      }
+      throw Exception(data['message'] ?? 'Ошибка обновления команды');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка обновления команды');
+    }
+  }
+
+  static Future<void> deleteTeam(int teamId) async {
+    final headers = await _getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/teams/$teamId'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка удаления команды');
+    }
+  }
+
+  static Future<void> addTeamMember(int teamId, int userId, String role) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/teams/$teamId/members'),
+      headers: headers,
+      body: jsonEncode({'user_id': userId, 'role': role}),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка добавления участника');
+    }
+  }
+
+  static Future<void> removeTeamMember(int teamId, int userId) async {
+    final headers = await _getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/teams/$teamId/members/$userId'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка удаления участника');
     }
   }
 }
