@@ -33,5 +33,12 @@ router.post('/logout', authController.logout);
 // GET /api/auth/me - Получить информацию о текущем пользователе
 router.get('/me', authenticate, authController.me);
 
+// PUT /api/auth/profile - Обновить профиль пользователя
+const updateProfileValidation = [
+  body('email').optional().isEmail().withMessage('Некорректный email'),
+  body('full_name').optional().isLength({ min: 1, max: 255 }).withMessage('Имя должно быть от 1 до 255 символов')
+];
+router.put('/profile', authenticate, updateProfileValidation, validate, authController.updateProfile);
+
 module.exports = router;
 

@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/finance_provider.dart';
 import '../models/user.dart';
 import 'auth/login_screen.dart';
+import 'forms/edit_profile_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -44,6 +45,16 @@ class ProfileScreen extends ConsumerWidget {
         title: const Text('ПРОФИЛЬ'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+              );
+            },
+            tooltip: 'Редактировать',
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await ref.read(authProvider.notifier).logout();
@@ -54,6 +65,7 @@ class ProfileScreen extends ConsumerWidget {
                 );
               }
             },
+            tooltip: 'Выход',
           ),
         ],
       ),

@@ -98,34 +98,101 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 )
               else ...[
-            AppTheme.slideUpAnimation(
-              child: _buildStatCard(
-                context,
-                'Активные задачи',
-                    '$activeTasks',
-                Icons.circle_outlined,
-              ),
-            ),
-            const SizedBox(height: 20),
-            AppTheme.slideUpAnimation(
-              duration: const Duration(milliseconds: 900),
-              child: _buildStatCard(
-                context,
-                    'Проекты',
-                    '${activeProjects.length}',
-                    Icons.change_history_outlined,
-              ),
-            ),
-            const SizedBox(height: 20),
-            AppTheme.slideUpAnimation(
-              duration: const Duration(milliseconds: 1000),
-              child: _buildStatCard(
-                context,
-                    'Всего задач',
-                    '${tasksState.tasks?.length ?? 0}',
-                    Icons.square_outlined,
-              ),
-            ),
+                // Overview Cards
+                AppTheme.fadeInAnimation(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          'АКТИВНЫЕ ПРОЕКТЫ',
+                          activeProjects.length.toString(),
+                          Icons.folder_open,
+                          AppTheme.tombstoneWhite,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildStatCard(
+                          'АКТИВНЫЕ ЗАДАЧИ',
+                          activeTasks.toString(),
+                          Icons.assignment,
+                          AppTheme.tombstoneWhite,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                AppTheme.fadeInAnimation(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          'ВСЕГО ПРОЕКТОВ',
+                          projectsState.projects.length.toString(),
+                          Icons.folder,
+                          AppTheme.mistGray,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildStatCard(
+                          'ВСЕГО ЗАДАЧ',
+                          (tasksState.tasks ?? []).length.toString(),
+                          Icons.assignment_turned_in,
+                          AppTheme.mistGray,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 48),
+                // Recent Activity Section
+                AppTheme.gothicTitle('НЕДАВНИЕ ПРОЕКТЫ'),
+                const SizedBox(height: 24),
+                if (activeProjects.isEmpty)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(40.0),
+                      child: Text(
+                        'Нет активных проектов',
+                        style: TextStyle(
+                          color: AppTheme.mistGray,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  ...activeProjects.take(3).map((project) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: AppTheme.animatedGothicCard(
+                        child: ListTile(
+                          leading: Icon(Icons.folder, color: AppTheme.tombstoneWhite),
+                          title: Text(
+                            project.name.toUpperCase(),
+                            style: TextStyle(
+                              color: AppTheme.tombstoneWhite,
+                              fontSize: 12,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${project.progress}% завершено',
+                            style: TextStyle(
+                              color: AppTheme.mistGray,
+                              fontSize: 10,
+                            ),
+                          ),
+                          trailing: Icon(Icons.arrow_forward, color: AppTheme.mistGray),
+                          onTap: () {
+                            // Navigate to project details
+                          },
+                        ),
+                      ),
+                    );
+                  }).toList(),
               ],
             
             const SizedBox(height: 48),
@@ -209,10 +276,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildStatCard(
-    BuildContext context,
     String label,
     String value,
     IconData icon,
+    Color iconColor,
   ) {
     return AppTheme.animatedGothicCard(
       child: Padding(
@@ -224,12 +291,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               height: 48,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: AppTheme.dimGray.withOpacity(0.5),
+                  color: iconColor.withOpacity(0.3),
                   width: 1,
                 ),
                 borderRadius: BorderRadius.zero,
               ),
-              child: Icon(icon, color: AppTheme.ashGray, size: 24),
+              child: Icon(icon, color: iconColor, size: 24),
             ),
             const SizedBox(width: 20),
             Expanded(

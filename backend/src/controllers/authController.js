@@ -238,3 +238,53 @@ exports.me = async (req, res) => {
   }
 };
 
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { full_name, email } = req.body;
+    
+    // Check if email already exists for other users
+    if (email) {
+      const existingUsers = await query(
+        'SELECT id FROM users WHERE email = ? AND id != ?',
+        [email, userId]
+      );
+      
+      if (existingUsers.length > 0) {
+        return errorResponse(res, 'Email уже используется', 400);
+      }
+    }
+    
+    // Update user data
+    const updateData = {};
+    if (full_name !== undefined) updateData.full_name = full_name;
+    if (email !== undefined) updateData.email = email;
+    updateData.updated_at = new Date();
+    
+    const updateFields = Object.keys(updateData).map(key => `${key} = ?`).join(', ');
+    const updateValues = [...Object.values(updateData), userId];
+    
+    await query(
+      `UPDATE users SET ${updateFields} WHERE id = ?`,
+      updateValues
+    );
+    
+    // Get updated user data
+    const users = await query(
+      `SELECT u.id, u.email, u.full_name, u.avatar_url, 
+              u.role, u.created_at,
+              f.balance, f.total_earned, f.total_spent
+       FROM users u
+       LEFT JOIN finance f ON f.user_id = u.id
+       WHERE u.id = ?`,
+      [userId]
+    );
+    
+    successResponse(res, users[0], 'Профиль обновлен');
+    
+  } catch (error) {
+    console.error('Update profile error:', error);
+    errorResponse(res, 'Ошибка при обновлении профиля');
+  }
+};
+

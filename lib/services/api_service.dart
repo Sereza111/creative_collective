@@ -113,6 +113,26 @@ class ApiService {
     }
   }
 
+  static Future<User> updateUserProfile(Map<String, dynamic> profileData) async {
+    final headers = await _getHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/auth/profile'),
+      headers: headers,
+      body: jsonEncode(profileData),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return User.fromJson(data['data']);
+      }
+      throw Exception(data['message'] ?? 'Ошибка обновления профиля');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка обновления профиля');
+    }
+  }
+
   // =============================================
   // TASKS
   // =============================================
