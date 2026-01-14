@@ -4,7 +4,9 @@ import '../theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/tasks_provider.dart';
 import '../providers/projects_provider.dart';
+import '../providers/notifications_provider.dart';
 import 'dashboard_screen.dart';
+import 'notifications_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -34,10 +36,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       t.status == 'todo' || t.status == 'in_progress'
     ).length;
 
+    final notificationsState = ref.watch(notificationsProvider);
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('ГЛАВНАЯ'),
         actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                  );
+                },
+                tooltip: 'Уведомления',
+              ),
+              if (notificationsState.unreadCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.bloodRed,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '${notificationsState.unreadCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
