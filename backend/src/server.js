@@ -84,6 +84,7 @@ app.use(`/api/${API_VERSION}/tasks`, tasksRoutes);
 app.use(`/api/${API_VERSION}/projects`, projectsRoutes);
 app.use(`/api/${API_VERSION}/finance`, financeRoutes);
 app.use(`/api/${API_VERSION}/teams`, teamsRoutes);
+app.use(`/api/${API_VERSION}/orders`, require('./routes/orders.routes'));
 
 // 404 обработчик
 app.use(notFound);
