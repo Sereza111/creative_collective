@@ -4,7 +4,11 @@ import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/finance_provider.dart';
+import '../providers/projects_provider.dart';
+import '../providers/tasks_provider.dart';
+import '../providers/transactions_provider.dart';
 import '../models/user.dart';
+import '../services/export_service.dart';
 import 'auth/login_screen.dart';
 import 'forms/edit_profile_screen.dart';
 
@@ -44,6 +48,11 @@ class ProfileScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('ПРОФИЛЬ'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: () => _showExportDialog(context, ref),
+            tooltip: 'Экспорт данных',
+          ),
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
@@ -394,6 +403,215 @@ class ProfileScreen extends ConsumerWidget {
         return 'Участник';
       default:
         return role;
+    }
+  }
+
+  void _showExportDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.darkerCharcoal,
+        title: Text(
+          'ЭКСПОРТ ДАННЫХ',
+          style: TextStyle(
+            color: AppTheme.tombstoneWhite,
+            fontSize: 14,
+            letterSpacing: 2,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildExportOption(
+              context,
+              ref,
+              'Проекты',
+              Icons.folder_outlined,
+              () => _exportProjects(context, ref),
+            ),
+            const SizedBox(height: 12),
+            _buildExportOption(
+              context,
+              ref,
+              'Задачи',
+              Icons.task_outlined,
+              () => _exportTasks(context, ref),
+            ),
+            const SizedBox(height: 12),
+            _buildExportOption(
+              context,
+              ref,
+              'Транзакции',
+              Icons.receipt_long_outlined,
+              () => _exportTransactions(context, ref),
+            ),
+            const SizedBox(height: 12),
+            _buildExportOption(
+              context,
+              ref,
+              'Все данные',
+              Icons.file_download_outlined,
+              () => _exportAllData(context, ref),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'ОТМЕНА',
+              style: TextStyle(color: AppTheme.mistGray),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExportOption(
+    BuildContext context,
+    WidgetRef ref,
+    String title,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppTheme.dimGray.withOpacity(0.3)),
+          borderRadius: BorderRadius.zero,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppTheme.ashGray, size: 24),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: AppTheme.tombstoneWhite,
+                  fontSize: 12,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, color: AppTheme.mistGray, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _exportProjects(BuildContext context, WidgetRef ref) async {
+    try {
+      final projects = ref.read(projectsProvider).projects;
+      final file = await ExportService.exportProjectsToCSV(projects);
+      
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Проекты экспортированы: ${file.path}'),
+            backgroundColor: AppTheme.shadowGray,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка экспорта: $e'),
+            backgroundColor: AppTheme.bloodRed,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportTasks(BuildContext context, WidgetRef ref) async {
+    try {
+      final tasks = ref.read(tasksProvider).tasks;
+      final file = await ExportService.exportTasksToCSV(tasks);
+      
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Задачи экспортированы: ${file.path}'),
+            backgroundColor: AppTheme.shadowGray,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка экспорта: $e'),
+            backgroundColor: AppTheme.bloodRed,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportTransactions(BuildContext context, WidgetRef ref) async {
+    try {
+      final transactions = ref.read(transactionsProvider).transactions;
+      final file = await ExportService.exportTransactionsToCSV(transactions);
+      
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Транзакции экспортированы: ${file.path}'),
+            backgroundColor: AppTheme.shadowGray,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка экспорта: $e'),
+            backgroundColor: AppTheme.bloodRed,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportAllData(BuildContext context, WidgetRef ref) async {
+    try {
+      final projects = ref.read(projectsProvider).projects;
+      final tasks = ref.read(tasksProvider).tasks;
+      final transactions = ref.read(transactionsProvider).transactions;
+      
+      final file = await ExportService.exportAllDataToCSV(
+        projects: projects,
+        tasks: tasks,
+        transactions: transactions,
+      );
+      
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Все данные экспортированы: ${file.path}'),
+            backgroundColor: AppTheme.shadowGray,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка экспорта: $e'),
+            backgroundColor: AppTheme.bloodRed,
+          ),
+        );
+      }
     }
   }
 }
