@@ -38,6 +38,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _submitForm() async {
+    if (_isSubmitting) return; // Prevent multiple submissions
+    
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isSubmitting = true;
@@ -164,7 +166,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 duration: const Duration(milliseconds: 1100),
                 child: AppTheme.gothicButton(
                   text: _isSubmitting ? 'Сохранение...' : 'Сохранить',
-                  onPressed: _isSubmitting ? null : () => _submitForm(),
+                  onPressed: () => _submitForm(),
                   isPrimary: true,
                 ),
               ),
