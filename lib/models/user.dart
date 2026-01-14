@@ -3,7 +3,8 @@ class User {
   final String email;
   final String? fullName;
   final String? avatarUrl;
-  final String role;
+  final String role; // team role: admin, manager, member
+  final String userRole; // marketplace role: client, freelancer, admin
   final bool isActive;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -15,6 +16,7 @@ class User {
     this.fullName,
     this.avatarUrl,
     required this.role,
+    this.userRole = 'freelancer',
     this.isActive = true,
     this.createdAt,
     this.updatedAt,
@@ -28,6 +30,7 @@ class User {
       fullName: json['full_name'],
       avatarUrl: json['avatar_url'],
       role: json['role'] ?? 'member',
+      userRole: json['user_role'] ?? 'freelancer',
       isActive: json['is_active'] ?? true,
       createdAt: json['created_at'] != null 
           ? DateTime.tryParse(json['created_at']) 
@@ -48,6 +51,7 @@ class User {
       'full_name': fullName,
       'avatar_url': avatarUrl,
       'role': role,
+      'user_role': userRole,
       'is_active': isActive,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
@@ -61,6 +65,7 @@ class User {
     String? fullName,
     String? avatarUrl,
     String? role,
+    String? userRole,
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -72,6 +77,7 @@ class User {
       fullName: fullName ?? this.fullName,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       role: role ?? this.role,
+      userRole: userRole ?? this.userRole,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
