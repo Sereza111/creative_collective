@@ -16,7 +16,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final _descriptionController = TextEditingController();
   final _categoryController = TextEditingController();
   
-  String _selectedType = 'earned'; // 'earned', 'spent', 'bonus', 'penalty'
+  String _selectedType = 'income'; // 'income', 'expense'
   bool _isSubmitting = false;
 
   @override
@@ -104,10 +104,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 spacing: 12,
                 runSpacing: 12,
                 children: [
-                  _buildTypeChip('earned', 'Доход', Icons.add),
-                  _buildTypeChip('spent', 'Расход', Icons.remove),
-                  _buildTypeChip('bonus', 'Бонус', Icons.star_border),
-                  _buildTypeChip('penalty', 'Штраф', Icons.warning_amber_outlined),
+                  _buildTypeChip('income', 'Доход', Icons.add),
+                  _buildTypeChip('expense', 'Расход', Icons.remove),
                 ],
               ),
               

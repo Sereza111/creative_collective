@@ -24,6 +24,8 @@ class _AddTeamScreenState extends ConsumerState<AddTeamScreen> {
   }
 
   Future<void> _submitForm() async {
+    if (_isSubmitting) return; // Prevent multiple submissions
+    
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isSubmitting = true;
@@ -138,7 +140,7 @@ class _AddTeamScreenState extends ConsumerState<AddTeamScreen> {
                 duration: const Duration(milliseconds: 1100),
                 child: AppTheme.gothicButton(
                   text: _isSubmitting ? 'Создание...' : 'Создать команду',
-                  onPressed: _isSubmitting ? null : () => _submitForm(),
+                  onPressed: () => _submitForm(),
                   isPrimary: true,
                 ),
               ),
