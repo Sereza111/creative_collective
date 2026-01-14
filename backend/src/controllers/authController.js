@@ -132,6 +132,7 @@ exports.login = async (req, res) => {
         email: user.email,
         full_name: user.full_name,
         role: user.role,
+        user_role: user.user_role || 'freelancer',
         avatar_url: user.avatar_url
       },
       accessToken,
@@ -218,7 +219,7 @@ exports.me = async (req, res) => {
     
     const users = await query(
       `SELECT u.id, u.email, u.full_name, u.avatar_url, 
-              u.role, u.created_at,
+              u.role, u.user_role, u.created_at,
               f.balance, f.total_earned, f.total_spent
        FROM users u
        LEFT JOIN finance f ON f.user_id = u.id

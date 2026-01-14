@@ -5,6 +5,7 @@ import 'screens/tasks_screen.dart';
 import 'screens/finance_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/projects_screen.dart';
+import 'screens/marketplace_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
@@ -91,6 +92,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     const HomeScreen(),
     const TasksScreen(),
     const ProjectsScreen(),
+    const MarketplaceScreen(),
     const FinanceScreen(),
     const ProfileScreen(),
   ];
@@ -99,6 +101,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     NavigationItem(icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Главная'),
     NavigationItem(icon: Icons.checklist_outlined, activeIcon: Icons.checklist, label: 'Задачи'),
     NavigationItem(icon: Icons.folder_outlined, activeIcon: Icons.folder, label: 'Проекты'),
+    NavigationItem(icon: Icons.shopping_bag_outlined, activeIcon: Icons.shopping_bag, label: 'Маркет'),
     NavigationItem(icon: Icons.account_balance_wallet_outlined, activeIcon: Icons.account_balance_wallet, label: 'Финансы'),
     NavigationItem(icon: Icons.person_outline, activeIcon: Icons.person, label: 'Профиль'),
   ];
