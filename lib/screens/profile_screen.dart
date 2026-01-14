@@ -6,7 +6,6 @@ import '../providers/auth_provider.dart';
 import '../providers/finance_provider.dart';
 import '../providers/projects_provider.dart';
 import '../providers/tasks_provider.dart';
-import '../providers/transactions_provider.dart';
 import '../models/user.dart';
 import '../services/export_service.dart';
 import 'auth/login_screen.dart';
@@ -558,7 +557,8 @@ class ProfileScreen extends ConsumerWidget {
 
   Future<void> _exportTransactions(BuildContext context, WidgetRef ref) async {
     try {
-      final transactions = ref.read(transactionsProvider).transactions;
+      final transactionsAsync = ref.read(transactionsProvider);
+      final transactions = transactionsAsync.valueOrNull ?? [];
       final file = await ExportService.exportTransactionsToCSV(transactions);
       
       if (context.mounted) {
@@ -586,7 +586,8 @@ class ProfileScreen extends ConsumerWidget {
     try {
       final projects = ref.read(projectsProvider).projects;
       final tasks = ref.read(tasksProvider).tasks;
-      final transactions = ref.read(transactionsProvider).transactions;
+      final transactionsAsync = ref.read(transactionsProvider);
+      final transactions = transactionsAsync.valueOrNull ?? [];
       
       final file = await ExportService.exportAllDataToCSV(
         projects: projects,
