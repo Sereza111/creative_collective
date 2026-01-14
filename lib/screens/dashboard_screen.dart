@@ -1,54 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'dart:math' as math;
 import '../theme/app_theme.dart';
+import '../providers/projects_provider.dart';
+import '../providers/tasks_provider.dart';
+import '../providers/finance_provider.dart';
 
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
-  late List<ProjectNode> nodes;
-
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    nodes = [
-      ProjectNode(
-        id: '1',
-        title: 'Видеоклип "Cyberpunk"',
-        status: 'active',
-        position: const Offset(50, 100),
-        budget: 50000,
-        spent: 37500,
-      ),
-      ProjectNode(
-        id: '2',
-        title: 'Музыка (Битмейк)',
-        status: 'in_progress',
-        position: const Offset(350, 50),
-        assignedTo: 'Иван',
-      ),
-      ProjectNode(
-        id: '3',
-        title: 'Видео (Монтаж)',
-        status: 'todo',
-        position: const Offset(650, 50),
-        assignedTo: 'Мария',
-      ),
-      ProjectNode(
-        id: '4',
-        title: 'Финальный микс',
-        status: 'done',
-        position: const Offset(350, 250),
-        assignedTo: 'Денис',
-      ),
-    ];
+    // Load data
+    Future.microtask(() {
+      ref.read(projectsProvider.notifier).loadProjects();
+      ref.read(tasksProvider.notifier).loadTasks();
+      ref.read(financeProvider.notifier).loadFinance();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final projectsState = ref.watch(projectsProvider);
+    final tasksState = ref.watch(tasksProvider);
+    final financeAsync = ref.watch(financeProvider);
+    final currencyFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
     return Scaffold(
       appBar: AppBar(
         title: const Text('DASHBOARD'),
@@ -71,348 +54,329 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Заголовок
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: AppTheme.fadeInAnimation(
-                child: Column(
-                  children: [
-                    AppTheme.gothicTitle('Карта проектов'),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Перетаскивайте узлы',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppTheme.mistGray,
-                        fontStyle: FontStyle.italic,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(projectsProvider.notifier).loadProjects();
+          await ref.read(tasksProvider.notifier).loadTasks();
+          await ref.read(financeProvider.notifier).loadFinance();
+        },
+        backgroundColor: AppTheme.shadowGray,
+        color: AppTheme.tombstoneWhite,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              AppTheme.fadeInAnimation(
+                child: AppTheme.gothicTitle('DASHBOARD'),
               ),
-            ),
-            
-            const SizedBox(height: 16),
-            AppTheme.gothicDivider(),
-            const SizedBox(height: 32),
-            
-            // Канвас
-            AppTheme.fadeInAnimation(
-              duration: const Duration(milliseconds: 1200),
-              child: Container(
-                height: 500,
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  color: AppTheme.deepBlack,
-                  border: Border.all(
-                    color: AppTheme.dimGray.withOpacity(0.3),
-                    width: 1,
-                  ),
-                  borderRadius: BorderRadius.zero,
-                ),
-                child: Stack(
-                  children: [
-                    // Сетка
-                    CustomPaint(
-                      painter: GridPainter(),
-                      size: const Size(double.infinity, 500),
-                    ),
-                    // Соединения
-                    CustomPaint(
-                      painter: ConnectionPainter(nodes: nodes),
-                      size: const Size(double.infinity, 500),
-                    ),
-                    // Узлы
-                    ...nodes.map((node) {
-                      return Positioned(
-                        left: node.position.dx,
-                        top: node.position.dy,
-                        child: GestureDetector(
-                          onPanUpdate: (details) {
-                            setState(() {
-                              node.position = Offset(
-                                (node.position.dx + details.delta.dx).clamp(0.0, 700.0),
-                                (node.position.dy + details.delta.dy).clamp(0.0, 450.0),
-                              );
-                            });
-                          },
-                          child: _buildNode(node),
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 32),
-            _buildStatsSection(),
-            const SizedBox(height: 32),
-          ],
+              const SizedBox(height: 32),
+              AppTheme.gothicDivider(),
+              const SizedBox(height: 32),
+              
+              // Overview Stats
+              _buildOverviewStats(projectsState, tasksState, financeAsync),
+              
+              const SizedBox(height: 32),
+              
+              // Projects by Status Chart
+              if (!projectsState.isLoading && projectsState.projects.isNotEmpty)
+                _buildProjectsChart(projectsState),
+              
+              const SizedBox(height: 32),
+              
+              // Tasks by Status Chart  
+              if (!tasksState.isLoading && tasksState.tasks.isNotEmpty)
+                _buildTasksChart(tasksState),
+              
+              const SizedBox(height: 32),
+              
+              // Budget Overview
+              if (!projectsState.isLoading && projectsState.projects.isNotEmpty)
+                _buildBudgetOverview(projectsState),
+              
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildNode(ProjectNode node) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.9, end: 1.0),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-      builder: (context, scale, child) {
-        return Transform.scale(
-          scale: scale,
-          child: Container(
-            width: 200,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.voidBlack,
-              border: Border.all(
-                color: AppTheme.dimGray.withOpacity(0.5),
-                width: 1,
-              ),
-              borderRadius: BorderRadius.zero,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  node.title.toUpperCase(),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w300,
-                    color: AppTheme.tombstoneWhite,
-                    height: 1.4,
-                    letterSpacing: 1.0,
-                    fontFamily: 'serif',
-                  ),
+  Widget _buildOverviewStats(projectsState, tasksState, financeAsync) {
+    return AppTheme.fadeInAnimation(
+      child: Row(
+        children: [
+          Expanded(
+            child: AppTheme.animatedGothicCard(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Text(
+                      '${projectsState.projects.length}',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w200,
+                        color: AppTheme.tombstoneWhite,
+                        fontFamily: 'serif',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'ПРОЕКТОВ',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppTheme.mistGray,
+                        letterSpacing: 2.0,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                if (node.budget != null) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: AppTheme.animatedGothicCard(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Text(
+                      '${tasksState.tasks.length}',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w200,
+                        color: AppTheme.tombstoneWhite,
+                        fontFamily: 'serif',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'ЗАДАЧ',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppTheme.mistGray,
+                        letterSpacing: 2.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProjectsChart(projectsState) {
+    final statuses = {'planning': 0, 'active': 0, 'completed': 0, 'on_hold': 0};
+    for (var project in projectsState.projects) {
+      statuses[project.status] = (statuses[project.status] ?? 0) + 1;
+    }
+
+    return AppTheme.fadeInAnimation(
+      duration: const Duration(milliseconds: 900),
+      child: AppTheme.animatedGothicCard(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'ПРОЕКТЫ ПО СТАТУСАМ',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AppTheme.mistGray,
+                  letterSpacing: 2.0,
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildStatusBar('Планирование', statuses['planning']!, Colors.blue),
+              const SizedBox(height: 12),
+              _buildStatusBar('Активные', statuses['active']!, Colors.green),
+              const SizedBox(height: 12),
+              _buildStatusBar('Завершённые', statuses['completed']!, Colors.grey),
+              const SizedBox(height: 12),
+              _buildStatusBar('На паузе', statuses['on_hold']!, Colors.orange),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTasksChart(tasksState) {
+    final statuses = {'todo': 0, 'in_progress': 0, 'done': 0};
+    for (var task in tasksState.tasks) {
+      statuses[task.status] = (statuses[task.status] ?? 0) + 1;
+    }
+
+    return AppTheme.fadeInAnimation(
+      duration: const Duration(milliseconds: 1100),
+      child: AppTheme.animatedGothicCard(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'ЗАДАЧИ ПО СТАТУСАМ',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AppTheme.mistGray,
+                  letterSpacing: 2.0,
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildStatusBar('К выполнению', statuses['todo']!, Colors.blue),
+              const SizedBox(height: 12),
+              _buildStatusBar('В работе', statuses['in_progress']!, Colors.orange),
+              const SizedBox(height: 12),
+              _buildStatusBar('Выполнено', statuses['done']!, Colors.green),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBudgetOverview(projectsState) {
+    double totalBudget = 0;
+    double totalSpent = 0;
+    
+    for (var project in projectsState.projects) {
+      totalBudget += project.budget;
+      totalSpent += project.spent;
+    }
+
+    final currencyFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
+
+    return AppTheme.fadeInAnimation(
+      duration: const Duration(milliseconds: 1300),
+      child: AppTheme.animatedGothicCard(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'БЮДЖЕТ',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AppTheme.mistGray,
+                  letterSpacing: 2.0,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '₽${((node.budget! - (node.spent ?? 0)) / 1000).toStringAsFixed(0)}K',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppTheme.ashGray,
-                          fontWeight: FontWeight.w300,
-                        ),
+                        'Всего',
+                        style: TextStyle(fontSize: 10, color: AppTheme.mistGray),
                       ),
+                      const SizedBox(height: 8),
                       Text(
-                        '${((node.spent ?? 0) / (node.budget ?? 1) * 100).toStringAsFixed(0)}%',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppTheme.mistGray,
-                          fontWeight: FontWeight.w300,
+                        currencyFormat.format(totalBudget),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w200,
+                          color: AppTheme.tombstoneWhite,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    height: 2,
-                    decoration: const BoxDecoration(
-                      color: AppTheme.shadowGray,
-                      borderRadius: BorderRadius.zero,
-                    ),
-                    child: FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: (node.spent ?? 0) / (node.budget ?? 1),
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: AppTheme.ashGray,
-                          borderRadius: BorderRadius.zero,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Потрачено',
+                        style: TextStyle(fontSize: 10, color: AppTheme.mistGray),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        currencyFormat.format(totalSpent),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w200,
+                          color: AppTheme.bloodRed,
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
-                if (node.assignedTo != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    node.assignedTo!,
-                    style: const TextStyle(
-                      fontSize: 9,
-                      color: AppTheme.mistGray,
-                      fontWeight: FontWeight.w300,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.dimGray.withOpacity(0.3),
+                ),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: totalBudget > 0 ? (totalSpent / totalBudget).clamp(0.0, 1.0) : 0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppTheme.bloodRed,
                     ),
                   ),
-                ],
-                const SizedBox(height: 12),
-                AppTheme.gothicBadge(node.status),
-              ],
-            ),
+                ),
+              ),
+            ],
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildStatsSection() {
-    double totalBudget = 0;
-    double totalSpent = 0;
-    int activeProjects = 0;
-
-    for (var node in nodes) {
-      if (node.budget != null) {
-        totalBudget += node.budget!;
-        totalSpent += node.spent ?? 0;
-      }
-      if (node.status == 'active' || node.status == 'in_progress') {
-        activeProjects++;
-      }
-    }
-
-    return AppTheme.fadeInAnimation(
-      duration: const Duration(milliseconds: 1400),
-      child: AppTheme.gothicCard(
-        title: 'Статистика',
-        borderColor: AppTheme.dimGray.withOpacity(0.5),
-        padding: const EdgeInsets.all(28),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _statCard('Всего', nodes.length.toString()),
-            Container(
-              width: 1,
-              height: 40,
-              color: AppTheme.dimGray.withOpacity(0.3),
-            ),
-            _statCard('Активные', activeProjects.toString()),
-            Container(
-              width: 1,
-              height: 40,
-              color: AppTheme.dimGray.withOpacity(0.3),
-            ),
-            _statCard('Бюджет', '₽${(totalBudget / 1000).toStringAsFixed(0)}K'),
-            Container(
-              width: 1,
-              height: 40,
-              color: AppTheme.dimGray.withOpacity(0.3),
-            ),
-            _statCard('Потрачено', '₽${(totalSpent / 1000).toStringAsFixed(0)}K'),
-          ],
         ),
       ),
     );
   }
 
-  Widget _statCard(String label, String value) {
-    return Column(
+  Widget _buildStatusBar(String label, int count, Color color) {
+    return Row(
       children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w200,
-            color: AppTheme.tombstoneWhite,
-            fontFamily: 'serif',
-            letterSpacing: 1.0,
+        SizedBox(
+          width: 100,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: AppTheme.ashGray,
+            ),
           ),
         ),
-        const SizedBox(height: 8),
+        Expanded(
+          child: Container(
+            height: 24,
+            decoration: BoxDecoration(
+              color: AppTheme.dimGray.withOpacity(0.2),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: count > 0 ? (count / 10).clamp(0.1, 1.0) : 0.1,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.7),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
         Text(
-          label.toUpperCase(),
-          style: const TextStyle(
-            fontSize: 9,
-            color: AppTheme.mistGray,
-            fontWeight: FontWeight.w300,
-            letterSpacing: 1.5,
-            fontFamily: 'serif',
+          '$count',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: color,
           ),
         ),
       ],
     );
   }
-}
-
-class ProjectNode {
-  final String id;
-  final String title;
-  final String status;
-  Offset position;
-  final double? budget;
-  final double? spent;
-  final String? assignedTo;
-
-  ProjectNode({
-    required this.id,
-    required this.title,
-    required this.status,
-    required this.position,
-    this.budget,
-    this.spent,
-    this.assignedTo,
-  });
-}
-
-class GridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppTheme.dimGray.withOpacity(0.1)
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
-
-    const gridSpacing = 50.0;
-
-    // Вертикальные линии
-    for (double x = 0; x < size.width; x += gridSpacing) {
-      canvas.drawLine(
-        Offset(x, 0),
-        Offset(x, size.height),
-        paint,
-      );
-    }
-
-    // Горизонтальные линии
-    for (double y = 0; y < size.height; y += gridSpacing) {
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y),
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(GridPainter oldDelegate) => false;
-}
-
-class ConnectionPainter extends CustomPainter {
-  final List<ProjectNode> nodes;
-
-  ConnectionPainter({required this.nodes});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppTheme.dimGray.withOpacity(0.3)
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
-
-    if (nodes.length >= 2) {
-      final start = Offset(nodes[0].position.dx + 100, nodes[0].position.dy + 50);
-      final end = Offset(nodes[1].position.dx + 100, nodes[1].position.dy + 50);
-      canvas.drawLine(start, end, paint);
-    }
-
-    if (nodes.length >= 4) {
-      final start = Offset(nodes[1].position.dx + 100, nodes[1].position.dy + 50);
-      final end = Offset(nodes[3].position.dx + 100, nodes[3].position.dy + 50);
-      canvas.drawLine(start, end, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(ConnectionPainter oldDelegate) => true;
 }
