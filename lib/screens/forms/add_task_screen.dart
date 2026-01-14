@@ -262,6 +262,17 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                     ],
                   ),
                 )
+              else if (projectsState.projects.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppTheme.bloodRed),
+                  ),
+                  child: Text(
+                    'Нет доступных проектов. Создайте проект сначала.',
+                    style: TextStyle(color: AppTheme.bloodRed),
+                  ),
+                )
               else
                 DropdownButtonFormField<int>(
                   value: _selectedProjectId,
@@ -285,7 +296,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                   dropdownColor: AppTheme.shadowGray,
                   style: TextStyle(color: AppTheme.tombstoneWhite),
                   items: projectsState.projects.map((project) {
-                    return DropdownMenuItem(
+                    return DropdownMenuItem<int>(
                       value: project.id,
                       child: Text(project.name),
                     );
