@@ -5,6 +5,8 @@ import '../models/project.dart';
 import '../models/finance.dart';
 import '../models/user.dart';
 import '../models/team.dart';
+import '../models/order.dart';
+import '../models/order_application.dart';
 import 'secure_storage_service.dart';
 
 class ApiService {
@@ -516,6 +518,158 @@ class ApiService {
     if (response.statusCode != 200 && response.statusCode != 204) {
       final error = jsonDecode(response.body);
       throw Exception(error['message'] ?? 'Ошибка удаления участника');
+    }
+  }
+
+  // =============================================
+  // ORDERS (MARKETPLACE)
+  // =============================================
+  
+  static Future<List<Order>> getOrders({String? status, String? category}) async {
+    final headers = await _getHeaders();
+    var url = '$baseUrl/orders?';
+    if (status != null) url += 'status=$status&';
+    if (category != null) url += 'category=$category&';
+    
+    final response = await http.get(
+      Uri.parse(url),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        final ordersList = data['data'] is List ? data['data'] : [data['data']];
+        return ordersList.map<Order>((json) => Order.fromJson(json)).toList();
+      }
+      return [];
+    } else {
+      throw Exception('Ошибка загрузки заказов');
+    }
+  }
+
+  static Future<Order> getOrderById(int orderId) async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/orders/$orderId'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return Order.fromJson(data['data']);
+      }
+      throw Exception(data['message'] ?? 'Заказ не найден');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка загрузки заказа');
+    }
+  }
+
+  static Future<Order> createOrder(Map<String, dynamic> orderData) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/orders'),
+      headers: headers,
+      body: jsonEncode(orderData),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return Order.fromJson(data['data']);
+      }
+      throw Exception(data['message'] ?? 'Ошибка создания заказа');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка создания заказа');
+    }
+  }
+
+  static Future<Order> updateOrder(int orderId, Map<String, dynamic> orderData) async {
+    final headers = await _getHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/orders/$orderId'),
+      headers: headers,
+      body: jsonEncode(orderData),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return Order.fromJson(data['data']);
+      }
+      throw Exception(data['message'] ?? 'Ошибка обновления заказа');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка обновления заказа');
+    }
+  }
+
+  static Future<void> deleteOrder(int orderId) async {
+    final headers = await _getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/orders/$orderId'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка удаления заказа');
+    }
+  }
+
+  static Future<OrderApplication> applyToOrder(int orderId, Map<String, dynamic> applicationData) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/orders/$orderId/apply'),
+      headers: headers,
+      body: jsonEncode(applicationData),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return OrderApplication.fromJson(data['data']);
+      }
+      throw Exception(data['message'] ?? 'Ошибка отправки отклика');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка отправки отклика');
+    }
+  }
+
+  static Future<List<OrderApplication>> getOrderApplications(int orderId) async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/orders/$orderId/applications'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        final appsList = data['data'] is List ? data['data'] : [data['data']];
+        return appsList.map<OrderApplication>((json) => OrderApplication.fromJson(json)).toList();
+      }
+      return [];
+    } else {
+      throw Exception('Ошибка загрузки откликов');
+    }
+  }
+
+  static Future<void> acceptApplication(int orderId, int applicationId) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/orders/$orderId/applications/$applicationId/accept'),
+      headers: headers,
+      body: jsonEncode({}),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка принятия отклика');
     }
   }
 }
