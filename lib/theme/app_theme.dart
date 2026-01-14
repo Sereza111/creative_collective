@@ -330,7 +330,9 @@ class AppTheme {
 
   static Widget gothicTextField({
     required TextEditingController controller,
+    String? labelText,
     String? hintText,
+    IconData? icon,
     Widget? prefixIcon,
     Widget? suffixIcon,
     int maxLines = 1,
@@ -348,18 +350,27 @@ class AppTheme {
         fontWeight: FontWeight.w300,
       ),
       decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: TextStyle(
+          color: mistGray,
+          fontSize: 12,
+          fontWeight: FontWeight.w300,
+          letterSpacing: 1.5,
+        ),
         hintText: hintText,
         hintStyle: TextStyle(
           color: mistGray,
           fontSize: 14,
           fontWeight: FontWeight.w300,
         ),
-        prefixIcon: prefixIcon != null
-            ? IconTheme(
-                data: IconThemeData(color: mistGray),
-                child: prefixIcon,
-              )
-            : null,
+        prefixIcon: icon != null 
+            ? Icon(icon, color: mistGray)
+            : (prefixIcon != null
+                ? IconTheme(
+                    data: IconThemeData(color: mistGray),
+                    child: prefixIcon,
+                  )
+                : null),
         suffixIcon: suffixIcon != null
             ? IconTheme(
                 data: IconThemeData(color: mistGray),
@@ -397,6 +408,8 @@ class AppTheme {
     required T value,
     required List<DropdownMenuItem<T>> items,
     required void Function(T?) onChanged,
+    String? labelText,
+    IconData? icon,
   }) {
     return DropdownButtonFormField<T>(
       value: value,
@@ -409,6 +422,14 @@ class AppTheme {
       ),
       dropdownColor: shadowGray,
       decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: TextStyle(
+          color: mistGray,
+          fontSize: 12,
+          fontWeight: FontWeight.w300,
+          letterSpacing: 1.5,
+        ),
+        prefixIcon: icon != null ? Icon(icon, color: mistGray) : null,
         filled: true,
         fillColor: shadowGray,
         border: OutlineInputBorder(
