@@ -1,12 +1,12 @@
 class Task {
-  final String id;
+  final int id;
   final String title;
   final String description;
   final String status; // 'todo', 'in_progress', 'done'
   final String assignedTo;
   final DateTime dueDate;
   final int priority; // 1-5
-  final String projectId;
+  final int projectId;
   final DateTime createdAt;
   final String? assignedFullName;
 
@@ -25,16 +25,16 @@ class Task {
 
   factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
-      id: json['id'] ?? '',
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
       title: json['title'] ?? 'Без названия',
       description: json['description'] ?? '',
       status: json['status'] ?? 'todo',
-      assignedTo: json['assigned_to'] ?? '',
+      assignedTo: json['assigned_to']?.toString() ?? '',
       dueDate: json['due_date'] != null 
           ? DateTime.parse(json['due_date']) 
           : DateTime.now().add(const Duration(days: 7)),
       priority: _parseInt(json['priority']),
-      projectId: json['project_id'] ?? '',
+      projectId: json['project_id'] is int ? json['project_id'] : int.tryParse(json['project_id'].toString()) ?? 0,
       createdAt: json['created_at'] != null 
           ? DateTime.parse(json['created_at']) 
           : DateTime.now(),

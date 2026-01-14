@@ -59,7 +59,7 @@ class TasksNotifier extends StateNotifier<TasksState> {
     }
   }
 
-  Future<void> updateTask(String taskId, Map<String, dynamic> taskData) async {
+  Future<void> updateTask(int taskId, Map<String, dynamic> taskData) async {
     try {
       final updatedTask = await ApiService.updateTask(taskId, taskData);
       final updatedTasks = state.tasks.map((task) {
@@ -74,7 +74,7 @@ class TasksNotifier extends StateNotifier<TasksState> {
     }
   }
 
-  Future<void> deleteTask(String taskId) async {
+  Future<void> deleteTask(int taskId) async {
     try {
       await ApiService.deleteTask(taskId);
       final updatedTasks = state.tasks.where((task) => task.id != taskId).toList();

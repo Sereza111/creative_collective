@@ -202,7 +202,7 @@ class ApiService {
     }
   }
 
-  static Future<Task> updateTask(String taskId, Map<String, dynamic> taskData) async {
+  static Future<Task> updateTask(int taskId, Map<String, dynamic> taskData) async {
     final headers = await _getHeaders();
     final response = await http.put(
       Uri.parse('$baseUrl/tasks/$taskId'),
@@ -222,7 +222,7 @@ class ApiService {
     }
   }
 
-  static Future<void> deleteTask(String taskId) async {
+  static Future<void> deleteTask(int taskId) async {
     final headers = await _getHeaders();
     final response = await http.delete(
       Uri.parse('$baseUrl/tasks/$taskId'),
