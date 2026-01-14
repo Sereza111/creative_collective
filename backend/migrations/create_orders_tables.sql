@@ -1,3 +1,5 @@
+USE creative_collective;
+
 -- Таблица заказов (маркетплейс)
 CREATE TABLE IF NOT EXISTS orders (
   id INT PRIMARY KEY AUTO_INCREMENT,
