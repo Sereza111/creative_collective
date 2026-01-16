@@ -18,6 +18,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  String _selectedRole = 'freelancer'; // По умолчанию фрилансер
 
   @override
   void dispose() {
@@ -37,6 +38,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           fullName: _fullNameController.text.trim().isEmpty 
               ? null 
               : _fullNameController.text.trim(),
+          userRole: _selectedRole,
         );
         if (mounted) {
           Navigator.pop(context);
@@ -106,6 +108,98 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       borderSide: BorderSide(color: AppTheme.tombstoneWhite, width: 2),
                       borderRadius: BorderRadius.zero,
                     ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Role selection
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppTheme.dimGray),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Icon(Icons.person_outline, color: AppTheme.mistGray, size: 20),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Я ХОЧУ:',
+                              style: TextStyle(
+                                color: AppTheme.mistGray,
+                                letterSpacing: 2,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w300,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        height: 1,
+                        color: AppTheme.dimGray.withOpacity(0.3),
+                      ),
+                      RadioListTile<String>(
+                        value: 'freelancer',
+                        groupValue: _selectedRole,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedRole = value!;
+                          });
+                        },
+                        activeColor: AppTheme.tombstoneWhite,
+                        title: Text(
+                          'ВЫПОЛНЯТЬ ЗАКАЗЫ',
+                          style: TextStyle(
+                            color: AppTheme.tombstoneWhite,
+                            fontSize: 13,
+                            letterSpacing: 1.5,
+                            fontWeight: FontWeight.w300,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Я фрилансер, хочу искать заказы',
+                          style: TextStyle(
+                            color: AppTheme.mistGray,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        height: 1,
+                        color: AppTheme.dimGray.withOpacity(0.3),
+                      ),
+                      RadioListTile<String>(
+                        value: 'client',
+                        groupValue: _selectedRole,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedRole = value!;
+                          });
+                        },
+                        activeColor: AppTheme.tombstoneWhite,
+                        title: Text(
+                          'РАЗМЕЩАТЬ ЗАКАЗЫ',
+                          style: TextStyle(
+                            color: AppTheme.tombstoneWhite,
+                            fontSize: 13,
+                            letterSpacing: 1.5,
+                            fontWeight: FontWeight.w300,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Я заказчик, хочу нанимать исполнителей',
+                          style: TextStyle(
+                            color: AppTheme.mistGray,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 

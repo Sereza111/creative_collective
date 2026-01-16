@@ -9,7 +9,8 @@ const { validate } = require('../middleware/validation');
 const registerValidation = [
   body('email').isEmail().withMessage('Некорректный email'),
   body('password').isLength({ min: 6 }).withMessage('Пароль должен содержать минимум 6 символов'),
-  body('full_name').optional().isLength({ max: 255 })
+  body('full_name').optional().isLength({ max: 255 }),
+  body('user_role').optional().isIn(['client', 'freelancer', 'admin']).withMessage('Некорректная роль пользователя')
 ];
 
 // Валидация для входа

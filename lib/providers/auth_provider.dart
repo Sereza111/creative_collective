@@ -83,6 +83,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String email,
     required String password,
     String? fullName,
+    String? userRole,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -90,6 +91,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         email: email,
         password: password,
         fullName: fullName,
+        userRole: userRole,
       );
       final user = User.fromJson(data['user']);
       state = AuthState(

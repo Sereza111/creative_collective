@@ -6,7 +6,7 @@ const { successResponse, errorResponse, generateUUID } = require('../utils/helpe
 // Регистрация нового пользователя
 exports.register = async (req, res) => {
   try {
-    const { email, password, full_name, role = 'member' } = req.body;
+    const { email, password, full_name, role = 'member', user_role = 'freelancer' } = req.body;
     
     // Проверяем, существует ли пользователь
     const existingUser = await query(
@@ -23,9 +23,9 @@ exports.register = async (req, res) => {
     
     // Создаем пользователя
     const userResult = await query(
-      `INSERT INTO users (email, password, full_name, role) 
-       VALUES (?, ?, ?, ?)`,
-      [email, hashedPassword, full_name || null, role]
+      `INSERT INTO users (email, password, full_name, role, user_role) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [email, hashedPassword, full_name || null, role, user_role]
     );
     
     const userId = userResult.insertId;
@@ -38,7 +38,7 @@ exports.register = async (req, res) => {
     
     // Генерируем токены
     const accessToken = jwt.sign(
-      { userId, email, role },
+      { userId, email, role, userRole: user_role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
@@ -60,7 +60,8 @@ exports.register = async (req, res) => {
         id: userId,
         email,
         full_name,
-        role
+        role,
+        user_role
       },
       accessToken,
       refreshToken
