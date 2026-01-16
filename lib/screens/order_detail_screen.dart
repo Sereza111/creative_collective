@@ -286,7 +286,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     }
 
     return AppTheme.gothicButton(
-      text: 'Оставить отзыв',
+      text: 'ОСТАВИТЬ ОТЗЫВ',
       onPressed: () async {
         final result = await Navigator.push(
           context,
@@ -300,7 +300,6 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         }
       },
       isPrimary: false,
-      icon: Icons.rate_review,
     );
   }
 
