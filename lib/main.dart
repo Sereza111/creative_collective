@@ -75,7 +75,12 @@ class _MyAppState extends ConsumerState<MyApp> {
 
     if (_checkingOnboarding) {
       return MaterialApp(
-        home: SplashScreen(),
+        home: Scaffold(
+          backgroundColor: AppTheme.midnightBlack,
+          body: Center(
+            child: CircularProgressIndicator(color: AppTheme.tombstoneWhite),
+          ),
+        ),
         theme: AppTheme.darkTheme,
       );
     }
