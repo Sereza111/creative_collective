@@ -6,6 +6,7 @@ exports.getOrCreateChat = async (req, res) => {
   try {
     const { orderId } = req.params;
     const userId = req.user.id;
+    console.log(`💬 Получение/создание чата для заказа ${orderId}, пользователь ${userId}`);
 
     // Проверяем заказ
     const orders = await query('SELECT * FROM orders WHERE id = ?', [orderId]);
@@ -14,6 +15,7 @@ exports.getOrCreateChat = async (req, res) => {
     }
 
     const order = orders[0];
+    console.log(`📦 Заказ найден: client_id=${order.client_id}, freelancer_id=${order.freelancer_id}`);
     
     // Проверяем доступ
     if (userId !== order.client_id && userId !== order.freelancer_id) {
@@ -32,14 +34,17 @@ exports.getOrCreateChat = async (req, res) => {
 
     let chatId;
     if (chats.length === 0) {
+      console.log('➕ Создаем новый чат');
       // Создаем новый чат
       const result = await query(
         'INSERT INTO chats (order_id, client_id, freelancer_id) VALUES (?, ?, ?)',
         [orderId, order.client_id, order.freelancer_id]
       );
       chatId = result.insertId;
+      console.log(`✅ Чат создан с ID: ${chatId}`);
     } else {
       chatId = chats[0].id;
+      console.log(`✅ Найден существующий чат с ID: ${chatId}`);
     }
 
     // Получаем полную информацию о чате в том же формате, что getUserChats
@@ -82,6 +87,7 @@ exports.getOrCreateChat = async (req, res) => {
 exports.getUserChats = async (req, res) => {
   try {
     const userId = req.user.id;
+    console.log(`📨 Получение чатов для пользователя ${userId}`);
 
     const chats = await query(
       `SELECT c.*, 
@@ -111,6 +117,11 @@ exports.getUserChats = async (req, res) => {
        ORDER BY COALESCE(c.last_message_at, c.created_at) DESC`,
       [userId, userId, userId, userId, userId, userId, userId]
     );
+
+    console.log(`✅ Найдено чатов: ${chats.length}`);
+    if (chats.length > 0) {
+      console.log('Первый чат:', JSON.stringify(chats[0], null, 2));
+    }
 
     successResponse(res, chats);
   } catch (error) {
@@ -168,6 +179,7 @@ exports.sendMessage = async (req, res) => {
     const { chatId } = req.params;
     const { message } = req.body;
     const senderId = req.user.id;
+    console.log(`📤 Отправка сообщения в чат ${chatId} от пользователя ${senderId}`);
 
     if (!message || message.trim().length === 0) {
       return errorResponse(res, 'Сообщение не может быть пустым', 400);
@@ -183,17 +195,23 @@ exports.sendMessage = async (req, res) => {
       return errorResponse(res, 'Чат не найден или доступ запрещен', 404);
     }
 
+    console.log(`✅ Доступ к чату разрешен`);
+
     // Сохраняем сообщение
     const result = await query(
       'INSERT INTO messages (chat_id, sender_id, message) VALUES (?, ?, ?)',
       [chatId, senderId, message.trim()]
     );
 
+    console.log(`✅ Сообщение сохранено с ID: ${result.insertId}`);
+
     // Обновляем чат (last_message и last_message_at)
     await query(
       'UPDATE chats SET last_message = ?, last_message_at = NOW() WHERE id = ?',
       [message.trim().substring(0, 100), chatId]
     );
+
+    console.log(`✅ Чат обновлен (last_message, last_message_at)`);
 
     // Получаем созданное сообщение с данными отправителя
     const newMessage = await query(
