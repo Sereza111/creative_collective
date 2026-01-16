@@ -1127,4 +1127,80 @@ class ApiService {
       throw Exception(error['message'] ?? 'Ошибка отмены верификации');
     }
   }
+
+  // === FAVORITES METHODS ===
+
+  // Добавить в избранное
+  static Future<void> addFavorite(String favoritedType, int favoritedId) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/favorites'),
+      headers: headers,
+      body: jsonEncode({
+        'favorited_type': favoritedType,
+        'favorited_id': favoritedId,
+      }),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка добавления в избранное');
+    }
+  }
+
+  // Удалить из избранного
+  static Future<void> removeFavorite(String favoritedType, int favoritedId) async {
+    final headers = await _getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/favorites'),
+      headers: headers,
+      body: jsonEncode({
+        'favorited_type': favoritedType,
+        'favorited_id': favoritedId,
+      }),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка удаления из избранного');
+    }
+  }
+
+  // Получить избранное
+  static Future<List<dynamic>> getFavorites({String? type}) async {
+    final headers = await _getHeaders();
+    final queryParams = type != null ? {'type': type} : <String, String>{};
+    final uri = Uri.parse('$baseUrl/favorites').replace(queryParameters: queryParams);
+    final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data'] as List;
+      }
+      throw Exception(data['message'] ?? 'Ошибка получения избранного');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка получения избранного');
+    }
+  }
+
+  // Проверить избранное
+  static Future<bool> checkFavorite(String favoritedType, int favoritedId) async {
+    final headers = await _getHeaders();
+    final uri = Uri.parse('$baseUrl/favorites/check').replace(queryParameters: {
+      'favorited_type': favoritedType,
+      'favorited_id': favoritedId.toString(),
+    });
+    final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data']['is_favorite'] == true;
+      }
+      return false;
+    }
+    return false;
+  }
 }
