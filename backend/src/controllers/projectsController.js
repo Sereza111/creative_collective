@@ -4,6 +4,7 @@ const { successResponse, errorResponse, generateUUID, getPagination, paginatedRe
 // Получить все проекты
 exports.getAllProjects = async (req, res) => {
   try {
+    const userId = req.user?.id; // Получаем ID текущего пользователя
     const { 
       page = '1', 
       limit = '20', 
@@ -16,6 +17,13 @@ exports.getAllProjects = async (req, res) => {
     
     let whereConditions = [];
     let params = [];
+    
+    // ВАЖНО: Фильтруем проекты по текущему пользователю
+    // Показываем только проекты, где пользователь - создатель или участник
+    if (userId) {
+      whereConditions.push('(p.created_by = ? OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND pm.user_id = ?))');
+      params.push(userId, userId);
+    }
     
     if (status) {
       whereConditions.push('p.status = ?');

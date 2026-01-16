@@ -4,12 +4,18 @@ const { successResponse, errorResponse, generateUUID } = require('../utils/helpe
 // Получить все команды
 exports.getAllTeams = async (req, res) => {
   try {
+    const userId = req.user?.id; // Получаем ID текущего пользователя
+    
+    // ВАЖНО: Фильтруем команды по текущему пользователю
+    // Показываем только команды, где пользователь - владелец или участник
     const teams = await query(
       `SELECT t.*, u.full_name as owner_name,
               (SELECT COUNT(*) FROM team_members tm WHERE tm.team_id = t.id) as members_count
        FROM teams t
        LEFT JOIN users u ON t.owner_id = u.id
-       ORDER BY t.created_at DESC`
+       WHERE t.owner_id = ? OR EXISTS (SELECT 1 FROM team_members tm WHERE tm.team_id = t.id AND tm.user_id = ?)
+       ORDER BY t.created_at DESC`,
+      [userId, userId]
     );
     
     successResponse(res, teams);

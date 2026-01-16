@@ -4,6 +4,7 @@ const { successResponse, errorResponse, generateUUID, getPagination, paginatedRe
 // Получить все задачи с фильтрацией
 exports.getAllTasks = async (req, res) => {
   try {
+    const userId = req.user?.id; // Получаем ID текущего пользователя
     const { 
       page = '1', 
       limit = '20', 
@@ -18,6 +19,21 @@ exports.getAllTasks = async (req, res) => {
     
     let whereConditions = [];
     let params = [];
+    
+    // ВАЖНО: Фильтруем задачи по текущему пользователю
+    // Показываем только задачи, где пользователь:
+    // - создатель задачи
+    // - исполнитель задачи
+    // - или участник/создатель проекта, к которому относится задача
+    if (userId) {
+      whereConditions.push(`(
+        t.created_by = ? 
+        OR t.assigned_to = ? 
+        OR p.created_by = ?
+        OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = t.project_id AND pm.user_id = ?)
+      )`);
+      params.push(userId, userId, userId, userId);
+    }
     
     if (project_id) {
       whereConditions.push('t.project_id = ?');
@@ -50,7 +66,10 @@ exports.getAllTasks = async (req, res) => {
     
     // Подсчет общего количества
     const countResult = await query(
-      `SELECT COUNT(*) as total FROM tasks t ${whereClause}`,
+      `SELECT COUNT(*) as total 
+       FROM tasks t 
+       LEFT JOIN projects p ON t.project_id = p.id
+       ${whereClause}`,
       params
     );
     const total = countResult[0].total;
