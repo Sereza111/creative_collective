@@ -135,6 +135,40 @@ class ProfileScreen extends ConsumerWidget {
                         textAlign: TextAlign.center,
                       ),
                       
+                      const SizedBox(height: 12),
+                      
+                      // Роль пользователя
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _getRoleColor(user.userRole).withOpacity(0.2),
+                          border: Border.all(
+                            color: _getRoleColor(user.userRole),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _getRoleIcon(user.userRole),
+                              size: 16,
+                              color: _getRoleColor(user.userRole),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _getRoleLabel(user.userRole).toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: _getRoleColor(user.userRole),
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
                       if (user.fullName != null && user.email != user.fullName) ...[
                         const SizedBox(height: 8),
                         Text(
@@ -163,30 +197,6 @@ class ProfileScreen extends ConsumerWidget {
                         textAlign: TextAlign.center,
                       ),
                       
-                      const SizedBox(height: 24),
-                      
-                      // Роль
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: AppTheme.dimGray.withOpacity(0.5),
-                          ),
-                          borderRadius: BorderRadius.zero,
-                        ),
-                        child: Text(
-                          _getRoleLabel(user.role).toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w300,
-                            color: AppTheme.ashGray,
-                            letterSpacing: 2.0,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -392,8 +402,12 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  String _getRoleLabel(String role) {
+  String _getRoleLabel(String? role) {
     switch (role) {
+      case 'client':
+        return 'Заказчик';
+      case 'freelancer':
+        return 'Фрилансер';
       case 'admin':
         return 'Администратор';
       case 'manager':
@@ -401,7 +415,33 @@ class ProfileScreen extends ConsumerWidget {
       case 'member':
         return 'Участник';
       default:
-        return role;
+        return role ?? 'Пользователь';
+    }
+  }
+
+  IconData _getRoleIcon(String? role) {
+    switch (role) {
+      case 'client':
+        return Icons.business_center_outlined;
+      case 'freelancer':
+        return Icons.engineering_outlined;
+      case 'admin':
+        return Icons.admin_panel_settings_outlined;
+      default:
+        return Icons.person_outline;
+    }
+  }
+
+  Color _getRoleColor(String? role) {
+    switch (role) {
+      case 'client':
+        return AppTheme.tombstoneWhite;
+      case 'freelancer':
+        return Colors.green;
+      case 'admin':
+        return AppTheme.bloodRed;
+      default:
+        return AppTheme.ashGray;
     }
   }
 
