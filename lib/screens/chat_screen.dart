@@ -7,6 +7,7 @@ import '../models/message.dart';
 import '../services/api_service.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
+import '../providers/unread_counter_provider.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final Chat chat;
@@ -28,6 +29,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void initState() {
     super.initState();
     _loadMessages();
+    // Обновляем счетчик непрочитанных при открытии чата
+    Future.delayed(Duration.zero, () {
+      ref.read(unreadCounterProvider.notifier).refresh();
+    });
   }
 
   @override

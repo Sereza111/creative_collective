@@ -19,6 +19,7 @@ import 'screens/auth/login_screen.dart';
 import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/chat_provider.dart';
+import 'providers/unread_counter_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -205,11 +206,58 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            isSelected ? item.activeIcon : item.icon,
-                            color: isSelected ? AppTheme.tombstoneWhite : AppTheme.mistGray,
-                            size: isSelected ? 24 : 22,
-                          ),
+                          // Иконка с бейджем для чатов (индекс 4)
+                          index == 4
+                              ? Consumer(
+                                  builder: (context, ref, child) {
+                                    final unreadCount = ref.watch(unreadCounterProvider);
+                                    return Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Icon(
+                                          isSelected ? item.activeIcon : item.icon,
+                                          color: isSelected ? AppTheme.tombstoneWhite : AppTheme.mistGray,
+                                          size: isSelected ? 24 : 22,
+                                        ),
+                                        if (unreadCount > 0)
+                                          Positioned(
+                                            right: -8,
+                                            top: -4,
+                                            child: Container(
+                                              padding: const EdgeInsets.all(4),
+                                              decoration: BoxDecoration(
+                                                color: AppTheme.bloodRed,
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: AppTheme.voidBlack,
+                                                  width: 1.5,
+                                                ),
+                                              ),
+                                              constraints: const BoxConstraints(
+                                                minWidth: 18,
+                                                minHeight: 18,
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  unreadCount > 99 ? '99+' : unreadCount.toString(),
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    );
+                                  },
+                                )
+                              : Icon(
+                                  isSelected ? item.activeIcon : item.icon,
+                                  color: isSelected ? AppTheme.tombstoneWhite : AppTheme.mistGray,
+                                  size: isSelected ? 24 : 22,
+                                ),
                           const SizedBox(height: 6),
                           Text(
                             item.label.toUpperCase(),
