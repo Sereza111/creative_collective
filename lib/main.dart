@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/home_screen.dart';
 import 'screens/tasks_screen.dart';
 import 'screens/finance_screen.dart';
@@ -17,6 +18,7 @@ import 'screens/user_profile_screen.dart';
 import 'screens/my_stats_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/chat_provider.dart';
