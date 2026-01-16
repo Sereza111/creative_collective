@@ -50,11 +50,23 @@ class _MyAppState extends ConsumerState<MyApp> {
   }
 
   Future<void> _checkOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
-      _checkingOnboarding = false;
-    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (mounted) {
+        setState(() {
+          _onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
+          _checkingOnboarding = false;
+        });
+      }
+    } catch (e) {
+      // Если ошибка - пропускаем онбординг
+      if (mounted) {
+        setState(() {
+          _onboardingCompleted = true;
+          _checkingOnboarding = false;
+        });
+      }
+    }
   }
 
   @override
@@ -63,7 +75,7 @@ class _MyAppState extends ConsumerState<MyApp> {
 
     if (_checkingOnboarding) {
       return MaterialApp(
-        home: const SplashScreen(),
+        home: SplashScreen(),
         theme: AppTheme.darkTheme,
       );
     }
