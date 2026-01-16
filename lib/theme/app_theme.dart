@@ -21,6 +21,12 @@ class AppTheme {
   static const Color ghostWhite = Color(0xFFEEEEEE);       // Призрачно-белый
   static const Color bloodRed = Color(0xFF8B0000);         // Темно-красный для ошибок
   
+  // Дополнительные цвета для новых экранов
+  static const Color midnightBlack = deepBlack;             // Алиас для deepBlack
+  static const Color charcoalGray = shadowGray;             // Алиас для shadowGray
+  static const Color electricBlue = Color(0xFF6B8E9D);      // Приглушенный синий
+  static const Color goldenrod = Color(0xFF9D8B6B);         // Приглушенный золотой
+  
   // ===== LEGACY COLORS (для совместимости) =====
   static const Color cyberBlue = subtleAccent;
   static const Color bgPrimary = deepBlack;

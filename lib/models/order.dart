@@ -15,6 +15,9 @@ class Order {
   final int applicationsCount;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  
+  // Alias для freelancerId (для совместимости)
+  int? get acceptedFreelancerId => freelancerId;
 
   Order({
     required this.id,

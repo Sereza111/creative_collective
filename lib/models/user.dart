@@ -7,6 +7,8 @@ class User {
   final String userRole; // marketplace role: client, freelancer, admin
   final bool isActive;
   final bool isVerified; // Верифицирован ли пользователь
+  final double? averageRating; // Средний рейтинг
+  final int reviewsCount; // Количество отзывов
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final DateTime? lastLogin;
@@ -20,6 +22,8 @@ class User {
     this.userRole = 'freelancer',
     this.isActive = true,
     this.isVerified = false,
+    this.averageRating,
+    this.reviewsCount = 0,
     this.createdAt,
     this.updatedAt,
     this.lastLogin,
@@ -35,6 +39,14 @@ class User {
       userRole: json['user_role'] ?? 'freelancer',
       isActive: json['is_active'] ?? true,
       isVerified: json['is_verified'] == 1 || json['is_verified'] == true,
+      averageRating: json['average_rating'] != null
+          ? (json['average_rating'] is String 
+              ? double.tryParse(json['average_rating']) 
+              : (json['average_rating'] as num).toDouble())
+          : null,
+      reviewsCount: json['reviews_count'] is int
+          ? json['reviews_count']
+          : int.tryParse(json['reviews_count']?.toString() ?? '0') ?? 0,
       createdAt: json['created_at'] != null 
           ? DateTime.tryParse(json['created_at']) 
           : null,
@@ -57,6 +69,8 @@ class User {
       'user_role': userRole,
       'is_active': isActive,
       'is_verified': isVerified,
+      'average_rating': averageRating,
+      'reviews_count': reviewsCount,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'last_login': lastLogin?.toIso8601String(),
@@ -72,6 +86,8 @@ class User {
     String? userRole,
     bool? isActive,
     bool? isVerified,
+    double? averageRating,
+    int? reviewsCount,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? lastLogin,
@@ -85,6 +101,8 @@ class User {
       userRole: userRole ?? this.userRole,
       isActive: isActive ?? this.isActive,
       isVerified: isVerified ?? this.isVerified,
+      averageRating: averageRating ?? this.averageRating,
+      reviewsCount: reviewsCount ?? this.reviewsCount,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       lastLogin: lastLogin ?? this.lastLogin,

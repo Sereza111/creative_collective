@@ -1,19 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/auth');
 const favoritesController = require('../controllers/favoritesController');
+const { authenticate } = require('../middleware/auth');
 
-// Добавить в избранное
-router.post('/', authenticate, favoritesController.addFavorite);
+// Все роуты требуют аутентификации
+router.use(authenticate);
 
-// Удалить из избранного
-router.delete('/', authenticate, favoritesController.removeFavorite);
+// POST /api/v1/favorites - Добавить в избранное
+router.post('/', favoritesController.addFavorite);
 
-// Получить избранное
-router.get('/', authenticate, favoritesController.getFavorites);
+// DELETE /api/v1/favorites - Удалить из избранного
+router.delete('/', favoritesController.removeFavorite);
 
-// Проверить избранное
-router.get('/check', authenticate, favoritesController.checkFavorite);
+// GET /api/v1/favorites - Получить избранное
+router.get('/', favoritesController.getFavorites);
+
+// GET /api/v1/favorites/check - Проверить, находится ли элемент в избранном
+router.get('/check', favoritesController.checkFavorite);
 
 module.exports = router;
-

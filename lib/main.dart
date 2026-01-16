@@ -11,6 +11,10 @@ import 'screens/marketplace_screen.dart';
 import 'screens/my_orders_screen.dart';
 import 'screens/my_applications_screen.dart';
 import 'screens/chats_list_screen.dart';
+import 'screens/freelancers_search_screen.dart';
+import 'screens/user_profile_screen.dart';
+import 'screens/my_stats_screen.dart';
+import 'screens/favorites_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
@@ -46,6 +50,9 @@ class MyApp extends ConsumerWidget {
         '/my_orders': (context) => const MyOrdersScreen(),
         '/my_applications': (context) => const MyApplicationsScreen(),
         '/admin_panel': (context) => const AdminPanelScreen(),
+        '/freelancers_search': (context) => const FreelancersSearchScreen(),
+        '/my_stats': (context) => const MyStatsScreen(),
+        '/favorites': (context) => const FavoritesScreen(),
       },
     );
   }

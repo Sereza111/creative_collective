@@ -157,9 +157,9 @@ class ApiService {
       final response = await http.get(uri, headers: headers).timeout(
         const Duration(seconds: 30),
         onTimeout: () => throw Exception('Превышено время ожидания ответа от сервера'),
-      );
+    );
 
-      if (response.statusCode == 200) {
+    if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data == null) {
           print('API returned null data for tasks');
@@ -181,7 +181,7 @@ class ApiService {
           }
         }
         return [];
-      } else {
+    } else {
         throw Exception('Ошибка загрузки задач: ${response.statusCode}');
       }
     } catch (e) {
@@ -281,7 +281,7 @@ class ApiService {
           }
         }
         return [];
-      } else {
+    } else {
         throw Exception('Ошибка загрузки проектов: ${response.statusCode}');
       }
     } catch (e) {
@@ -1131,32 +1131,32 @@ class ApiService {
   // === FAVORITES METHODS ===
 
   // Добавить в избранное
-  static Future<void> addFavorite(String favoritedType, int favoritedId) async {
+  static Future<void> addFavorite(String itemType, int itemId) async {
     final headers = await _getHeaders();
     final response = await http.post(
       Uri.parse('$baseUrl/favorites'),
       headers: headers,
       body: jsonEncode({
-        'favorited_type': favoritedType,
-        'favorited_id': favoritedId,
+        'item_type': itemType,
+        'item_id': itemId,
       }),
     ).timeout(const Duration(seconds: 10));
 
-    if (response.statusCode != 200) {
+    if (response.statusCode != 200 && response.statusCode != 201) {
       final error = jsonDecode(response.body);
       throw Exception(error['message'] ?? 'Ошибка добавления в избранное');
     }
   }
 
   // Удалить из избранного
-  static Future<void> removeFavorite(String favoritedType, int favoritedId) async {
+  static Future<void> removeFavorite(String itemType, int itemId) async {
     final headers = await _getHeaders();
     final response = await http.delete(
       Uri.parse('$baseUrl/favorites'),
       headers: headers,
       body: jsonEncode({
-        'favorited_type': favoritedType,
-        'favorited_id': favoritedId,
+        'item_type': itemType,
+        'item_id': itemId,
       }),
     ).timeout(const Duration(seconds: 10));
 
@@ -1167,9 +1167,9 @@ class ApiService {
   }
 
   // Получить избранное
-  static Future<List<dynamic>> getFavorites({String? type}) async {
+  static Future<List<dynamic>> getFavorites({String? itemType}) async {
     final headers = await _getHeaders();
-    final queryParams = type != null ? {'type': type} : <String, String>{};
+    final queryParams = itemType != null ? {'item_type': itemType} : <String, String>{};
     final uri = Uri.parse('$baseUrl/favorites').replace(queryParameters: queryParams);
     final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 10));
 
@@ -1186,11 +1186,11 @@ class ApiService {
   }
 
   // Проверить избранное
-  static Future<bool> checkFavorite(String favoritedType, int favoritedId) async {
+  static Future<bool> checkFavorite(String itemType, int itemId) async {
     final headers = await _getHeaders();
     final uri = Uri.parse('$baseUrl/favorites/check').replace(queryParameters: {
-      'favorited_type': favoritedType,
-      'favorited_id': favoritedId.toString(),
+      'item_type': itemType,
+      'item_id': itemId.toString(),
     });
     final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 10));
 

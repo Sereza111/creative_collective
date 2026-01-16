@@ -238,6 +238,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ],
                     ),
                   ),
+                  // Кнопка поиска фрилансеров для клиентов
+                  if (user.userRole == 'client') ...[
+                    const SizedBox(height: 16),
+                    AppTheme.fadeInAnimation(
+                      child: _buildActionCard(
+                        context,
+                        'НАЙТИ ФРИЛАНСЕРОВ',
+                        Icons.search,
+                        AppTheme.electricBlue,
+                        () {
+                          Navigator.pushNamed(context, '/freelancers_search');
+                        },
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 48),
                 ],
                 // Recent Activity Section

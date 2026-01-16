@@ -221,8 +221,7 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen> with Single
                 _StatItem('В работе', orders['in_progress_orders']?.toString() ?? '0'),
                 _StatItem('Завершенные', orders['completed_orders']?.toString() ?? '0'),
                 _StatItem('Отмененные', orders['cancelled_orders']?.toString() ?? '0'),
-                _StatItem('Средний бюджет', 
-                    '${orders['average_budget']?.toStringAsFixed(0) ?? '0'} ₽'),
+                _StatItem('Средний бюджет', _formatMoney(orders['average_budget'])),
               ],
             ),
             const SizedBox(height: 16),
@@ -234,8 +233,7 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen> with Single
               Colors.orange,
               [
                 _StatItem('Всего отзывов', reviews['total_reviews']?.toString() ?? '0'),
-                _StatItem('Средний рейтинг', 
-                    reviews['average_rating']?.toStringAsFixed(2) ?? '0.00'),
+                _StatItem('Средний рейтинг', _formatRating(reviews['average_rating'])),
               ],
             ),
             const SizedBox(height: 16),
@@ -397,6 +395,28 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen> with Single
         return 'Администратор';
       default:
         return role ?? 'Неизвестно';
+    }
+  }
+
+  // Безопасное форматирование денег
+  String _formatMoney(dynamic value) {
+    if (value == null) return '0 ₽';
+    try {
+      final double amount = value is String ? double.parse(value) : value.toDouble();
+      return '${amount.toStringAsFixed(0)} ₽';
+    } catch (e) {
+      return '0 ₽';
+    }
+  }
+
+  // Безопасное форматирование рейтинга
+  String _formatRating(dynamic value) {
+    if (value == null) return '0.00';
+    try {
+      final double rating = value is String ? double.parse(value) : value.toDouble();
+      return rating.toStringAsFixed(2);
+    } catch (e) {
+      return '0.00';
     }
   }
 }

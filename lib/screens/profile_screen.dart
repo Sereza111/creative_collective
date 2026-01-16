@@ -212,6 +212,62 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
                       
+                      // Кнопки статистики и избранного
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/my_stats');
+                              },
+                              icon: const Icon(Icons.analytics, size: 18),
+                              label: const Text(
+                                'СТАТИСТИКА',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.electricBlue,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.zero,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/favorites');
+                              },
+                              icon: const Icon(Icons.favorite, size: 18),
+                              label: const Text(
+                                'ИЗБРАННОЕ',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.pink.shade700,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.zero,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      
                       // Кнопка админ-панели (только для админов)
                       if (user.userRole == 'admin') ...[
                         const SizedBox(height: 16),
