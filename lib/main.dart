@@ -6,6 +6,8 @@ import 'screens/finance_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/projects_screen.dart';
 import 'screens/marketplace_screen.dart';
+import 'screens/my_orders_screen.dart';
+import 'screens/my_applications_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
@@ -34,6 +36,10 @@ class MyApp extends ConsumerWidget {
           : authState.isAuthenticated
               ? const MainScreen()
               : const LoginScreen(),
+      routes: {
+        '/my_orders': (context) => const MyOrdersScreen(),
+        '/my_applications': (context) => const MyApplicationsScreen(),
+      },
     );
   }
 }

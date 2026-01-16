@@ -189,6 +189,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 32),
+                // Marketplace Quick Access
+                AppTheme.gothicTitle('МАРКЕТПЛЕЙС'),
+                const SizedBox(height: 16),
+                AppTheme.fadeInAnimation(
+                  child: Row(
+                    children: [
+                      if (user.userRole == 'client')
+                        Expanded(
+                          child: _buildActionCard(
+                            context,
+                            'МОИ ЗАКАЗЫ',
+                            Icons.shopping_bag_outlined,
+                            AppTheme.tombstoneWhite,
+                            () {
+                              Navigator.pushNamed(context, '/my_orders');
+                            },
+                          ),
+                        ),
+                      if (user.userRole == 'freelancer')
+                        Expanded(
+                          child: _buildActionCard(
+                            context,
+                            'МОИ ОТКЛИКИ',
+                            Icons.send_outlined,
+                            AppTheme.tombstoneWhite,
+                            () {
+                              Navigator.pushNamed(context, '/my_applications');
+                            },
+                          ),
+                        ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildActionCard(
+                          context,
+                          'МАРКЕТПЛЕЙС',
+                          Icons.storefront_outlined,
+                          AppTheme.ashGray,
+                          () {
+                            // Переключаемся на вкладку маркетплейса (индекс 3)
+                            DefaultTabController.of(context).animateTo(3);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 48),
                 // Recent Activity Section
                 AppTheme.gothicTitle('НЕДАВНИЕ ПРОЕКТЫ'),
@@ -311,6 +358,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionCard(
+    BuildContext context,
+    String label,
+    IconData icon,
+    Color iconColor,
+    VoidCallback onTap,
+  ) {
+    return AppTheme.animatedGothicCard(
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: iconColor.withOpacity(0.3),
+                    width: 1,
+                  ),
+                  borderRadius: BorderRadius.zero,
+                ),
+                child: Icon(icon, color: iconColor, size: 24),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                label.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppTheme.tombstoneWhite,
+                  letterSpacing: 1.5,
+                  fontWeight: FontWeight.w300,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
         ),
