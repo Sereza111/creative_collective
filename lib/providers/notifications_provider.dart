@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/notification.dart';
 import '../models/task.dart';
 import 'tasks_provider.dart';
+import 'orders_provider.dart';
+import 'auth_provider.dart';
 
 class NotificationsState {
   final List<AppNotification> notifications;
@@ -33,14 +35,16 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
   final Ref ref;
   
   NotificationsNotifier(this.ref) : super(NotificationsState()) {
-    _checkTaskDeadlines();
+    _checkAllNotifications();
   }
 
-  void _checkTaskDeadlines() {
-    final tasksState = ref.read(tasksProvider);
-    final now = DateTime.now();
+  void _checkAllNotifications() {
     final notifications = <AppNotification>[];
     int notificationId = 1;
+
+    // Check task deadlines
+    final tasksState = ref.read(tasksProvider);
+    final now = DateTime.now();
 
     for (var task in tasksState.tasks) {
       final daysUntilDue = task.dueDate.difference(now).inDays;
@@ -66,6 +70,58 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
           createdAt: now,
           data: {'task_id': task.id, 'type': 'due_soon'},
         ));
+      }
+    }
+
+    // Check marketplace orders
+    final ordersState = ref.read(ordersProvider);
+    final user = ref.read(authProvider).user;
+
+    if (user != null) {
+      for (var order in ordersState.orders) {
+        // Notify freelancers about new orders in their category
+        if (user.userRole == 'freelancer' && order.status == 'published') {
+          final daysSinceCreated = now.difference(order.createdAt).inDays;
+          if (daysSinceCreated <= 1) { // New orders within last 24 hours
+            notifications.add(AppNotification(
+              id: notificationId++,
+              title: 'Новый заказ доступен',
+              message: 'Заказ "${order.title}" - ${order.category ?? "без категории"}',
+              type: 'info',
+              createdAt: order.createdAt,
+              data: {'order_id': order.id, 'type': 'new_order'},
+            ));
+          }
+        }
+
+        // Notify clients about new applications on their orders
+        if (user.id == order.clientId && order.applicationsCount > 0) {
+          notifications.add(AppNotification(
+            id: notificationId++,
+            title: 'Новые отклики на заказ',
+            message: 'У заказа "${order.title}" ${order.applicationsCount} откликов',
+            type: 'info',
+            createdAt: now,
+            data: {'order_id': order.id, 'type': 'new_applications'},
+          ));
+        }
+
+        // Notify about order deadline
+        if (order.deadline != null) {
+          final daysUntilDeadline = order.deadline!.difference(now).inDays;
+          if (daysUntilDeadline >= 0 && daysUntilDeadline <= 3 && 
+              order.status == 'in_progress' && 
+              (user.id == order.clientId || user.id == order.freelancerId)) {
+            notifications.add(AppNotification(
+              id: notificationId++,
+              title: 'Дедлайн заказа приближается',
+              message: 'Заказ "${order.title}" должен быть завершен через $daysUntilDeadline дн.',
+              type: 'warning',
+              createdAt: now,
+              data: {'order_id': order.id, 'type': 'order_deadline'},
+            ));
+          }
+        }
       }
     }
 
@@ -100,7 +156,7 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
   }
 
   void refresh() {
-    _checkTaskDeadlines();
+    _checkAllNotifications();
   }
 
   void addNotification(AppNotification notification) {

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/order.dart';
 import '../models/order_application.dart';
 import '../services/api_service.dart';
+import 'notifications_provider.dart';
 
 class OrdersState {
   final List<Order> orders;
@@ -28,7 +29,9 @@ class OrdersState {
 }
 
 class OrdersNotifier extends StateNotifier<OrdersState> {
-  OrdersNotifier() : super(OrdersState()) {
+  final Ref ref;
+  
+  OrdersNotifier(this.ref) : super(OrdersState()) {
     loadOrders();
   }
 
@@ -37,6 +40,8 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
     try {
       final orders = await ApiService.getOrders(status: status, category: category);
       state = state.copyWith(orders: orders, isLoading: false);
+      // Обновляем уведомления после загрузки заказов
+      ref.read(notificationsProvider.notifier).refresh();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -53,6 +58,8 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
         orders: [newOrder, ...state.orders],
         isLoading: false,
       );
+      // Обновляем уведомления после создания заказа
+      ref.read(notificationsProvider.notifier).refresh();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -115,6 +122,6 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
 }
 
 final ordersProvider = StateNotifierProvider<OrdersNotifier, OrdersState>((ref) {
-  return OrdersNotifier();
+  return OrdersNotifier(ref);
 });
 
