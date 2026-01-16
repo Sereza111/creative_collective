@@ -10,6 +10,7 @@ import '../models/order_application.dart';
 import '../models/chat.dart';
 import '../models/message.dart';
 import '../models/review.dart';
+import '../models/portfolio_item.dart';
 import 'secure_storage_service.dart';
 
 class ApiService {
@@ -932,6 +933,117 @@ class ApiService {
     if (response.statusCode != 200) {
       final error = jsonDecode(response.body);
       throw Exception(error['message'] ?? 'Ошибка удаления отзыва');
+    }
+  }
+
+  // ==================== PORTFOLIO METHODS ====================
+
+  // Создать работу в портфолио
+  static Future<PortfolioItem> createPortfolioItem({
+    required String title,
+    String? description,
+    String? imageUrl,
+    String? projectUrl,
+    String? category,
+    List<String>? skills,
+    DateTime? completedAt,
+  }) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/portfolio'),
+      headers: headers,
+      body: jsonEncode({
+        'title': title,
+        'description': description,
+        'image_url': imageUrl,
+        'project_url': projectUrl,
+        'category': category,
+        'skills': skills,
+        'completed_at': completedAt?.toIso8601String(),
+      }),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return PortfolioItem.fromJson(data['data']);
+      }
+      throw Exception('Не удалось создать работу');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка создания работы');
+    }
+  }
+
+  // Получить портфолио пользователя
+  static Future<List<PortfolioItem>> getUserPortfolio(int userId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/portfolio/user/$userId'),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        final itemsList = data['data'] is List ? data['data'] : [data['data']];
+        return itemsList.map<PortfolioItem>((json) => PortfolioItem.fromJson(json)).toList();
+      }
+      return [];
+    } else {
+      return [];
+    }
+  }
+
+  // Обновить работу
+  static Future<PortfolioItem> updatePortfolioItem({
+    required int itemId,
+    required String title,
+    String? description,
+    String? imageUrl,
+    String? projectUrl,
+    String? category,
+    List<String>? skills,
+    DateTime? completedAt,
+    int? displayOrder,
+  }) async {
+    final headers = await _getHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/portfolio/$itemId'),
+      headers: headers,
+      body: jsonEncode({
+        'title': title,
+        'description': description,
+        'image_url': imageUrl,
+        'project_url': projectUrl,
+        'category': category,
+        'skills': skills,
+        'completed_at': completedAt?.toIso8601String(),
+        'display_order': displayOrder,
+      }),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return PortfolioItem.fromJson(data['data']);
+      }
+      throw Exception('Не удалось обновить работу');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка обновления работы');
+    }
+  }
+
+  // Удалить работу
+  static Future<void> deletePortfolioItem(int itemId) async {
+    final headers = await _getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/portfolio/$itemId'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка удаления работы');
     }
   }
 }
