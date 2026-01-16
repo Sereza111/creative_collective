@@ -198,7 +198,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        application.freelancerName?.toUpperCase() ?? application.freelancerEmail.toUpperCase(),
+                        (application.freelancerName ?? application.freelancerEmail).toUpperCase(),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppTheme.tombstoneWhite,

@@ -672,4 +672,23 @@ class ApiService {
       throw Exception(error['message'] ?? 'Ошибка принятия отклика');
     }
   }
+
+  static Future<void> rejectApplication(int orderId, int applicationId) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/orders/$orderId/applications/$applicationId/reject'),
+      headers: headers,
+      body: jsonEncode({}),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка отклонения отклика');
+    }
+  }
+
+  // Алиас для совместимости
+  static Future<List<OrderApplication>> getApplicationsForOrder(int orderId) {
+    return getOrderApplications(orderId);
+  }
 }
