@@ -11,6 +11,7 @@ import '../services/export_service.dart';
 import '../services/api_service.dart';
 import 'auth/login_screen.dart';
 import 'forms/edit_profile_screen.dart';
+import 'portfolio_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -48,6 +49,21 @@ class ProfileScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('ПРОФИЛЬ'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.work_outline),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PortfolioScreen(
+                    userId: user.id,
+                    isOwnProfile: true,
+                  ),
+                ),
+              );
+            },
+            tooltip: 'Портфолио',
+          ),
           IconButton(
             icon: const Icon(Icons.download),
             onPressed: () => _showExportDialog(context, ref),
