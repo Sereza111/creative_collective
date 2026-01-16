@@ -324,215 +324,82 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildQuickActionsGrid(BuildContext context, user) {
-    final actions = <Map<String, dynamic>>[];
-    
-    // Role-specific actions
-    if (user.userRole == 'client') {
-      actions.addAll([
-        {
-          'label': 'МОИ ЗАКАЗЫ',
-          'icon': Icons.shopping_bag_outlined,
-          'color': AppTheme.gothicBlue,
-          'route': '/my_orders',
-        },
-        {
-          'label': 'СОЗДАТЬ ЗАКАЗ',
-          'icon': Icons.add_circle_outline,
-          'color': AppTheme.gothicGreen,
-          'action': () {
-            DefaultTabController.of(context).animateTo(3); // Marketplace tab
-          },
-        },
-        {
-          'label': 'НАЙТИ ФРИЛАНСЕРА',
-          'icon': Icons.person_search,
-          'color': AppTheme.electricBlue,
-          'route': '/freelancers_search',
-        },
-      ]);
-    } else if (user.userRole == 'freelancer') {
-      actions.addAll([
-        {
-          'label': 'МОИ ОТКЛИКИ',
-          'icon': Icons.send_outlined,
-          'color': AppTheme.gothicBlue,
-          'route': '/my_applications',
-        },
-        {
-          'label': 'ИСКАТЬ ЗАКАЗЫ',
-          'icon': Icons.search,
-          'color': AppTheme.gothicGreen,
-          'action': () {
-            DefaultTabController.of(context).animateTo(3); // Marketplace tab
-          },
-        },
-        {
-          'label': 'МОЯ СТАТИСТИКА',
-          'icon': Icons.bar_chart,
-          'color': AppTheme.goldenrod,
-          'route': '/my_stats',
-        },
-      ]);
-    }
-    
-    // Common actions
-    actions.addAll([
-      {
-        'label': 'МОИ ЧАТЫ',
-        'icon': Icons.chat_bubble_outline,
-        'color': AppTheme.electricBlue,
-        'action': () {
-          DefaultTabController.of(context).animateTo(2); // Chats tab
-        },
-      },
-      {
-        'label': 'ИЗБРАННОЕ',
-        'icon': Icons.favorite_border,
-        'color': AppTheme.bloodRed,
-        'route': '/favorites',
-      },
-      {
-        'label': 'DASHBOARD',
-        'icon': Icons.dashboard_outlined,
-        'color': AppTheme.goldenrod,
-        'action': () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => DashboardScreen()),
-          );
-        },
-      },
-    ]);
-    
-    return AppTheme.fadeInAnimation(
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          childAspectRatio: 1.0,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-        ),
-        itemCount: actions.length,
-        itemBuilder: (context, index) {
-          final action = actions[index];
-          return _buildActionCard(
-            context,
-            action['label'] as String,
-            action['icon'] as IconData,
-            action['color'] as Color,
-            () {
-              if (action['route'] != null) {
-                Navigator.pushNamed(context, action['route'] as String);
-              } else if (action['action'] != null) {
-                (action['action'] as VoidCallback)();
-              }
-            },
-          );
-        },
-      ),
-    );
-  }
 
-  Widget _buildActionCard(
-    BuildContext context,
+  Widget _buildCircularStatCard(
     String label,
+    int currentValue,
+    int totalValue,
     IconData icon,
-    Color iconColor,
-    VoidCallback onTap,
+    Color color,
   ) {
-    return AppTheme.animatedGothicCard(
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: iconColor.withOpacity(0.4),
-                    width: 2,
-                  ),
-                  borderRadius: BorderRadius.zero,
-                ),
-                child: Icon(icon, color: iconColor, size: 20),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                label.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 8,
-                  color: AppTheme.tombstoneWhite,
-                  letterSpacing: 1.2,
-                  fontWeight: FontWeight.w400,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    String label,
-    String value,
-    IconData icon,
-    Color iconColor,
-  ) {
+    final percentage = totalValue > 0 ? (currentValue / totalValue) : 0.0;
+    
     return AppTheme.animatedGothicCard(
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Row(
+        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+        child: Column(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: iconColor.withOpacity(0.3),
-                  width: 1,
-                ),
-                borderRadius: BorderRadius.zero,
+            // Circular Progress
+            SizedBox(
+              width: 100,
+              height: 100,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Background circle
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppTheme.dimGray.withOpacity(0.3),
+                        width: 8,
+                      ),
+                    ),
+                  ),
+                  // Progress circle
+                  SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: CircularProgressIndicator(
+                      value: percentage,
+                      strokeWidth: 8,
+                      backgroundColor: Colors.transparent,
+                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                    ),
+                  ),
+                  // Center content
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(icon, color: color, size: 28),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$currentValue',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w200,
+                          color: AppTheme.tombstoneWhite,
+                          fontFamily: 'serif',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              child: Icon(icon, color: iconColor, size: 24),
             ),
-            const SizedBox(width: 20),
-            Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label.toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w300,
-                        color: AppTheme.mistGray,
-                        letterSpacing: 2.0,
-                        fontFamily: 'serif',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      value,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w200,
-                        color: AppTheme.tombstoneWhite,
-                        fontFamily: 'serif',
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                  ],
+            const SizedBox(height: 20),
+            // Label
+            Text(
+              label.toUpperCase(),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10,
+                color: AppTheme.mistGray,
+                letterSpacing: 1.5,
+                fontWeight: FontWeight.w400,
+                height: 1.4,
               ),
             ),
           ],
