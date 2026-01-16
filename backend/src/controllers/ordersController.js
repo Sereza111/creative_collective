@@ -243,7 +243,12 @@ exports.getOrderApplications = async (req, res) => {
 
     const applications = await query(
       `SELECT oa.*, 
-              f.full_name as freelancer_name, f.email as freelancer_email, f.avatar_url as freelancer_avatar
+              f.full_name as freelancer_name, 
+              f.email as freelancer_email, 
+              f.avatar_url as freelancer_avatar,
+              f.average_rating as freelancer_rating,
+              f.reviews_count as freelancer_reviews_count,
+              f.is_verified as freelancer_is_verified
        FROM order_applications oa
        LEFT JOIN users f ON oa.freelancer_id = f.id
        WHERE oa.order_id = ?

@@ -5,6 +5,9 @@ class OrderApplication {
   final String? freelancerName;
   final String? freelancerEmail;
   final String? freelancerAvatar;
+  final double? freelancerRating;
+  final int? freelancerReviewsCount;
+  final bool freelancerIsVerified;
   final String? message;
   final double? proposedBudget;
   final DateTime? proposedDeadline;
@@ -19,6 +22,9 @@ class OrderApplication {
     this.freelancerName,
     this.freelancerEmail,
     this.freelancerAvatar,
+    this.freelancerRating,
+    this.freelancerReviewsCount,
+    this.freelancerIsVerified = false,
     this.message,
     this.proposedBudget,
     this.proposedDeadline,
@@ -35,6 +41,13 @@ class OrderApplication {
       freelancerName: json['freelancer_name'],
       freelancerEmail: json['freelancer_email'],
       freelancerAvatar: json['freelancer_avatar'],
+      freelancerRating: json['freelancer_rating'] != null 
+          ? (json['freelancer_rating'] is String ? double.tryParse(json['freelancer_rating']) : (json['freelancer_rating'] as num?)?.toDouble())
+          : null,
+      freelancerReviewsCount: json['freelancer_reviews_count'] is int 
+          ? json['freelancer_reviews_count'] 
+          : (json['freelancer_reviews_count'] != null ? int.tryParse(json['freelancer_reviews_count'].toString()) : null),
+      freelancerIsVerified: json['freelancer_is_verified'] == 1 || json['freelancer_is_verified'] == true,
       message: json['message'],
       proposedBudget: json['proposed_budget'] != null 
           ? (json['proposed_budget'] is String ? double.tryParse(json['proposed_budget']) : (json['proposed_budget'] as num).toDouble())
