@@ -11,6 +11,7 @@ import 'screens/marketplace_screen.dart';
 import 'screens/my_orders_screen.dart';
 import 'screens/my_applications_screen.dart';
 import 'screens/chats_list_screen.dart';
+import 'screens/chats_list_with_search_screen.dart';
 import 'screens/freelancers_search_screen.dart';
 import 'screens/user_profile_screen.dart';
 import 'screens/my_stats_screen.dart';
@@ -114,7 +115,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     const TasksScreen(),
     const ProjectsScreen(),
     const MarketplaceScreen(),
-    const ChatsListScreen(),
+    const ChatsListWithSearchScreen(),
     const FinanceScreen(),
     const ProfileScreen(),
   ];
