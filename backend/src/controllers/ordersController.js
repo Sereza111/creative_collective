@@ -258,6 +258,30 @@ exports.getOrderApplications = async (req, res) => {
   }
 };
 
+// Получить мои отклики (для фрилансера)
+exports.getMyApplications = async (req, res) => {
+  try {
+    const freelancerId = req.user.id;
+
+    const applications = await query(
+      `SELECT oa.*, 
+              o.title as order_title, o.description as order_description, 
+              o.budget as order_budget, o.deadline as order_deadline, 
+              o.status as order_status, o.category as order_category
+       FROM order_applications oa
+       LEFT JOIN orders o ON oa.order_id = o.id
+       WHERE oa.freelancer_id = ?
+       ORDER BY oa.created_at DESC`,
+      [freelancerId]
+    );
+
+    successResponse(res, applications);
+  } catch (error) {
+    console.error('Get my applications error:', error);
+    errorResponse(res, 'Ошибка получения откликов');
+  }
+};
+
 // Принять отклик (назначить фрилансера)
 exports.acceptApplication = async (req, res) => {
   try {

@@ -22,6 +22,9 @@ const applyValidation = [
 // GET /api/v1/orders - Получить все заказы (маркетплейс)
 router.get('/', authenticate, ordersController.getAllOrders);
 
+// GET /api/v1/orders/my-applications - Получить мои отклики (freelancer)
+router.get('/my-applications', authenticate, ordersController.getMyApplications);
+
 // GET /api/v1/orders/:id - Получить заказ по ID
 router.get('/:id', authenticate, ordersController.getOrderById);
 
