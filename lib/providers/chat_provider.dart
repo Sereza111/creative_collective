@@ -69,8 +69,8 @@ class ChatsNotifier extends StateNotifier<ChatsState> {
         return Chat(
           id: chat.id,
           orderId: chat.orderId,
-          participant1Id: chat.participant1Id,
-          participant2Id: chat.participant2Id,
+          clientId: chat.clientId,
+          freelancerId: chat.freelancerId,
           lastMessage: message,
           lastMessageAt: timestamp,
           createdAt: chat.createdAt,
