@@ -191,68 +191,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                // Marketplace Quick Access
+                // Quick Actions Grid
                 if (user != null) ...[
-                  AppTheme.gothicTitle('МАРКЕТПЛЕЙС'),
-                  const SizedBox(height: 16),
-                  AppTheme.fadeInAnimation(
-                    child: Row(
-                      children: [
-                        if (user.userRole == 'client')
-                          Expanded(
-                            child: _buildActionCard(
-                              context,
-                              'МОИ ЗАКАЗЫ',
-                              Icons.shopping_bag_outlined,
-                              AppTheme.tombstoneWhite,
-                              () {
-                                Navigator.pushNamed(context, '/my_orders');
-                              },
-                            ),
-                          ),
-                        if (user.userRole == 'freelancer')
-                          Expanded(
-                            child: _buildActionCard(
-                              context,
-                              'МОИ ОТКЛИКИ',
-                              Icons.send_outlined,
-                              AppTheme.tombstoneWhite,
-                              () {
-                                Navigator.pushNamed(context, '/my_applications');
-                              },
-                            ),
-                          ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildActionCard(
-                            context,
-                            'МАРКЕТПЛЕЙС',
-                            Icons.storefront_outlined,
-                            AppTheme.ashGray,
-                            () {
-                              // Переключаемся на вкладку маркетплейса (индекс 3)
-                              DefaultTabController.of(context).animateTo(3);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Кнопка поиска фрилансеров для клиентов
-                  if (user.userRole == 'client') ...[
-                    const SizedBox(height: 16),
-                    AppTheme.fadeInAnimation(
-                      child: _buildActionCard(
-                        context,
-                        'НАЙТИ ФРИЛАНСЕРОВ',
-                        Icons.search,
-                        AppTheme.electricBlue,
-                        () {
-                          Navigator.pushNamed(context, '/freelancers_search');
-                        },
-                      ),
-                    ),
-                  ],
+                  AppTheme.gothicTitle('БЫСТРЫЕ ДЕЙСТВИЯ'),
+                  const SizedBox(height: 24),
+                  _buildQuickActionsGrid(context, user),
                   const SizedBox(height: 48),
                 ],
                 // Recent Activity Section
@@ -383,6 +326,118 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  Widget _buildQuickActionsGrid(BuildContext context, user) {
+    final actions = <Map<String, dynamic>>[];
+    
+    // Role-specific actions
+    if (user.userRole == 'client') {
+      actions.addAll([
+        {
+          'label': 'МОИ ЗАКАЗЫ',
+          'icon': Icons.shopping_bag_outlined,
+          'color': AppTheme.gothicBlue,
+          'route': '/my_orders',
+        },
+        {
+          'label': 'СОЗДАТЬ ЗАКАЗ',
+          'icon': Icons.add_circle_outline,
+          'color': AppTheme.gothicGreen,
+          'action': () {
+            DefaultTabController.of(context).animateTo(3); // Marketplace tab
+          },
+        },
+        {
+          'label': 'НАЙТИ ФРИЛАНСЕРА',
+          'icon': Icons.person_search,
+          'color': AppTheme.electricBlue,
+          'route': '/freelancers_search',
+        },
+      ]);
+    } else if (user.userRole == 'freelancer') {
+      actions.addAll([
+        {
+          'label': 'МОИ ОТКЛИКИ',
+          'icon': Icons.send_outlined,
+          'color': AppTheme.gothicBlue,
+          'route': '/my_applications',
+        },
+        {
+          'label': 'ИСКАТЬ ЗАКАЗЫ',
+          'icon': Icons.search,
+          'color': AppTheme.gothicGreen,
+          'action': () {
+            DefaultTabController.of(context).animateTo(3); // Marketplace tab
+          },
+        },
+        {
+          'label': 'МОЯ СТАТИСТИКА',
+          'icon': Icons.bar_chart,
+          'color': AppTheme.goldenrod,
+          'route': '/my_stats',
+        },
+      ]);
+    }
+    
+    // Common actions
+    actions.addAll([
+      {
+        'label': 'МОИ ЧАТЫ',
+        'icon': Icons.chat_bubble_outline,
+        'color': AppTheme.electricBlue,
+        'action': () {
+          DefaultTabController.of(context).animateTo(2); // Chats tab
+        },
+      },
+      {
+        'label': 'ИЗБРАННОЕ',
+        'icon': Icons.favorite_border,
+        'color': AppTheme.bloodRed,
+        'route': '/favorites',
+      },
+      {
+        'label': 'DASHBOARD',
+        'icon': Icons.dashboard_outlined,
+        'color': AppTheme.goldenrod,
+        'action': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => DashboardScreen()),
+          );
+        },
+      },
+    ]);
+    
+    return AppTheme.fadeInAnimation(
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          childAspectRatio: 1.0,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        itemCount: actions.length,
+        itemBuilder: (context, index) {
+          final action = actions[index];
+          return _buildActionCard(
+            context,
+            action['label'] as String,
+            action['icon'] as IconData,
+            action['color'] as Color,
+            () {
+              if (action['route'] != null) {
+                Navigator.pushNamed(context, action['route'] as String);
+              } else if (action['action'] != null) {
+                (action['action'] as VoidCallback)();
+              }
+            },
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildActionCard(
     BuildContext context,
     String label,
@@ -394,31 +449,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: iconColor.withOpacity(0.3),
-                    width: 1,
+                    color: iconColor.withOpacity(0.4),
+                    width: 2,
                   ),
                   borderRadius: BorderRadius.zero,
                 ),
-                child: Icon(icon, color: iconColor, size: 24),
+                child: Icon(icon, color: iconColor, size: 20),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Text(
                 label.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 10,
+                style: TextStyle(
+                  fontSize: 8,
                   color: AppTheme.tombstoneWhite,
-                  letterSpacing: 1.5,
-                  fontWeight: FontWeight.w300,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w400,
                 ),
                 textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
