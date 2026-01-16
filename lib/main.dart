@@ -32,22 +32,53 @@ void main() async {
   );
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  bool _onboardingCompleted = false;
+  bool _checkingOnboarding = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOnboarding();
+  }
+
+  Future<void> _checkOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
+      _checkingOnboarding = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+
+    if (_checkingOnboarding) {
+      return MaterialApp(
+        home: const SplashScreen(),
+        theme: AppTheme.darkTheme,
+      );
+    }
 
     return MaterialApp(
       title: 'Creative Collective',
       theme: AppTheme.darkTheme,
       debugShowCheckedModeBanner: false,
-      home: authState.isLoading
-          ? const SplashScreen()
-          : authState.isAuthenticated
-              ? const MainScreen()
-              : const LoginScreen(),
+      home: !_onboardingCompleted
+          ? const OnboardingScreen()
+          : authState.isLoading
+              ? const SplashScreen()
+              : authState.isAuthenticated
+                  ? const MainScreen()
+                  : const LoginScreen(),
       routes: {
         '/my_orders': (context) => const MyOrdersScreen(),
         '/my_applications': (context) => const MyApplicationsScreen(),
