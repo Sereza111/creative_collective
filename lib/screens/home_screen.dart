@@ -29,6 +29,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final user = authState.user;
     final tasksState = ref.watch(tasksProvider);
     final projectsState = ref.watch(projectsProvider);
     final activeProjects = ref.watch(activeProjectsProvider) ?? [];
@@ -191,52 +192,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(height: 32),
                 // Marketplace Quick Access
-                AppTheme.gothicTitle('МАРКЕТПЛЕЙС'),
-                const SizedBox(height: 16),
-                AppTheme.fadeInAnimation(
-                  child: Row(
-                    children: [
-                      if (user.userRole == 'client')
+                if (user != null) ...[
+                  AppTheme.gothicTitle('МАРКЕТПЛЕЙС'),
+                  const SizedBox(height: 16),
+                  AppTheme.fadeInAnimation(
+                    child: Row(
+                      children: [
+                        if (user.userRole == 'client')
+                          Expanded(
+                            child: _buildActionCard(
+                              context,
+                              'МОИ ЗАКАЗЫ',
+                              Icons.shopping_bag_outlined,
+                              AppTheme.tombstoneWhite,
+                              () {
+                                Navigator.pushNamed(context, '/my_orders');
+                              },
+                            ),
+                          ),
+                        if (user.userRole == 'freelancer')
+                          Expanded(
+                            child: _buildActionCard(
+                              context,
+                              'МОИ ОТКЛИКИ',
+                              Icons.send_outlined,
+                              AppTheme.tombstoneWhite,
+                              () {
+                                Navigator.pushNamed(context, '/my_applications');
+                              },
+                            ),
+                          ),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: _buildActionCard(
                             context,
-                            'МОИ ЗАКАЗЫ',
-                            Icons.shopping_bag_outlined,
-                            AppTheme.tombstoneWhite,
+                            'МАРКЕТПЛЕЙС',
+                            Icons.storefront_outlined,
+                            AppTheme.ashGray,
                             () {
-                              Navigator.pushNamed(context, '/my_orders');
+                              // Переключаемся на вкладку маркетплейса (индекс 3)
+                              DefaultTabController.of(context).animateTo(3);
                             },
                           ),
                         ),
-                      if (user.userRole == 'freelancer')
-                        Expanded(
-                          child: _buildActionCard(
-                            context,
-                            'МОИ ОТКЛИКИ',
-                            Icons.send_outlined,
-                            AppTheme.tombstoneWhite,
-                            () {
-                              Navigator.pushNamed(context, '/my_applications');
-                            },
-                          ),
-                        ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildActionCard(
-                          context,
-                          'МАРКЕТПЛЕЙС',
-                          Icons.storefront_outlined,
-                          AppTheme.ashGray,
-                          () {
-                            // Переключаемся на вкладку маркетплейса (индекс 3)
-                            DefaultTabController.of(context).animateTo(3);
-                          },
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 48),
+                  const SizedBox(height: 48),
+                ],
                 // Recent Activity Section
                 AppTheme.gothicTitle('НЕДАВНИЕ ПРОЕКТЫ'),
                 const SizedBox(height: 24),

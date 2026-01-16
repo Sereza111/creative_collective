@@ -693,4 +693,23 @@ class ApiService {
   static Future<List<OrderApplication>> getApplicationsForOrder(int orderId) {
     return getOrderApplications(orderId);
   }
+
+  static Future<List<OrderApplication>> getApplicationsByFreelancer() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/orders/my-applications'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        final appsList = data['data'] is List ? data['data'] : [data['data']];
+        return appsList.map<OrderApplication>((json) => OrderApplication.fromJson(json)).toList();
+      }
+      return [];
+    } else {
+      throw Exception('Ошибка загрузки откликов');
+    }
+  }
 }
