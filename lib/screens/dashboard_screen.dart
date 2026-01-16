@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../providers/projects_provider.dart';
 import '../providers/tasks_provider.dart';
 import '../providers/finance_provider.dart';
+import '../widgets/pie_chart_widget.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -32,6 +33,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final tasksState = ref.watch(tasksProvider);
     final financeAsync = ref.watch(financeProvider);
     final currencyFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('DASHBOARD'),
@@ -41,15 +43,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Добавить проект'),
-                  backgroundColor: AppTheme.shadowGray,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+            icon: const Icon(Icons.refresh),
+            onPressed: () async {
+              await ref.read(projectsProvider.notifier).loadProjects();
+              await ref.read(tasksProvider.notifier).loadTasks();
+              await ref.read(financeProvider.notifier).loadFinance();
             },
           ),
         ],
@@ -70,32 +68,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             children: [
               // Header
               AppTheme.fadeInAnimation(
-                child: AppTheme.gothicTitle('DASHBOARD'),
+                child: AppTheme.gothicTitle('АНАЛИТИКА'),
               ),
               const SizedBox(height: 32),
               AppTheme.gothicDivider(),
               const SizedBox(height: 32),
               
-              // Overview Stats
-              _buildOverviewStats(projectsState, tasksState, financeAsync),
+              // Overview Stats - Quick Actions
+              _buildQuickStats(projectsState, tasksState, financeAsync),
               
               const SizedBox(height: 32),
               
-              // Projects by Status Chart
+              // Charts Row
               if (!projectsState.isLoading && projectsState.projects.isNotEmpty)
-                _buildProjectsChart(projectsState),
+                _buildChartsRow(projectsState, tasksState),
               
               const SizedBox(height: 32),
               
-              // Tasks by Status Chart  
-              if (!tasksState.isLoading && tasksState.tasks.isNotEmpty)
-                _buildTasksChart(tasksState),
-              
-              const SizedBox(height: 32),
-              
-              // Budget Overview
+              // Budget Overview with Circular Progress
               if (!projectsState.isLoading && projectsState.projects.isNotEmpty)
-                _buildBudgetOverview(projectsState),
+                _buildBudgetCircular(projectsState),
+              
+              const SizedBox(height: 32),
+              
+              // Activity Overview
+              _buildActivityOverview(projectsState, tasksState),
               
               const SizedBox(height: 32),
             ],
@@ -105,9 +102,147 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildOverviewStats(projectsState, tasksState, financeAsync) {
+  Widget _buildQuickStats(projectsState, tasksState, financeAsync) {
+    final activeProjects = projectsState.projects.where((p) => p.status == 'active').length;
+    final activeTasks = tasksState.tasks.where((t) => t.status == 'in_progress').length;
+    final completedToday = tasksState.tasks.where((t) => 
+      t.status == 'done' && 
+      t.updatedAt != null &&
+      DateTime.now().difference(t.updatedAt!).inHours < 24
+    ).length;
+
     return AppTheme.fadeInAnimation(
       child: Row(
+        children: [
+          Expanded(
+            child: _buildStatCard(
+              'АКТИВНЫХ\nПРОЕКТОВ',
+              '$activeProjects',
+              Icons.rocket_launch,
+              AppTheme.gothicBlue,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _buildStatCard(
+              'ЗАДАЧ\nВ РАБОТЕ',
+              '$activeTasks',
+              Icons.trending_up,
+              AppTheme.gothicGreen,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _buildStatCard(
+              'ЗАВЕРШЕНО\nСЕГОДНЯ',
+              '$completedToday',
+              Icons.check_circle_outline,
+              AppTheme.electricBlue,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return AppTheme.animatedGothicCard(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 32),
+            const SizedBox(height: 12),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w200,
+                color: color,
+                fontFamily: 'serif',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 9,
+                color: AppTheme.mistGray,
+                letterSpacing: 1.5,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChartsRow(projectsState, tasksState) {
+    // Calculate project statuses
+    final projectStatuses = <String, int>{
+      'Планирование': 0,
+      'Активные': 0,
+      'Завершённые': 0,
+      'На паузе': 0,
+    };
+    
+    for (var project in projectsState.projects) {
+      switch (project.status) {
+        case 'planning':
+          projectStatuses['Планирование'] = projectStatuses['Планирование']! + 1;
+          break;
+        case 'active':
+          projectStatuses['Активные'] = projectStatuses['Активные']! + 1;
+          break;
+        case 'completed':
+          projectStatuses['Завершённые'] = projectStatuses['Завершённые']! + 1;
+          break;
+        case 'on_hold':
+          projectStatuses['На паузе'] = projectStatuses['На паузе']! + 1;
+          break;
+      }
+    }
+
+    final projectColors = {
+      'Планирование': AppTheme.electricBlue,
+      'Активные': AppTheme.gothicGreen,
+      'Завершённые': AppTheme.shadowGray,
+      'На паузе': AppTheme.goldenrod,
+    };
+
+    // Calculate task statuses
+    final taskStatuses = <String, int>{
+      'К выполнению': 0,
+      'В работе': 0,
+      'Выполнено': 0,
+    };
+    
+    for (var task in tasksState.tasks) {
+      switch (task.status) {
+        case 'todo':
+          taskStatuses['К выполнению'] = taskStatuses['К выполнению']! + 1;
+          break;
+        case 'in_progress':
+          taskStatuses['В работе'] = taskStatuses['В работе']! + 1;
+          break;
+        case 'done':
+          taskStatuses['Выполнено'] = taskStatuses['Выполнено']! + 1;
+          break;
+      }
+    }
+
+    final taskColors = {
+      'К выполнению': AppTheme.electricBlue,
+      'В работе': AppTheme.goldenrod,
+      'Выполнено': AppTheme.gothicGreen,
+    };
+
+    return AppTheme.fadeInAnimation(
+      duration: const Duration(milliseconds: 900),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: AppTheme.animatedGothicCard(
@@ -116,22 +251,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 child: Column(
                   children: [
                     Text(
-                      '${projectsState.projects.length}',
+                      'ПРОЕКТЫ',
                       style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w200,
-                        color: AppTheme.tombstoneWhite,
-                        fontFamily: 'serif',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'ПРОЕКТОВ',
-                      style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         color: AppTheme.mistGray,
                         letterSpacing: 2.0,
+                        fontWeight: FontWeight.w600,
                       ),
+                    ),
+                    const SizedBox(height: 24),
+                    PieChartWidget(
+                      data: projectStatuses,
+                      colors: projectColors,
+                      size: 160,
                     ),
                   ],
                 ),
@@ -146,22 +278,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 child: Column(
                   children: [
                     Text(
-                      '${tasksState.tasks.length}',
+                      'ЗАДАЧИ',
                       style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w200,
-                        color: AppTheme.tombstoneWhite,
-                        fontFamily: 'serif',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'ЗАДАЧ',
-                      style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         color: AppTheme.mistGray,
                         letterSpacing: 2.0,
+                        fontWeight: FontWeight.w600,
                       ),
+                    ),
+                    const SizedBox(height: 24),
+                    PieChartWidget(
+                      data: taskStatuses,
+                      colors: taskColors,
+                      size: 160,
                     ),
                   ],
                 ),
@@ -173,48 +302,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildProjectsChart(projectsState) {
-    final statuses = {'planning': 0, 'active': 0, 'completed': 0, 'on_hold': 0};
+  Widget _buildBudgetCircular(projectsState) {
+    double totalBudget = 0;
+    double totalSpent = 0;
+    
     for (var project in projectsState.projects) {
-      statuses[project.status] = (statuses[project.status] ?? 0) + 1;
+      totalBudget += project.budget;
+      totalSpent += project.spent;
     }
 
-    return AppTheme.fadeInAnimation(
-      duration: const Duration(milliseconds: 900),
-      child: AppTheme.animatedGothicCard(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'ПРОЕКТЫ ПО СТАТУСАМ',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: AppTheme.mistGray,
-                  letterSpacing: 2.0,
-                ),
-              ),
-              const SizedBox(height: 24),
-              _buildStatusBar('Планирование', statuses['planning']!, Colors.blue),
-              const SizedBox(height: 12),
-              _buildStatusBar('Активные', statuses['active']!, Colors.green),
-              const SizedBox(height: 12),
-              _buildStatusBar('Завершённые', statuses['completed']!, Colors.grey),
-              const SizedBox(height: 12),
-              _buildStatusBar('На паузе', statuses['on_hold']!, Colors.orange),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTasksChart(tasksState) {
-    final statuses = {'todo': 0, 'in_progress': 0, 'done': 0};
-    for (var task in tasksState.tasks) {
-      statuses[task.status] = (statuses[task.status] ?? 0) + 1;
-    }
+    final currencyFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
+    final percentage = totalBudget > 0 ? (totalSpent / totalBudget) : 0.0;
 
     return AppTheme.fadeInAnimation(
       duration: const Duration(milliseconds: 1100),
@@ -225,19 +323,91 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'ЗАДАЧИ ПО СТАТУСАМ',
+                'ИСПОЛЬЗОВАНИЕ БЮДЖЕТА',
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 11,
                   color: AppTheme.mistGray,
                   letterSpacing: 2.0,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 24),
-              _buildStatusBar('К выполнению', statuses['todo']!, Colors.blue),
-              const SizedBox(height: 12),
-              _buildStatusBar('В работе', statuses['in_progress']!, Colors.orange),
-              const SizedBox(height: 12),
-              _buildStatusBar('Выполнено', statuses['done']!, Colors.green),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  // Circular Progress
+                  SizedBox(
+                    width: 150,
+                    height: 150,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 150,
+                          height: 150,
+                          child: CircularProgressIndicator(
+                            value: percentage,
+                            strokeWidth: 12,
+                            backgroundColor: AppTheme.dimGray.withOpacity(0.2),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              percentage > 0.8 
+                                ? AppTheme.bloodRed 
+                                : percentage > 0.5 
+                                  ? AppTheme.goldenrod 
+                                  : AppTheme.gothicGreen,
+                            ),
+                          ),
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '${(percentage * 100).toStringAsFixed(0)}%',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w200,
+                                color: AppTheme.tombstoneWhite,
+                                fontFamily: 'serif',
+                              ),
+                            ),
+                            Text(
+                              'ПОТРАЧЕНО',
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: AppTheme.mistGray,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Budget Details
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildBudgetRow(
+                        'Общий бюджет:',
+                        currencyFormat.format(totalBudget),
+                        AppTheme.tombstoneWhite,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildBudgetRow(
+                        'Потрачено:',
+                        currencyFormat.format(totalSpent),
+                        percentage > 0.8 ? AppTheme.bloodRed : AppTheme.goldenrod,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildBudgetRow(
+                        'Осталось:',
+                        currencyFormat.format(totalBudget - totalSpent),
+                        AppTheme.gothicGreen,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -245,16 +415,34 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildBudgetOverview(projectsState) {
-    double totalBudget = 0;
-    double totalSpent = 0;
-    
-    for (var project in projectsState.projects) {
-      totalBudget += project.budget;
-      totalSpent += project.spent;
-    }
+  Widget _buildBudgetRow(String label, String value, Color valueColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: AppTheme.mistGray,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w300,
+            color: valueColor,
+          ),
+        ),
+      ],
+    );
+  }
 
-    final currencyFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
+  Widget _buildActivityOverview(projectsState, tasksState) {
+    final recentProjects = projectsState.projects.take(3).toList();
+    final recentTasks = tasksState.tasks.where((t) => t.status != 'done').take(5).toList();
 
     return AppTheme.fadeInAnimation(
       duration: const Duration(milliseconds: 1300),
@@ -264,72 +452,100 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'БЮДЖЕТ',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: AppTheme.mistGray,
-                  letterSpacing: 2.0,
-                ),
-              ),
-              const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Всего',
-                        style: TextStyle(fontSize: 10, color: AppTheme.mistGray),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        currencyFormat.format(totalBudget),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w200,
-                          color: AppTheme.tombstoneWhite,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Потрачено',
-                        style: TextStyle(fontSize: 10, color: AppTheme.mistGray),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        currencyFormat.format(totalSpent),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w200,
-                          color: AppTheme.bloodRed,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Container(
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppTheme.dimGray.withOpacity(0.3),
-                ),
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: totalBudget > 0 ? (totalSpent / totalBudget).clamp(0.0, 1.0) : 0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppTheme.bloodRed,
+                  Text(
+                    'НЕДАВНЯЯ АКТИВНОСТЬ',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.mistGray,
+                      letterSpacing: 2.0,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
+                  Icon(Icons.timeline, color: AppTheme.electricBlue, size: 20),
+                ],
               ),
+              const SizedBox(height: 24),
+              
+              // Recent Projects
+              if (recentProjects.isNotEmpty) ...[
+                Text(
+                  'Текущие проекты:',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.ashGray,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...recentProjects.map((project) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(project.status),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          project.name,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.tombstoneWhite,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+                const SizedBox(height: 20),
+              ],
+              
+              // Recent Tasks
+              if (recentTasks.isNotEmpty) ...[
+                Text(
+                  'Ближайшие задачи:',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.ashGray,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...recentTasks.map((task) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Icon(
+                        task.status == 'in_progress' 
+                          ? Icons.play_circle_outline 
+                          : Icons.circle_outlined,
+                        color: _getStatusColor(task.status),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          task.title,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.ashGray,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+              ],
             ],
           ),
         ),
@@ -337,46 +553,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildStatusBar(String label, int count, Color color) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 100,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: AppTheme.ashGray,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Container(
-            height: 24,
-            decoration: BoxDecoration(
-              color: AppTheme.dimGray.withOpacity(0.2),
-            ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: count > 0 ? (count / 10).clamp(0.1, 1.0) : 0.1,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.7),
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          '$count',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
-    );
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'planning':
+      case 'todo':
+        return AppTheme.electricBlue;
+      case 'active':
+      case 'in_progress':
+        return AppTheme.goldenrod;
+      case 'completed':
+      case 'done':
+        return AppTheme.gothicGreen;
+      case 'on_hold':
+        return AppTheme.shadowGray;
+      default:
+        return AppTheme.mistGray;
+    }
   }
 }
