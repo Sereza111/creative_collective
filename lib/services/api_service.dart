@@ -9,6 +9,7 @@ import '../models/order.dart';
 import '../models/order_application.dart';
 import '../models/chat.dart';
 import '../models/message.dart';
+import '../models/review.dart';
 import 'secure_storage_service.dart';
 
 class ApiService {
@@ -814,6 +815,123 @@ class ApiService {
       return 0;
     } else {
       return 0;
+    }
+  }
+
+  // ==================== REVIEWS METHODS ====================
+
+  // Создать отзыв для заказа
+  static Future<Review> createReview(int orderId, int rating, String? comment) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/reviews/orders/$orderId/review'),
+      headers: headers,
+      body: jsonEncode({
+        'rating': rating,
+        'comment': comment,
+      }),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return Review.fromJson(data['data']);
+      }
+      throw Exception('Не удалось создать отзыв');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка создания отзыва');
+    }
+  }
+
+  // Получить отзывы пользователя
+  static Future<List<Review>> getUserReviews(int userId, {int limit = 20, int offset = 0}) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/reviews/users/$userId/reviews?limit=$limit&offset=$offset'),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        final reviewsList = data['data'] is List ? data['data'] : [data['data']];
+        return reviewsList.map<Review>((json) => Review.fromJson(json)).toList();
+      }
+      return [];
+    } else {
+      throw Exception('Ошибка загрузки отзывов');
+    }
+  }
+
+  // Получить статистику рейтинга пользователя
+  static Future<UserRating> getUserRating(int userId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/reviews/users/$userId/rating'),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return UserRating.fromJson(data['data']);
+      }
+      throw Exception('Не удалось получить рейтинг');
+    } else {
+      throw Exception('Ошибка загрузки рейтинга');
+    }
+  }
+
+  // Получить отзывы для заказа
+  static Future<List<Review>> getOrderReviews(int orderId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/reviews/orders/$orderId/reviews'),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        final reviewsList = data['data'] is List ? data['data'] : [data['data']];
+        return reviewsList.map<Review>((json) => Review.fromJson(json)).toList();
+      }
+      return [];
+    } else {
+      return [];
+    }
+  }
+
+  // Обновить отзыв
+  static Future<Review> updateReview(int reviewId, int rating, String? comment) async {
+    final headers = await _getHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/reviews/$reviewId'),
+      headers: headers,
+      body: jsonEncode({
+        'rating': rating,
+        'comment': comment,
+      }),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return Review.fromJson(data['data']);
+      }
+      throw Exception('Не удалось обновить отзыв');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка обновления отзыва');
+    }
+  }
+
+  // Удалить отзыв
+  static Future<void> deleteReview(int reviewId) async {
+    final headers = await _getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/reviews/$reviewId'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка удаления отзыва');
     }
   }
 }

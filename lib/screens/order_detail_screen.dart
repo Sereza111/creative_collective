@@ -4,9 +4,11 @@ import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
 import '../models/order.dart';
 import '../models/order_application.dart';
+import '../models/review.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import 'chat_screen.dart';
+import 'forms/add_review_screen.dart';
 
 class OrderDetailScreen extends ConsumerStatefulWidget {
   final Order order;
@@ -20,11 +22,35 @@ class OrderDetailScreen extends ConsumerStatefulWidget {
 class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   List<OrderApplication>? _applications;
   bool _isLoadingApplications = false;
+  List<Review>? _reviews;
+  bool _isLoadingReviews = false;
 
   @override
   void initState() {
     super.initState();
     _loadApplicationsIfNeeded();
+    _loadReviews();
+  }
+
+  Future<void> _loadReviews() async {
+    setState(() {
+      _isLoadingReviews = true;
+    });
+    try {
+      final reviews = await ApiService.getOrderReviews(widget.order.id);
+      if (mounted) {
+        setState(() {
+          _reviews = reviews;
+          _isLoadingReviews = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingReviews = false;
+        });
+      }
+    }
   }
 
   Future<void> _loadApplicationsIfNeeded() async {
@@ -207,6 +233,141 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                         child: _buildApplicationCard(app, currencyFormat),
                       )).toList(),
                   ],
+                ),
+              ),
+            ],
+            
+            // Кнопка для добавления отзыва (если заказ завершен)
+            if (widget.order.status == 'completed' && 
+                user != null &&
+                (user.id == widget.order.clientId || user.id == widget.order.freelancerId)) ...[
+              const SizedBox(height: 24),
+              _buildReviewButton(user.id),
+            ],
+            
+            // Отзывы
+            if (_reviews != null && _reviews!.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              AppTheme.fadeInAnimation(
+                duration: const Duration(milliseconds: 1000),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ОТЗЫВЫ',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.tombstoneWhite,
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ..._reviews!.map((review) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildReviewCard(review),
+                    )).toList(),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReviewButton(int userId) {
+    // Проверяем, оставил ли пользователь уже отзыв
+    final hasReviewed = _reviews?.any((r) => r.reviewerId == userId) ?? false;
+    
+    if (hasReviewed) {
+      return Container();
+    }
+
+    return AppTheme.gothicButton(
+      text: 'Оставить отзыв',
+      onPressed: () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AddReviewScreen(order: widget.order),
+          ),
+        );
+        
+        if (result == true) {
+          _loadReviews(); // Перезагружаем отзывы
+        }
+      },
+      isPrimary: false,
+      icon: Icons.rate_review,
+    );
+  }
+
+  Widget _buildReviewCard(Review review) {
+    return AppTheme.animatedGothicCard(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                // Аватар
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkerCharcoal,
+                    border: Border.all(color: AppTheme.dimGray),
+                  ),
+                  child: review.reviewerAvatar != null
+                      ? Image.network(review.reviewerAvatar!, fit: BoxFit.cover)
+                      : Icon(Icons.person, color: AppTheme.mistGray, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        review.reviewerName ?? review.reviewerEmail ?? 'Аноним',
+                        style: const TextStyle(
+                          color: AppTheme.tombstoneWhite,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: List.generate(5, (index) {
+                          return Icon(
+                            index < review.rating ? Icons.star : Icons.star_border,
+                            size: 16,
+                            color: Colors.amber,
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  DateFormat('dd.MM.yyyy').format(review.createdAt),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.ashGray,
+                  ),
+                ),
+              ],
+            ),
+            if (review.comment != null && review.comment!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                review.comment!,
+                style: const TextStyle(
+                  color: AppTheme.ghostWhite,
+                  fontSize: 13,
+                  height: 1.5,
                 ),
               ),
             ],

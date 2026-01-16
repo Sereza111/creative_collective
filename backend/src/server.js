@@ -17,6 +17,7 @@ const projectsRoutes = require('./routes/projects.routes');
 const financeRoutes = require('./routes/finance.routes');
 const teamsRoutes = require('./routes/teams.routes');
 const chatRoutes = require('./routes/chat.routes');
+const reviewsRoutes = require('./routes/reviews.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -87,6 +88,7 @@ app.use(`/api/${API_VERSION}/finance`, financeRoutes);
 app.use(`/api/${API_VERSION}/teams`, teamsRoutes);
 app.use(`/api/${API_VERSION}/orders`, require('./routes/orders.routes'));
 app.use(`/api/${API_VERSION}/chat`, chatRoutes);
+app.use(`/api/${API_VERSION}/reviews`, reviewsRoutes);
 
 // 404 обработчик
 app.use(notFound);

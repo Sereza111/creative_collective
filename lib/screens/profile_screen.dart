@@ -8,6 +8,7 @@ import '../providers/projects_provider.dart';
 import '../providers/tasks_provider.dart';
 import '../models/user.dart';
 import '../services/export_service.dart';
+import '../services/api_service.dart';
 import 'auth/login_screen.dart';
 import 'forms/edit_profile_screen.dart';
 
@@ -168,6 +169,9 @@ class ProfileScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
+                      
+                      // Рейтинг
+                      _RatingWidget(userId: user.id),
                       
                       if (user.fullName != null && user.email != user.fullName) ...[
                         const SizedBox(height: 8),
@@ -654,5 +658,119 @@ class ProfileScreen extends ConsumerWidget {
         );
       }
     }
+  }
+}
+
+// Виджет для отображения рейтинга пользователя
+class _RatingWidget extends ConsumerStatefulWidget {
+  final int userId;
+
+  const _RatingWidget({required this.userId});
+
+  @override
+  ConsumerState<_RatingWidget> createState() => _RatingWidgetState();
+}
+
+class _RatingWidgetState extends ConsumerState<_RatingWidget> {
+  bool _isLoading = true;
+  double? _averageRating;
+  int _reviewsCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRating();
+  }
+
+  Future<void> _loadRating() async {
+    try {
+      final rating = await ApiService.getUserRating(widget.userId);
+      if (mounted) {
+        setState(() {
+          _averageRating = rating.averageRating;
+          _reviewsCount = rating.reviewsCount;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.dimGray),
+          ),
+        ),
+      );
+    }
+
+    if (_reviewsCount == 0) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Text(
+          'Нет отзывов',
+          style: TextStyle(
+            fontSize: 12,
+            color: AppTheme.dimGray,
+            letterSpacing: 1,
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Звезды
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(5, (index) {
+              final starValue = index + 1;
+              final isFullStar = _averageRating != null && starValue <= _averageRating!;
+              final isHalfStar = _averageRating != null && 
+                  starValue > _averageRating! && 
+                  (starValue - 0.5) <= _averageRating!;
+              
+              return Icon(
+                isFullStar
+                    ? Icons.star
+                    : isHalfStar
+                        ? Icons.star_half
+                        : Icons.star_border,
+                size: 20,
+                color: Colors.amber,
+              );
+            }),
+          ),
+          const SizedBox(width: 8),
+          // Средний рейтинг и количество отзывов
+          Text(
+            _averageRating != null
+                ? '${_averageRating!.toStringAsFixed(1)} ($_reviewsCount)'
+                : '($_reviewsCount)',
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppTheme.ghostWhite,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
