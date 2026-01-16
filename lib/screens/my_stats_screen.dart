@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/pie_chart_widget.dart';
 import 'package:intl/intl.dart';
 
 class MyStatsScreen extends ConsumerStatefulWidget {
@@ -175,6 +176,19 @@ class _MyStatsScreenState extends ConsumerState<MyStatsScreen> {
   }
 
   Widget _buildFreelancerStats() {
+    // Prepare data for pie chart
+    final applicationsData = <String, int>{
+      'Принято': _stats!['accepted_applications'] as int,
+      'На рассмотрении': _stats!['pending_applications'] as int,
+      'Отклонено': _stats!['rejected_applications'] as int,
+    };
+    
+    final applicationsColors = {
+      'Принято': AppTheme.gothicGreen,
+      'На рассмотрении': AppTheme.goldenrod,
+      'Отклонено': AppTheme.bloodRed,
+    };
+
     return Column(
       children: [
         // Заработок
@@ -184,31 +198,34 @@ class _MyStatsScreenState extends ConsumerState<MyStatsScreen> {
           Icons.attach_money,
           AppTheme.goldenrod,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
 
-        // Отклики
-        Row(
-          children: [
-            Expanded(
-              child: _buildMiniStatCard(
-                'ОТКЛИКОВ',
-                '${_stats!['total_applications']}',
-                Icons.send,
-                AppTheme.electricBlue,
-              ),
+        // Круговая диаграмма откликов
+        AppTheme.animatedGothicCard(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                Text(
+                  'СТАТИСТИКА ОТКЛИКОВ',
+                  style: TextStyle(
+                    color: AppTheme.tombstoneWhite,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                PieChartWidget(
+                  data: applicationsData,
+                  colors: applicationsColors,
+                  size: 180,
+                ),
+              ],
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildMiniStatCard(
-                'ПРИНЯТО',
-                '${_stats!['accepted_applications']}',
-                Icons.check_circle,
-                Colors.green,
-              ),
-            ),
-          ],
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
 
         // Заказы
         Row(
@@ -218,7 +235,7 @@ class _MyStatsScreenState extends ConsumerState<MyStatsScreen> {
                 'В РАБОТЕ',
                 '${_stats!['active_orders']}',
                 Icons.work,
-                Colors.orange,
+                AppTheme.goldenrod,
               ),
             ),
             const SizedBox(width: 16),
@@ -227,7 +244,7 @@ class _MyStatsScreenState extends ConsumerState<MyStatsScreen> {
                 'ЗАВЕРШЕНО',
                 '${_stats!['completed_orders']}',
                 Icons.done_all,
-                Colors.green,
+                AppTheme.gothicGreen,
               ),
             ),
           ],
@@ -251,7 +268,7 @@ class _MyStatsScreenState extends ConsumerState<MyStatsScreen> {
                 'ПОРТФОЛИО',
                 '${_stats!['portfolio_items']} работ',
                 Icons.photo_library,
-                AppTheme.ashGray,
+                AppTheme.electricBlue,
               ),
             ),
           ],
@@ -261,6 +278,21 @@ class _MyStatsScreenState extends ConsumerState<MyStatsScreen> {
   }
 
   Widget _buildClientStats() {
+    // Prepare data for pie chart
+    final ordersData = <String, int>{
+      'Открытые': _stats!['open_orders'] as int,
+      'В работе': _stats!['in_progress_orders'] as int,
+      'Завершено': _stats!['completed_orders'] as int,
+      'Отменено': _stats!['cancelled_orders'] as int,
+    };
+    
+    final ordersColors = {
+      'Открытые': AppTheme.electricBlue,
+      'В работе': AppTheme.goldenrod,
+      'Завершено': AppTheme.gothicGreen,
+      'Отменено': AppTheme.shadowGray,
+    };
+
     return Column(
       children: [
         // Затраты
@@ -279,9 +311,36 @@ class _MyStatsScreenState extends ConsumerState<MyStatsScreen> {
           Icons.trending_up,
           AppTheme.electricBlue,
         ),
+        const SizedBox(height: 24),
+
+        // Круговая диаграмма заказов
+        AppTheme.animatedGothicCard(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                Text(
+                  'РАСПРЕДЕЛЕНИЕ ЗАКАЗОВ',
+                  style: TextStyle(
+                    color: AppTheme.tombstoneWhite,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                PieChartWidget(
+                  data: ordersData,
+                  colors: ordersColors,
+                  size: 180,
+                ),
+              ],
+            ),
+          ),
+        ),
         const SizedBox(height: 16),
 
-        // Заказы по статусу
+        // Мини карточки
         Row(
           children: [
             Expanded(
@@ -295,33 +354,10 @@ class _MyStatsScreenState extends ConsumerState<MyStatsScreen> {
             const SizedBox(width: 16),
             Expanded(
               child: _buildMiniStatCard(
-                'ОТКРЫТЫЕ',
-                '${_stats!['open_orders']}',
-                Icons.lock_open,
-                AppTheme.electricBlue,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        Row(
-          children: [
-            Expanded(
-              child: _buildMiniStatCard(
-                'В РАБОТЕ',
-                '${_stats!['in_progress_orders']}',
-                Icons.work,
-                Colors.orange,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildMiniStatCard(
-                'ЗАВЕРШЕНО',
-                '${_stats!['completed_orders']}',
-                Icons.done_all,
-                Colors.green,
+                'ОТЗЫВОВ',
+                '${_stats!['total_reviews_given']}',
+                Icons.rate_review,
+                AppTheme.goldenrod,
               ),
             ),
           ],
