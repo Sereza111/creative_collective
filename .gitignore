@@ -43,3 +43,30 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ===== BACKEND & SECURITY =====
+backend/.env
+backend/.env.*
+backend/node_modules/
+backend/dist/
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+*.keystore
+
+# ===== BUILD ARTIFACTS (большие файлы!) =====
+*.apk
+*.aab
+*.ipa
+*.zip
+*.exe
+*.dmg
+creative_collective-*
+
+# ===== LOGS =====
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
