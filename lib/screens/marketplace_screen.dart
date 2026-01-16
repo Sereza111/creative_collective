@@ -19,6 +19,8 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
   String? _selectedCategory;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  double? _minBudget;
+  double? _maxBudget;
 
   @override
   void dispose() {
@@ -34,15 +36,28 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
 
     final isClient = user?.userRole == 'client';
     
-    // Фильтруем заказы по поисковому запросу
-    final filteredOrders = _searchQuery.isEmpty
-        ? ordersState.orders
-        : ordersState.orders.where((order) {
-            final query = _searchQuery.toLowerCase();
-            return order.title.toLowerCase().contains(query) ||
-                (order.description?.toLowerCase().contains(query) ?? false) ||
-                (order.category?.toLowerCase().contains(query) ?? false);
-          }).toList();
+    // Фильтруем заказы по поисковому запросу и бюджету
+    var filteredOrders = ordersState.orders;
+    
+    // Поиск
+    if (_searchQuery.isNotEmpty) {
+      filteredOrders = filteredOrders.where((order) {
+        final query = _searchQuery.toLowerCase();
+        return order.title.toLowerCase().contains(query) ||
+            (order.description?.toLowerCase().contains(query) ?? false) ||
+            (order.category?.toLowerCase().contains(query) ?? false);
+      }).toList();
+    }
+    
+    // Фильтр по бюджету
+    if (_minBudget != null || _maxBudget != null) {
+      filteredOrders = filteredOrders.where((order) {
+        if (order.budget == null) return false;
+        if (_minBudget != null && order.budget! < _minBudget!) return false;
+        if (_maxBudget != null && order.budget! > _maxBudget!) return false;
+        return true;
+      }).toList();
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -296,6 +311,9 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
   }
 
   void _showFilterDialog() {
+    final minBudgetController = TextEditingController(text: _minBudget?.toString() ?? '');
+    final maxBudgetController = TextEditingController(text: _maxBudget?.toString() ?? '');
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -304,50 +322,114 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
           'ФИЛЬТРЫ',
           style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 14, letterSpacing: 2),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<String>(
-              value: _selectedStatus,
-              decoration: InputDecoration(
-                labelText: 'Статус',
-                labelStyle: TextStyle(color: AppTheme.mistGray),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Статус
+              DropdownButtonFormField<String>(
+                value: _selectedStatus,
+                decoration: InputDecoration(
+                  labelText: 'Статус',
+                  labelStyle: TextStyle(color: AppTheme.mistGray, fontSize: 12),
+                ),
+                dropdownColor: AppTheme.darkerCharcoal,
+                items: [
+                  DropdownMenuItem(value: null, child: Text('Все', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
+                  DropdownMenuItem(value: 'published', child: Text('Опубликован', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
+                  DropdownMenuItem(value: 'in_progress', child: Text('В работе', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
+                  DropdownMenuItem(value: 'completed', child: Text('Завершен', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedStatus = value;
+                  });
+                },
               ),
-              dropdownColor: AppTheme.darkerCharcoal,
-              items: [
-                DropdownMenuItem(value: null, child: Text('Все', style: TextStyle(color: AppTheme.tombstoneWhite))),
-                DropdownMenuItem(value: 'published', child: Text('Опубликован', style: TextStyle(color: AppTheme.tombstoneWhite))),
-                DropdownMenuItem(value: 'in_progress', child: Text('В работе', style: TextStyle(color: AppTheme.tombstoneWhite))),
-                DropdownMenuItem(value: 'completed', child: Text('Завершен', style: TextStyle(color: AppTheme.tombstoneWhite))),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedStatus = value;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _selectedCategory,
-              decoration: InputDecoration(
-                labelText: 'Категория',
-                labelStyle: TextStyle(color: AppTheme.mistGray),
+              const SizedBox(height: 16),
+              // Категория
+              DropdownButtonFormField<String>(
+                value: _selectedCategory,
+                decoration: InputDecoration(
+                  labelText: 'Категория',
+                  labelStyle: TextStyle(color: AppTheme.mistGray, fontSize: 12),
+                ),
+                dropdownColor: AppTheme.darkerCharcoal,
+                items: [
+                  DropdownMenuItem(value: null, child: Text('Все', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
+                  DropdownMenuItem(value: 'design', child: Text('Дизайн', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
+                  DropdownMenuItem(value: 'development', child: Text('Разработка', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
+                  DropdownMenuItem(value: 'content', child: Text('Контент', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
+                  DropdownMenuItem(value: 'marketing', child: Text('Маркетинг', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCategory = value;
+                  });
+                },
               ),
-              dropdownColor: AppTheme.darkerCharcoal,
-              items: [
-                DropdownMenuItem(value: null, child: Text('Все', style: TextStyle(color: AppTheme.tombstoneWhite))),
-                DropdownMenuItem(value: 'design', child: Text('Дизайн', style: TextStyle(color: AppTheme.tombstoneWhite))),
-                DropdownMenuItem(value: 'development', child: Text('Разработка', style: TextStyle(color: AppTheme.tombstoneWhite))),
-                DropdownMenuItem(value: 'content', child: Text('Контент', style: TextStyle(color: AppTheme.tombstoneWhite))),
-                DropdownMenuItem(value: 'marketing', child: Text('Маркетинг', style: TextStyle(color: AppTheme.tombstoneWhite))),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedCategory = value;
-                });
-              },
-            ),
-          ],
+              const SizedBox(height: 24),
+              // Бюджет
+              Text(
+                'БЮДЖЕТ (₽)',
+                style: TextStyle(
+                  color: AppTheme.mistGray,
+                  fontSize: 12,
+                  letterSpacing: 1.5,
+                  fontWeight: FontWeight.w300,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: minBudgetController,
+                      keyboardType: TextInputType.number,
+                      style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13),
+                      decoration: InputDecoration(
+                        labelText: 'От',
+                        labelStyle: TextStyle(color: AppTheme.mistGray, fontSize: 11),
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide(color: AppTheme.dimGray),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: AppTheme.dimGray),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: AppTheme.tombstoneWhite),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: maxBudgetController,
+                      keyboardType: TextInputType.number,
+                      style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13),
+                      decoration: InputDecoration(
+                        labelText: 'До',
+                        labelStyle: TextStyle(color: AppTheme.mistGray, fontSize: 11),
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide(color: AppTheme.dimGray),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: AppTheme.dimGray),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: AppTheme.tombstoneWhite),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -355,25 +437,34 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
               setState(() {
                 _selectedStatus = null;
                 _selectedCategory = null;
+                _minBudget = null;
+                _maxBudget = null;
               });
               ref.read(ordersProvider.notifier).loadOrders();
               Navigator.pop(context);
             },
-            child: Text('СБРОСИТЬ', style: TextStyle(color: AppTheme.mistGray)),
+            child: Text('СБРОСИТЬ', style: TextStyle(color: AppTheme.mistGray, fontSize: 11, letterSpacing: 1)),
           ),
           TextButton(
             onPressed: () {
+              setState(() {
+                _minBudget = double.tryParse(minBudgetController.text);
+                _maxBudget = double.tryParse(maxBudgetController.text);
+              });
               ref.read(ordersProvider.notifier).loadOrders(
                 status: _selectedStatus,
                 category: _selectedCategory,
               );
               Navigator.pop(context);
             },
-            child: Text('ПРИМЕНИТЬ', style: TextStyle(color: AppTheme.tombstoneWhite)),
+            child: Text('ПРИМЕНИТЬ', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 11, letterSpacing: 1)),
           ),
         ],
       ),
-    );
+    ).then((_) {
+      minBudgetController.dispose();
+      maxBudgetController.dispose();
+    });
   }
 }
 
