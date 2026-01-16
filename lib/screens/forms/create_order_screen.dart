@@ -53,7 +53,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
               backgroundColor: AppTheme.shadowGray,
             ),
           );
-          Navigator.pop(context);
+          Navigator.pop(context, true); // Возвращаем true для обновления списка
         }
       } catch (e) {
         if (mounted) {

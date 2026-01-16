@@ -17,6 +17,14 @@ class MarketplaceScreen extends ConsumerStatefulWidget {
 class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
   String? _selectedStatus;
   String? _selectedCategory;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,22 +33,21 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
     final currencyFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
 
     final isClient = user?.userRole == 'client';
+    
+    // Фильтруем заказы по поисковому запросу
+    final filteredOrders = _searchQuery.isEmpty
+        ? ordersState.orders
+        : ordersState.orders.where((order) {
+            final query = _searchQuery.toLowerCase();
+            return order.title.toLowerCase().contains(query) ||
+                (order.description?.toLowerCase().contains(query) ?? false) ||
+                (order.category?.toLowerCase().contains(query) ?? false);
+          }).toList();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('МАРКЕТПЛЕЙС'),
         actions: [
-          if (isClient)
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const CreateOrderScreen()),
-                );
-              },
-              tooltip: 'Создать заказ',
-            ),
           IconButton(
             icon: const Icon(Icons.filter_list),
             onPressed: _showFilterDialog,
@@ -48,85 +55,137 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
           ),
         ],
       ),
-      body: ordersState.isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.tombstoneWhite),
+      floatingActionButton: isClient
+          ? FloatingActionButton.extended(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const CreateOrderScreen()),
+                );
+                if (result == true) {
+                  ref.read(ordersProvider.notifier).loadOrders();
+                }
+              },
+              icon: const Icon(Icons.add, color: AppTheme.charcoal),
+              label: const Text(
+                'СОЗДАТЬ ЗАКАЗ',
+                style: TextStyle(
+                  color: AppTheme.charcoal,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 1.5,
+                ),
               ),
+              backgroundColor: AppTheme.tombstoneWhite,
+              elevation: 8,
             )
-          : ordersState.error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, size: 64, color: AppTheme.bloodRed),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Ошибка: ${ordersState.error}',
-                        style: TextStyle(color: AppTheme.tombstoneWhite),
-                      ),
-                      const SizedBox(height: 10),
-                      ElevatedButton(
-                        onPressed: () => ref.read(ordersProvider.notifier).loadOrders(),
-                        child: const Text('Повторить'),
-                      ),
-                    ],
-                  ),
-                )
-              : ordersState.orders.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.shopping_bag_outlined, size: 64, color: AppTheme.mistGray),
-                          const SizedBox(height: 20),
-                          Text(
-                            'Нет доступных заказов',
-                            style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 18),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            isClient ? 'Создайте свой первый заказ' : 'Пока нет заказов',
-                            style: TextStyle(color: AppTheme.mistGray),
-                          ),
-                        ],
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: () async {
-                        await ref.read(ordersProvider.notifier).loadOrders(
-                          status: _selectedStatus,
-                          category: _selectedCategory,
-                        );
-                      },
-                      backgroundColor: AppTheme.shadowGray,
-                      color: AppTheme.tombstoneWhite,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(20),
-                        itemCount: ordersState.orders.length,
-                        itemBuilder: (context, index) {
-                          final order = ordersState.orders[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: AppTheme.slideUpAnimation(
-                              offset: 15,
-                              duration: Duration(milliseconds: 800 + (index * 100)),
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => OrderDetailScreen(order: order),
-                                    ),
-                                  );
-                                },
-                                child: _buildOrderCard(order, currencyFormat),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+          : null,
+      body: Column(
+        children: [
+          // Поиск
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: AppTheme.gothicTextField(
+              controller: _searchController,
+              hintText: 'Поиск заказов...',
+              icon: Icons.search,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+            ),
+          ),
+          // Список заказов
+          Expanded(
+            child: ordersState.isLoading
+                ? Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.tombstoneWhite),
                     ),
+                  )
+                : ordersState.error != null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error_outline, size: 64, color: AppTheme.bloodRed),
+                            const SizedBox(height: 20),
+                            Text(
+                              'Ошибка: ${ordersState.error}',
+                              style: TextStyle(color: AppTheme.tombstoneWhite),
+                            ),
+                            const SizedBox(height: 10),
+                            ElevatedButton(
+                              onPressed: () => ref.read(ordersProvider.notifier).loadOrders(),
+                              child: const Text('Повторить'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : filteredOrders.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.shopping_bag_outlined, size: 64, color: AppTheme.mistGray),
+                                const SizedBox(height: 20),
+                                Text(
+                                  _searchQuery.isNotEmpty 
+                                      ? 'Ничего не найдено'
+                                      : 'Нет доступных заказов',
+                                  style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 18),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  _searchQuery.isNotEmpty
+                                      ? 'Попробуйте изменить запрос'
+                                      : (isClient ? 'Создайте свой первый заказ' : 'Пока нет заказов'),
+                                  style: TextStyle(color: AppTheme.mistGray),
+                                ),
+                              ],
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: () async {
+                              await ref.read(ordersProvider.notifier).loadOrders(
+                                status: _selectedStatus,
+                                category: _selectedCategory,
+                              );
+                            },
+                            backgroundColor: AppTheme.shadowGray,
+                            color: AppTheme.tombstoneWhite,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                              itemCount: filteredOrders.length,
+                              itemBuilder: (context, index) {
+                                final order = filteredOrders[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: AppTheme.slideUpAnimation(
+                                    offset: 15,
+                                    duration: Duration(milliseconds: 800 + (index * 100)),
+                                    child: GestureDetector(
+                                      onTap: () async {
+                                        final result = await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => OrderDetailScreen(order: order),
+                                          ),
+                                        );
+                                        if (result == true) {
+                                          ref.read(ordersProvider.notifier).loadOrders();
+                                        }
+                                      },
+                                      child: _buildOrderCard(order, currencyFormat),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+          ),
+        ],
+      ),
     );
   }
 

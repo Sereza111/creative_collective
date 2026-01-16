@@ -3,22 +3,61 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
 import '../models/order.dart';
+import '../models/order_application.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 
-class OrderDetailScreen extends ConsumerWidget {
+class OrderDetailScreen extends ConsumerStatefulWidget {
   final Order order;
 
   const OrderDetailScreen({Key? key, required this.order}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<OrderDetailScreen> createState() => _OrderDetailScreenState();
+}
+
+class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
+  List<OrderApplication>? _applications;
+  bool _isLoadingApplications = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadApplicationsIfNeeded();
+  }
+
+  Future<void> _loadApplicationsIfNeeded() async {
+    final user = ref.read(authProvider).user;
+    if (user?.id == widget.order.clientId) {
+      setState(() {
+        _isLoadingApplications = true;
+      });
+      try {
+        final applications = await ApiService.getApplicationsForOrder(widget.order.id);
+        if (mounted) {
+          setState(() {
+            _applications = applications;
+            _isLoadingApplications = false;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _isLoadingApplications = false;
+          });
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
     final currencyFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
     
     final isFreelancer = user?.userRole == 'freelancer';
     final isClient = user?.userRole == 'client';
-    final isOwner = user?.id == order.clientId;
+    final isOwner = user?.id == widget.order.clientId;
 
     return Scaffold(
       appBar: AppBar(
@@ -40,7 +79,7 @@ class OrderDetailScreen extends ConsumerWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              order.title.toUpperCase(),
+                              widget.order.title.toUpperCase(),
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w300,
@@ -50,13 +89,13 @@ class OrderDetailScreen extends ConsumerWidget {
                               ),
                             ),
                           ),
-                          AppTheme.gothicBadge(order.getStatusLabel()),
+                          AppTheme.gothicBadge(widget.order.getStatusLabel()),
                         ],
                       ),
                       const SizedBox(height: 24),
-                      if (order.description != null) ...[
+                      if (widget.order.description != null) ...[
                         Text(
-                          order.description!,
+                          widget.order.description!,
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppTheme.mistGray,
@@ -67,36 +106,37 @@ class OrderDetailScreen extends ConsumerWidget {
                       ],
                       Container(height: 1, color: AppTheme.dimGray.withOpacity(0.3)),
                       const SizedBox(height: 24),
-                      if (order.budget != null) ...[
-                        _buildInfoRow('БЮДЖЕТ', currencyFormat.format(order.budget), Icons.attach_money),
+                      if (widget.order.budget != null) ...[
+                        _buildInfoRow('БЮДЖЕТ', currencyFormat.format(widget.order.budget), Icons.attach_money),
                         const SizedBox(height: 16),
                       ],
-                      if (order.deadline != null) ...[
+                      if (widget.order.deadline != null) ...[
                         _buildInfoRow(
                           'ДЕДЛАЙН',
-                          DateFormat('dd.MM.yyyy').format(order.deadline!),
+                          DateFormat('dd.MM.yyyy').format(widget.order.deadline!),
                           Icons.calendar_today,
                         ),
                         const SizedBox(height: 16),
                       ],
-                      if (order.category != null) ...[
-                        _buildInfoRow('КАТЕГОРИЯ', order.category!.toUpperCase(), Icons.category_outlined),
+                      if (widget.order.category != null) ...[
+                        _buildInfoRow('КАТЕГОРИЯ', widget.order.category!.toUpperCase(), Icons.category_outlined),
                         const SizedBox(height: 16),
                       ],
-                      _buildInfoRow('ЗАКАЗЧИК', order.clientName ?? order.clientEmail ?? 'Не указан', Icons.person_outline),
-                      if (order.freelancerName != null) ...[
+                      _buildInfoRow('ЗАКАЗЧИК', widget.order.clientName ?? widget.order.clientEmail ?? 'Не указан', Icons.person_outline),
+                      if (widget.order.freelancerName != null) ...[
                         const SizedBox(height: 16),
-                        _buildInfoRow('ИСПОЛНИТЕЛЬ', order.freelancerName!, Icons.engineering_outlined),
+                        _buildInfoRow('ИСПОЛНИТЕЛЬ', widget.order.freelancerName!, Icons.engineering_outlined),
                       ],
                       const SizedBox(height: 16),
-                      _buildInfoRow('ОТКЛИКОВ', order.applicationsCount.toString(), Icons.people_outline),
+                      _buildInfoRow('ОТКЛИКОВ', widget.order.applicationsCount.toString(), Icons.people_outline),
                     ],
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 24),
-            if (isFreelancer && order.status == 'published' && order.freelancerId == null) ...[
+            // Кнопка откликнуться для фрилансеров
+            if (isFreelancer && widget.order.status == 'published' && widget.order.freelancerId == null) ...[
               AppTheme.fadeInAnimation(
                 duration: const Duration(milliseconds: 700),
                 child: AppTheme.gothicButton(
@@ -106,10 +146,181 @@ class OrderDetailScreen extends ConsumerWidget {
                 ),
               ),
             ],
+            // Список откликов для владельца заказа
+            if (isOwner && widget.order.applicationsCount > 0) ...[
+              AppTheme.fadeInAnimation(
+                duration: const Duration(milliseconds: 900),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ОТКЛИКИ НА ЗАКАЗ',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.tombstoneWhite,
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (_isLoadingApplications)
+                      Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.tombstoneWhite),
+                        ),
+                      )
+                    else if (_applications != null)
+                      ..._applications!.map((app) => Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _buildApplicationCard(app, currencyFormat),
+                      )).toList(),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildApplicationCard(OrderApplication application, NumberFormat currencyFormat) {
+    return AppTheme.animatedGothicCard(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        application.freelancerName?.toUpperCase() ?? application.freelancerEmail.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.tombstoneWhite,
+                          letterSpacing: 1.5,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        DateFormat('dd.MM.yyyy HH:mm').format(application.createdAt),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppTheme.mistGray,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                AppTheme.gothicBadge(application.getStatusLabel()),
+              ],
+            ),
+            if (application.message != null && application.message!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                application.message!,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.ashGray,
+                  height: 1.6,
+                ),
+              ),
+            ],
+            if (application.proposedBudget != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.attach_money, size: 14, color: AppTheme.mistGray),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Предложение: ${currencyFormat.format(application.proposedBudget)}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.ashGray,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (application.status == 'pending') ...[
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: AppTheme.gothicButton(
+                      text: 'Принять',
+                      onPressed: () => _acceptApplication(application.id),
+                      isPrimary: true,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AppTheme.gothicButton(
+                      text: 'Отклонить',
+                      onPressed: () => _rejectApplication(application.id),
+                      isPrimary: false,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _acceptApplication(int applicationId) async {
+    try {
+      await ApiService.acceptApplication(widget.order.id, applicationId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Отклик принят!'),
+            backgroundColor: AppTheme.shadowGray,
+          ),
+        );
+        Navigator.pop(context, true); // Возвращаемся и обновляем список
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: AppTheme.bloodRed,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _rejectApplication(int applicationId) async {
+    try {
+      await ApiService.rejectApplication(widget.order.id, applicationId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Отклик отклонён'),
+            backgroundColor: AppTheme.shadowGray,
+          ),
+        );
+        _loadApplicationsIfNeeded(); // Перезагружаем список откликов
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: AppTheme.bloodRed,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildInfoRow(String label, String value, IconData icon) {
@@ -196,7 +407,7 @@ class OrderDetailScreen extends ConsumerWidget {
 
     if (result == true && context.mounted) {
       try {
-        await ApiService.applyToOrder(order.id, {
+        await ApiService.applyToOrder(widget.order.id, {
           'message': messageController.text.trim(),
           'proposed_budget': budgetController.text.isNotEmpty ? double.parse(budgetController.text) : null,
         });
@@ -208,7 +419,7 @@ class OrderDetailScreen extends ConsumerWidget {
               backgroundColor: AppTheme.shadowGray,
             ),
           );
-          Navigator.pop(context);
+          Navigator.pop(context, true); // Возвращаемся и обновляем список
         }
       } catch (e) {
         if (context.mounted) {

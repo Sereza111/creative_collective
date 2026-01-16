@@ -338,12 +338,14 @@ class AppTheme {
     int maxLines = 1,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
+    void Function(String)? onChanged,
   }) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
       validator: validator,
+      onChanged: onChanged,
       style: const TextStyle(
         color: tombstoneWhite,
         fontSize: 14,
