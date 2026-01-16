@@ -142,62 +142,60 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 )
               else ...[
-                // Overview Cards
+                // Circular Stats Cards
                 AppTheme.fadeInAnimation(
                   child: Row(
                     children: [
                       Expanded(
-                        child: _buildStatCard(
-                          'АКТИВНЫЕ ПРОЕКТЫ',
-                          activeProjects.length.toString(),
-                          Icons.folder_open,
-                          AppTheme.tombstoneWhite,
+                        child: _buildCircularStatCard(
+                          'АКТИВНЫЕ\nПРОЕКТЫ',
+                          activeProjects.length,
+                          projectsState.projects.length,
+                          Icons.rocket_launch,
+                          AppTheme.gothicBlue,
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 20),
                       Expanded(
-                        child: _buildStatCard(
-                          'АКТИВНЫЕ ЗАДАЧИ',
-                          activeTasks.toString(),
-                          Icons.assignment,
-                          AppTheme.tombstoneWhite,
+                        child: _buildCircularStatCard(
+                          'АКТИВНЫЕ\nЗАДАЧИ',
+                          activeTasks,
+                          (tasksState.tasks ?? []).length,
+                          Icons.trending_up,
+                          AppTheme.gothicGreen,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 AppTheme.fadeInAnimation(
+                  duration: const Duration(milliseconds: 600),
                   child: Row(
                     children: [
                       Expanded(
-                        child: _buildStatCard(
-                          'ВСЕГО ПРОЕКТОВ',
-                          projectsState.projects.length.toString(),
-                          Icons.folder,
-                          AppTheme.mistGray,
+                        child: _buildCircularStatCard(
+                          'ВСЕГО\nПРОЕКТОВ',
+                          projectsState.projects.length,
+                          projectsState.projects.length,
+                          Icons.folder_special,
+                          AppTheme.electricBlue,
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 20),
                       Expanded(
-                        child: _buildStatCard(
-                          'ВСЕГО ЗАДАЧ',
-                          (tasksState.tasks ?? []).length.toString(),
+                        child: _buildCircularStatCard(
+                          'ВСЕГО\nЗАДАЧ',
+                          (tasksState.tasks ?? []).length,
+                          (tasksState.tasks ?? []).length,
                           Icons.assignment_turned_in,
-                          AppTheme.mistGray,
+                          AppTheme.goldenrod,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 32),
-                // Quick Actions Grid
-                if (user != null) ...[
-                  AppTheme.gothicTitle('БЫСТРЫЕ ДЕЙСТВИЯ'),
-                  const SizedBox(height: 24),
-                  _buildQuickActionsGrid(context, user),
-                  const SizedBox(height: 48),
-                ],
+                const SizedBox(height: 48),
                 // Recent Activity Section
                 AppTheme.gothicTitle('НЕДАВНИЕ ПРОЕКТЫ'),
                 const SizedBox(height: 24),
