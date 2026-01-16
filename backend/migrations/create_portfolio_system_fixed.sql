@@ -22,10 +22,15 @@ CREATE TABLE IF NOT EXISTS portfolio (
   INDEX idx_display_order (display_order)
 );
 
--- Добавляем поля для навыков и категорий в профиль пользователя
--- Выполняй по одной команде! Если колонка существует - получишь ошибку, это нормально
+-- Добавляем поля в users (БЕЗ IF NOT EXISTS - выполняй по одному!)
+-- Если колонка уже существует, получишь ошибку - это нормально, просто пропусти её
+
+-- Попробуй выполнить каждую команду отдельно:
 ALTER TABLE users ADD COLUMN skills TEXT COMMENT 'Навыки пользователя (JSON массив)';
+
 ALTER TABLE users ADD COLUMN categories TEXT COMMENT 'Категории работы (JSON массив)';
+
 ALTER TABLE users ADD COLUMN bio TEXT COMMENT 'О себе';
+
 ALTER TABLE users ADD COLUMN portfolio_url VARCHAR(500) COMMENT 'Ссылка на внешнее портфолио';
 
