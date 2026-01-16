@@ -1203,4 +1203,47 @@ class ApiService {
     }
     return false;
   }
+
+  // ==================== ALIASES FOR COMPATIBILITY ====================
+
+  // Alias for getUserPortfolio
+  static Future<List<PortfolioItem>> getPortfolioItems(int userId) async {
+    return getUserPortfolio(userId);
+  }
+
+  // Get reviews for user (for compatibility with new screens)
+  static Future<List<dynamic>> getReviewsForUser(int userId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/reviews/user/$userId'),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data'] as List;
+      }
+      return [];
+    } else {
+      throw Exception('Ошибка загрузки отзывов');
+    }
+  }
+
+  // Get my applications (for compatibility)
+  static Future<List<dynamic>> getMyApplications() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/orders/my-applications'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data'] as List;
+      }
+      return [];
+    } else {
+      throw Exception('Ошибка загрузки откликов');
+    }
+  }
 }
