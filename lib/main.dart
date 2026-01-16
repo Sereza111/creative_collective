@@ -5,6 +5,7 @@ import 'screens/home_screen.dart';
 import 'screens/tasks_screen.dart';
 import 'screens/finance_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/admin_panel_screen.dart';
 import 'screens/projects_screen.dart';
 import 'screens/marketplace_screen.dart';
 import 'screens/my_orders_screen.dart';
@@ -44,6 +45,7 @@ class MyApp extends ConsumerWidget {
       routes: {
         '/my_orders': (context) => const MyOrdersScreen(),
         '/my_applications': (context) => const MyApplicationsScreen(),
+        '/admin_panel': (context) => const AdminPanelScreen(),
       },
     );
   }

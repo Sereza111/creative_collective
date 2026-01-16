@@ -1046,4 +1046,85 @@ class ApiService {
       throw Exception(error['message'] ?? 'Ошибка удаления работы');
     }
   }
+
+  // === ADMIN METHODS ===
+
+  // Получить всех пользователей (только админ)
+  static Future<Map<String, dynamic>> getAllUsers({
+    int page = 1,
+    int limit = 50,
+    String? search,
+    String? role,
+  }) async {
+    final headers = await _getHeaders();
+    final queryParams = {
+      'page': page.toString(),
+      'limit': limit.toString(),
+      if (search != null && search.isNotEmpty) 'search': search,
+      if (role != null && role.isNotEmpty) 'role': role,
+    };
+    
+    final uri = Uri.parse('$baseUrl/admin/users').replace(queryParameters: queryParams);
+    final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data'];
+      }
+      throw Exception(data['message'] ?? 'Ошибка получения пользователей');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка получения пользователей');
+    }
+  }
+
+  // Получить статистику платформы (только админ)
+  static Future<Map<String, dynamic>> getPlatformStats() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/admin/stats'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data'];
+      }
+      throw Exception(data['message'] ?? 'Ошибка получения статистики');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка получения статистики');
+    }
+  }
+
+  // Верифицировать пользователя (только админ)
+  static Future<void> verifyUser(int userId, String? note) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/admin/users/$userId/verify'),
+      headers: headers,
+      body: jsonEncode({'verification_note': note}),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка верификации пользователя');
+    }
+  }
+
+  // Отменить верификацию пользователя (только админ)
+  static Future<void> unverifyUser(int userId) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/admin/users/$userId/unverify'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка отмены верификации');
+    }
+  }
 }
