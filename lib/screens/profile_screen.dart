@@ -212,6 +212,36 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
                       
+                      // Кнопка админ-панели (только для админов)
+                      if (user.userRole == 'admin') ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/admin_panel');
+                            },
+                            icon: const Icon(Icons.admin_panel_settings, size: 18),
+                            label: const Text(
+                              'АДМИН-ПАНЕЛЬ',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.shade700,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.zero,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                      
                       // Рейтинг
                       _RatingWidget(userId: user.id),
                       
