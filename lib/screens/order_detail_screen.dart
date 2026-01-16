@@ -6,6 +6,7 @@ import '../models/order.dart';
 import '../models/order_application.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import 'chat_screen.dart';
 
 class OrderDetailScreen extends ConsumerStatefulWidget {
   final Order order;
@@ -62,6 +63,37 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('ЗАКАЗ'),
+        actions: [
+          // Кнопка чата (если фрилансер назначен)
+          if (widget.order.freelancerId != null && 
+              (user?.id == widget.order.clientId || user?.id == widget.order.freelancerId))
+            IconButton(
+              icon: const Icon(Icons.chat_bubble_outline),
+              onPressed: () async {
+                try {
+                  final chat = await ApiService.getOrCreateChatForOrder(widget.order.id);
+                  if (context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatScreen(chat: chat),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Ошибка: ${e.toString().replaceAll('Exception: ', '')}'),
+                        backgroundColor: AppTheme.bloodRed,
+                      ),
+                    );
+                  }
+                }
+              },
+              tooltip: 'Чат с исполнителем',
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

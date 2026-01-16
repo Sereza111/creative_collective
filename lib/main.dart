@@ -8,9 +8,11 @@ import 'screens/projects_screen.dart';
 import 'screens/marketplace_screen.dart';
 import 'screens/my_orders_screen.dart';
 import 'screens/my_applications_screen.dart';
+import 'screens/chats_list_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
+import 'providers/chat_provider.dart';
 
 void main() {
   runApp(
@@ -99,6 +101,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     const TasksScreen(),
     const ProjectsScreen(),
     const MarketplaceScreen(),
+    const ChatsListScreen(),
     const FinanceScreen(),
     const ProfileScreen(),
   ];
@@ -108,6 +111,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     NavigationItem(icon: Icons.checklist_outlined, activeIcon: Icons.checklist, label: 'Задачи'),
     NavigationItem(icon: Icons.folder_outlined, activeIcon: Icons.folder, label: 'Проекты'),
     NavigationItem(icon: Icons.shopping_bag_outlined, activeIcon: Icons.shopping_bag, label: 'Маркет'),
+    NavigationItem(icon: Icons.chat_bubble_outline, activeIcon: Icons.chat_bubble, label: 'Чаты'),
     NavigationItem(icon: Icons.account_balance_wallet_outlined, activeIcon: Icons.account_balance_wallet, label: 'Финансы'),
     NavigationItem(icon: Icons.person_outline, activeIcon: Icons.person, label: 'Профиль'),
   ];

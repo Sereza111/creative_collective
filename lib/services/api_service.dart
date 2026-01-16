@@ -7,6 +7,8 @@ import '../models/user.dart';
 import '../models/team.dart';
 import '../models/order.dart';
 import '../models/order_application.dart';
+import '../models/chat.dart';
+import '../models/message.dart';
 import 'secure_storage_service.dart';
 
 class ApiService {
@@ -710,6 +712,108 @@ class ApiService {
       return [];
     } else {
       throw Exception('Ошибка загрузки откликов');
+    }
+  }
+
+  // ==================== CHAT API ====================
+
+  // Получить все чаты пользователя
+  static Future<List<Chat>> getUserChats() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/chat'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        final chatsList = data['data'] is List ? data['data'] : [data['data']];
+        return chatsList.map<Chat>((json) => Chat.fromJson(json)).toList();
+      }
+      return [];
+    } else {
+      throw Exception('Ошибка загрузки чатов');
+    }
+  }
+
+  // Получить или создать чат для заказа
+  static Future<Chat> getOrCreateChatForOrder(int orderId) async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/chat/order/$orderId'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return Chat.fromJson(data['data']);
+      }
+      throw Exception('Не удалось получить чат');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка получения чата');
+    }
+  }
+
+  // Получить сообщения чата
+  static Future<List<Message>> getChatMessages(int chatId, {int limit = 50, int offset = 0}) async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/chat/$chatId/messages?limit=$limit&offset=$offset'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        final messagesList = data['data'] is List ? data['data'] : [data['data']];
+        return messagesList.map<Message>((json) => Message.fromJson(json)).toList();
+      }
+      return [];
+    } else {
+      throw Exception('Ошибка загрузки сообщений');
+    }
+  }
+
+  // Отправить сообщение
+  static Future<Message> sendMessage(int chatId, String message) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/chat/$chatId/messages'),
+      headers: headers,
+      body: jsonEncode({'message': message}),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return Message.fromJson(data['data']);
+      }
+      throw Exception('Не удалось отправить сообщение');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка отправки сообщения');
+    }
+  }
+
+  // Получить количество непрочитанных сообщений
+  static Future<int> getUnreadMessagesCount() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/chat/unread'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data']['unread_count'] ?? 0;
+      }
+      return 0;
+    } else {
+      return 0;
     }
   }
 }
