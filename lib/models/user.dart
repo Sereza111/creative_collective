@@ -6,6 +6,7 @@ class User {
   final String role; // team role: admin, manager, member
   final String userRole; // marketplace role: client, freelancer, admin
   final bool isActive;
+  final bool isVerified; // Верифицирован ли пользователь
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final DateTime? lastLogin;
@@ -18,6 +19,7 @@ class User {
     required this.role,
     this.userRole = 'freelancer',
     this.isActive = true,
+    this.isVerified = false,
     this.createdAt,
     this.updatedAt,
     this.lastLogin,
@@ -32,6 +34,7 @@ class User {
       role: json['role'] ?? 'member',
       userRole: json['user_role'] ?? 'freelancer',
       isActive: json['is_active'] ?? true,
+      isVerified: json['is_verified'] == 1 || json['is_verified'] == true,
       createdAt: json['created_at'] != null 
           ? DateTime.tryParse(json['created_at']) 
           : null,
@@ -53,6 +56,7 @@ class User {
       'role': role,
       'user_role': userRole,
       'is_active': isActive,
+      'is_verified': isVerified,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'last_login': lastLogin?.toIso8601String(),
@@ -67,6 +71,7 @@ class User {
     String? role,
     String? userRole,
     bool? isActive,
+    bool? isVerified,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? lastLogin,
@@ -79,6 +84,7 @@ class User {
       role: role ?? this.role,
       userRole: userRole ?? this.userRole,
       isActive: isActive ?? this.isActive,
+      isVerified: isVerified ?? this.isVerified,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       lastLogin: lastLogin ?? this.lastLogin,

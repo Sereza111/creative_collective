@@ -139,17 +139,43 @@ class ProfileScreen extends ConsumerWidget {
                       
                       const SizedBox(height: 24),
                       
-                      // Имя пользователя
-                      Text(
-                        (user.fullName ?? user.email.split('@')[0]).toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w300,
-                          color: AppTheme.ghostWhite,
-                          letterSpacing: 2.0,
-                          fontFamily: 'serif',
-                        ),
-                        textAlign: TextAlign.center,
+                      // Имя пользователя с бейджем верификации
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              (user.fullName ?? user.email.split('@')[0]).toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w300,
+                                color: AppTheme.ghostWhite,
+                                letterSpacing: 2.0,
+                                fontFamily: 'serif',
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          if (user.isVerified) ...[
+                            const SizedBox(width: 8),
+                            Tooltip(
+                              message: 'Верифицированный пользователь',
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.2),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.blue, width: 1.5),
+                                ),
+                                child: const Icon(
+                                  Icons.verified,
+                                  size: 18,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       
                       const SizedBox(height: 12),
