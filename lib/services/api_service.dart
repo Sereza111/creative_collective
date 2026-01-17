@@ -1365,4 +1365,94 @@ class ApiService {
       throw Exception(error['message'] ?? 'Ошибка обновления настроек');
     }
   }
+
+  // === FINANCE METHODS ===
+
+  // Получить баланс пользователя
+  static Future<Map<String, dynamic>> getUserBalance() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/finance/balance'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data'];
+      }
+      throw Exception(data['message'] ?? 'Ошибка получения баланса');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка получения баланса');
+    }
+  }
+
+  // Получить транзакции пользователя
+  static Future<Map<String, dynamic>> getUserTransactions({int limit = 50, int offset = 0, String? type, String? status}) async {
+    final headers = await _getHeaders();
+    final queryParams = <String, String>{
+      'limit': limit.toString(),
+      'offset': offset.toString(),
+    };
+    
+    if (type != null) queryParams['type'] = type;
+    if (status != null) queryParams['status'] = status;
+    
+    final uri = Uri.parse('$baseUrl/finance/transactions').replace(queryParameters: queryParams);
+    final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data'];
+      }
+      throw Exception(data['message'] ?? 'Ошибка получения транзакций');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка получения транзакций');
+    }
+  }
+
+  // Создать запрос на вывод средств
+  static Future<void> createWithdrawalRequest({
+    required double amount,
+    required String paymentMethod,
+    required Map<String, dynamic> paymentDetails,
+  }) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/finance/withdrawal'),
+      headers: headers,
+      body: jsonEncode({
+        'amount': amount,
+        'payment_method': paymentMethod,
+        'payment_details': paymentDetails,
+      }),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка создания запроса на вывод');
+    }
+  }
+
+  // Получить запросы на вывод средств
+  static Future<List<dynamic>> getWithdrawalRequests() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/finance/withdrawal'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data'] as List;
+      }
+      return [];
+    } else {
+      throw Exception('Ошибка получения запросов на вывод');
+    }
+  }
 }
