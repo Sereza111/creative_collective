@@ -107,9 +107,29 @@ const optionalAuth = async (req, res, next) => {
   }
 };
 
+// Middleware только для админов
+const adminOnly = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Необходима аутентификация'
+    });
+  }
+  
+  if (req.user.user_role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Доступ только для администраторов'
+    });
+  }
+  
+  next();
+};
+
 module.exports = {
   authenticate,
   authorize,
-  optionalAuth
+  optionalAuth,
+  adminOnly
 };
 
