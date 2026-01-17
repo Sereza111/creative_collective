@@ -65,6 +65,11 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
     }
   }
 
+  // Алиас для совместимости
+  Future<void> refresh() async {
+    await refreshUnreadCount();
+  }
+
   Future<void> markAsRead(int notificationId) async {
     try {
       await ApiService.markNotificationAsRead(notificationId);

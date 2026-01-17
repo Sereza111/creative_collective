@@ -258,7 +258,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () => ref.read(notificationsProvider.notifier).loadNotifications(),
-            style: AppTheme.gothicButtonStyle,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.shadowGray,
+              foregroundColor: AppTheme.tombstoneWhite,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            ),
             child: const Text('ПОВТОРИТЬ'),
           ),
         ],
