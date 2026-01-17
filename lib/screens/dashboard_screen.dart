@@ -47,7 +47,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             onPressed: () async {
               await ref.read(projectsProvider.notifier).loadProjects();
               await ref.read(tasksProvider.notifier).loadTasks();
-              await ref.read(financeProvider.notifier).loadFinance();
+              await ref.read(balanceProvider.notifier).loadBalance();
             },
           ),
         ],
@@ -56,7 +56,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         onRefresh: () async {
           await ref.read(projectsProvider.notifier).loadProjects();
           await ref.read(tasksProvider.notifier).loadTasks();
-          await ref.read(financeProvider.notifier).loadFinance();
+          await ref.read(balanceProvider.notifier).loadBalance();
         },
         backgroundColor: AppTheme.shadowGray,
         color: AppTheme.tombstoneWhite,

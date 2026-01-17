@@ -80,7 +80,7 @@ class ExportService {
         transaction.type,
         transaction.amount,
         transaction.description ?? '',
-        transaction.category ?? '',
+        transaction.status,
         transaction.createdAt.toString().split(' ')[0],
       ]);
     }
@@ -96,7 +96,7 @@ class ExportService {
   static Future<File> exportAllDataToCSV({
     required List<Project> projects,
     required List<Task> tasks,
-    required List<Transaction> transactions,
+    required List<transaction_model.TransactionModel> transactions,
   }) async {
     final directory = await getApplicationDocumentsDirectory();
     final path = '${directory.path}/all_data_export_${DateTime.now().millisecondsSinceEpoch}.csv';
