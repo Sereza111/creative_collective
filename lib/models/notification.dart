@@ -1,66 +1,71 @@
-class AppNotification {
+class NotificationModel {
   final int id;
+  final int userId;
+  final String type;
   final String title;
   final String message;
-  final String type; // 'info', 'warning', 'error', 'success'
-  final DateTime createdAt;
+  final int? relatedId;
+  final String? relatedType;
   final bool isRead;
-  final Map<String, dynamic>? data;
+  final DateTime createdAt;
+  final DateTime? readAt;
+  final String? relatedTitle;
 
-  AppNotification({
+  NotificationModel({
     required this.id,
+    required this.userId,
+    required this.type,
     required this.title,
     required this.message,
-    required this.type,
+    this.relatedId,
+    this.relatedType,
+    required this.isRead,
     required this.createdAt,
-    this.isRead = false,
-    this.data,
+    this.readAt,
+    this.relatedTitle,
   });
 
-  factory AppNotification.fromJson(Map<String, dynamic> json) {
-    return AppNotification(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
-      title: json['title'] ?? '',
-      message: json['message'] ?? '',
-      type: json['type'] ?? 'info',
-      createdAt: json['created_at'] != null 
-          ? DateTime.parse(json['created_at']) 
-          : DateTime.now(),
-      isRead: json['is_read'] ?? false,
-      data: json['data'],
+  factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    return NotificationModel(
+      id: json['id'],
+      userId: json['user_id'],
+      type: json['type'],
+      title: json['title'],
+      message: json['message'],
+      relatedId: json['related_id'],
+      relatedType: json['related_type'],
+      isRead: json['is_read'] == 1 || json['is_read'] == true,
+      createdAt: DateTime.parse(json['created_at']),
+      readAt: json['read_at'] != null ? DateTime.parse(json['read_at']) : null,
+      relatedTitle: json['related_title'],
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'message': message,
-      'type': type,
-      'created_at': createdAt.toIso8601String(),
-      'is_read': isRead,
-      'data': data,
-    };
-  }
-
-  AppNotification copyWith({
+  NotificationModel copyWith({
     int? id,
+    int? userId,
+    String? type,
     String? title,
     String? message,
-    String? type,
-    DateTime? createdAt,
+    int? relatedId,
+    String? relatedType,
     bool? isRead,
-    Map<String, dynamic>? data,
+    DateTime? createdAt,
+    DateTime? readAt,
+    String? relatedTitle,
   }) {
-    return AppNotification(
+    return NotificationModel(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
+      type: type ?? this.type,
       title: title ?? this.title,
       message: message ?? this.message,
-      type: type ?? this.type,
-      createdAt: createdAt ?? this.createdAt,
+      relatedId: relatedId ?? this.relatedId,
+      relatedType: relatedType ?? this.relatedType,
       isRead: isRead ?? this.isRead,
-      data: data ?? this.data,
+      createdAt: createdAt ?? this.createdAt,
+      readAt: readAt ?? this.readAt,
+      relatedTitle: relatedTitle ?? this.relatedTitle,
     );
   }
 }
-

@@ -1246,4 +1246,123 @@ class ApiService {
       throw Exception('Ошибка загрузки откликов');
     }
   }
+
+  // === NOTIFICATIONS METHODS ===
+
+  // Получить уведомления пользователя
+  static Future<Map<String, dynamic>> getNotifications({int limit = 50, int offset = 0, bool unreadOnly = false}) async {
+    final headers = await _getHeaders();
+    final uri = Uri.parse('$baseUrl/notifications').replace(queryParameters: {
+      'limit': limit.toString(),
+      'offset': offset.toString(),
+      'unread_only': unreadOnly.toString(),
+    });
+    final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data'];
+      }
+      throw Exception(data['message'] ?? 'Ошибка получения уведомлений');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка получения уведомлений');
+    }
+  }
+
+  // Получить количество непрочитанных уведомлений
+  static Future<int> getUnreadNotificationsCount() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/notifications/unread-count'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data']['unread_count'] ?? 0;
+      }
+      return 0;
+    }
+    return 0;
+  }
+
+  // Отметить уведомление как прочитанное
+  static Future<void> markNotificationAsRead(int notificationId) async {
+    final headers = await _getHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/notifications/$notificationId/read'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка обновления уведомления');
+    }
+  }
+
+  // Отметить все уведомления как прочитанные
+  static Future<void> markAllNotificationsAsRead() async {
+    final headers = await _getHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/notifications/read-all'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка обновления уведомлений');
+    }
+  }
+
+  // Удалить уведомление
+  static Future<void> deleteNotification(int notificationId) async {
+    final headers = await _getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/notifications/$notificationId'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка удаления уведомления');
+    }
+  }
+
+  // Получить настройки уведомлений
+  static Future<Map<String, dynamic>> getNotificationSettings() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/notifications/settings'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data'];
+      }
+      throw Exception(data['message'] ?? 'Ошибка получения настроек');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка получения настроек');
+    }
+  }
+
+  // Обновить настройки уведомлений
+  static Future<void> updateNotificationSettings(Map<String, dynamic> settings) async {
+    final headers = await _getHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/notifications/settings'),
+      headers: headers,
+      body: jsonEncode(settings),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка обновления настроек');
+    }
+  }
 }
