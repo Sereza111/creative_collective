@@ -21,6 +21,7 @@ const reviewsRoutes = require('./routes/reviews.routes');
 const portfolioRoutes = require('./routes/portfolio.routes');
 const adminRoutes = require('./routes/admin.routes');
 const favoritesRoutes = require('./routes/favorites.routes');
+const notificationsRoutes = require('./routes/notifications.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -95,6 +96,7 @@ app.use(`/api/${API_VERSION}/reviews`, reviewsRoutes);
 app.use(`/api/${API_VERSION}/portfolio`, portfolioRoutes);
 app.use(`/api/${API_VERSION}/admin`, adminRoutes);
 app.use(`/api/${API_VERSION}/favorites`, favoritesRoutes);
+app.use(`/api/${API_VERSION}/notifications`, notificationsRoutes);
 
 // 404 обработчик
 app.use(notFound);
