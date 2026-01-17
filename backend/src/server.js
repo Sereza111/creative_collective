@@ -89,7 +89,7 @@ app.get('/health', async (req, res) => {
 app.use(`/api/${API_VERSION}/auth`, authRoutes);
 app.use(`/api/${API_VERSION}/tasks`, tasksRoutes);
 app.use(`/api/${API_VERSION}/projects`, projectsRoutes);
-app.use(`/api/${API_VERSION}/finance`, financeRoutes);
+app.use(`/api/${API_VERSION}/finance`, require('./routes/finance.routes'));
 app.use(`/api/${API_VERSION}/teams`, teamsRoutes);
 app.use(`/api/${API_VERSION}/orders`, require('./routes/orders.routes'));
 app.use(`/api/${API_VERSION}/chat`, chatRoutes);

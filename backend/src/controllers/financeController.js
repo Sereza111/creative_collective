@@ -1,218 +1,339 @@
 const { query } = require('../config/database');
-const { successResponse, errorResponse, generateUUID, getPagination, paginatedResponse } = require('../utils/helpers');
+const { successResponse, errorResponse } = require('../utils/responseHandler');
 
-// Получить финансовую информацию пользователя
-exports.getUserFinance = async (req, res) => {
+// Получить баланс пользователя
+exports.getUserBalance = async (req, res) => {
   try {
-    const { user_id } = req.params;
+    const userId = req.user.id;
+
+    // Получаем или создаем баланс
+    let balance = await query('SELECT * FROM user_balances WHERE user_id = ?', [userId]);
     
-    // Проверяем доступ (пользователь может видеть только свои финансы, кроме админов)
-    if (req.user.role !== 'admin' && req.user.id !== parseInt(user_id)) {
-      return errorResponse(res, 'Недостаточно прав', 403);
+    if (balance.length === 0) {
+      // Создаем баланс, если его нет
+      await query('INSERT INTO user_balances (user_id) VALUES (?)', [userId]);
+      balance = await query('SELECT * FROM user_balances WHERE user_id = ?', [userId]);
     }
-    
-    const finances = await query(
-      `SELECT f.*, u.full_name 
-       FROM finance f
-       LEFT JOIN users u ON f.user_id = u.id
-       WHERE f.user_id = ?`,
-      [user_id]
-    );
-    
-    if (finances.length === 0) {
-      return errorResponse(res, 'Финансовая информация не найдена', 404);
-    }
-    
-    // Получаем последние транзакции
-    const transactions = await query(
-      `SELECT t.*
-       FROM transactions t
-       WHERE t.user_id = ?
-       ORDER BY t.date DESC
-       LIMIT 10`,
-      [user_id]
-    );
-    
-    successResponse(res, {
-      ...finances[0],
-      recent_transactions: transactions
-    });
-    
+
+    successResponse(res, balance[0]);
   } catch (error) {
-    console.error('Get finance error:', error);
-    errorResponse(res, 'Ошибка при получении финансовой информации');
+    console.error('Get balance error:', error);
+    errorResponse(res, 'Ошибка получения баланса');
   }
 };
 
-// Получить все транзакции пользователя
+// Получить транзакции пользователя
 exports.getUserTransactions = async (req, res) => {
   try {
-    const { user_id } = req.params;
-    const { page = 1, limit = 20, type, category, start_date, end_date } = req.query;
-    
-    // Проверяем доступ
-    if (req.user.role !== 'admin' && req.user.id !== parseInt(user_id)) {
-      return errorResponse(res, 'Недостаточно прав', 403);
-    }
-    
-    const { limit: limitNum, offset } = getPagination(page, limit);
-    
-    let whereConditions = ['t.user_id = ?'];
-    let params = [user_id];
-    
+    const userId = req.user.id;
+    const { limit = 50, offset = 0, type, status } = req.query;
+
+    let sql = `
+      SELECT 
+        t.*,
+        o.title as order_title,
+        u.full_name as related_user_name
+      FROM transactions t
+      LEFT JOIN orders o ON t.order_id = o.id
+      LEFT JOIN users u ON t.related_user_id = u.id
+      WHERE t.user_id = ?
+    `;
+
+    const params = [userId];
+
     if (type) {
-      whereConditions.push('t.type = ?');
+      sql += ' AND t.type = ?';
       params.push(type);
     }
-    
-    if (category) {
-      whereConditions.push('t.category = ?');
-      params.push(category);
+
+    if (status) {
+      sql += ' AND t.status = ?';
+      params.push(status);
     }
-    
-    if (start_date) {
-      whereConditions.push('t.date >= ?');
-      params.push(start_date);
+
+    sql += ' ORDER BY t.created_at DESC LIMIT ? OFFSET ?';
+    params.push(parseInt(limit), parseInt(offset));
+
+    const transactions = await query(sql, params);
+
+    // Получаем общее количество
+    let countSql = 'SELECT COUNT(*) as total FROM transactions WHERE user_id = ?';
+    const countParams = [userId];
+
+    if (type) {
+      countSql += ' AND type = ?';
+      countParams.push(type);
     }
-    
-    if (end_date) {
-      whereConditions.push('t.date <= ?');
-      params.push(end_date);
+
+    if (status) {
+      countSql += ' AND status = ?';
+      countParams.push(status);
     }
-    
-    const whereClause = 'WHERE ' + whereConditions.join(' AND ');
-    
-    const countResult = await query(
-      `SELECT COUNT(*) as total FROM transactions t ${whereClause}`,
-      params
-    );
-    const total = countResult[0].total;
-    
-    const transactions = await query(
-      `SELECT t.*
-       FROM transactions t
-       ${whereClause}
-       ORDER BY t.date DESC
-       LIMIT ? OFFSET ?`,
-      [...params, limitNum, offset]
-    );
-    
-    successResponse(res, paginatedResponse(transactions, total, page, limit));
-    
+
+    const countResult = await query(countSql, countParams);
+
+    successResponse(res, {
+      transactions,
+      total: countResult[0].total,
+    });
   } catch (error) {
     console.error('Get transactions error:', error);
-    errorResponse(res, 'Ошибка при получении транзакций');
+    errorResponse(res, 'Ошибка получения транзакций');
   }
 };
 
-// Создать новую транзакцию
+// Создать транзакцию (для заказов)
 exports.createTransaction = async (req, res) => {
   try {
-    const { user_id } = req.params;
-    const { type, amount, description, project_id, category } = req.body;
-    
-    // Проверяем доступ
-    if (req.user.role !== 'admin' && req.user.id !== user_id) {
+    const { user_id, order_id, type, amount, description, related_user_id } = req.body;
+
+    // Проверяем права (только админ или создание транзакции для себя)
+    if (req.user.user_role !== 'admin' && req.user.id !== user_id) {
       return errorResponse(res, 'Недостаточно прав', 403);
     }
-    
+
     const result = await query(
-      `INSERT INTO transactions (user_id, type, amount, description, category, date)
-       VALUES (?, ?, ?, ?, ?, NOW())`,
-      [user_id, type, amount, description, category]
+      `INSERT INTO transactions (user_id, order_id, type, amount, description, related_user_id, status)
+       VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
+      [user_id, order_id, type, amount, description, related_user_id]
     );
-    
-    const transactionId = result.insertId;
-    
-    // Обновляем баланс вручную (триггеры удалены)
-    if (type === 'income') {
-      await query(
-        `UPDATE finance SET balance = balance + ?, total_earned = total_earned + ? WHERE user_id = ?`,
-        [amount, amount, user_id]
-      );
-    } else if (type === 'expense') {
-      await query(
-        `UPDATE finance SET balance = balance - ?, total_spent = total_spent + ? WHERE user_id = ?`,
-        [amount, amount, user_id]
-      );
-    }
-    
-    const newTransaction = await query(
-      `SELECT t.*
-       FROM transactions t
-       WHERE t.id = ?`,
-      [transactionId]
-    );
-    
-    // Создаем уведомление
-    const notifMessage = type === 'earned' || type === 'bonus' 
-      ? `Получено: ₽${amount}` 
-      : `Списано: ₽${amount}`;
-    
-    await query(
-      'INSERT INTO notifications (id, user_id, title, message, type, entity_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [generateUUID(), user_id, 'Финансовая операция', notifMessage, 'finance', transactionId]
-    );
-    
-    successResponse(res, newTransaction[0], 'Транзакция создана', 201);
-    
+
+    const transaction = await query('SELECT * FROM transactions WHERE id = ?', [result.insertId]);
+
+    successResponse(res, transaction[0], 'Транзакция создана', 201);
   } catch (error) {
     console.error('Create transaction error:', error);
-    errorResponse(res, 'Ошибка при создании транзакции');
+    errorResponse(res, 'Ошибка создания транзакции');
   }
 };
 
-// Получить статистику по финансам
+// Завершить транзакцию (изменить статус на completed)
+exports.completeTransaction = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Только админ может завершать транзакции
+    if (req.user.user_role !== 'admin') {
+      return errorResponse(res, 'Только администратор может завершать транзакции', 403);
+    }
+
+    const transaction = await query('SELECT * FROM transactions WHERE id = ?', [id]);
+
+    if (transaction.length === 0) {
+      return errorResponse(res, 'Транзакция не найдена', 404);
+    }
+
+    if (transaction[0].status === 'completed') {
+      return errorResponse(res, 'Транзакция уже завершена', 400);
+    }
+
+    await query(
+      'UPDATE transactions SET status = ?, completed_at = NOW() WHERE id = ?',
+      ['completed', id]
+    );
+
+    const updatedTransaction = await query('SELECT * FROM transactions WHERE id = ?', [id]);
+
+    successResponse(res, updatedTransaction[0], 'Транзакция завершена');
+  } catch (error) {
+    console.error('Complete transaction error:', error);
+    errorResponse(res, 'Ошибка завершения транзакции');
+  }
+};
+
+// Создать запрос на вывод средств
+exports.createWithdrawalRequest = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { amount, payment_method, payment_details } = req.body;
+
+    // Проверяем баланс
+    const balance = await query('SELECT balance FROM user_balances WHERE user_id = ?', [userId]);
+
+    if (balance.length === 0 || balance[0].balance < amount) {
+      return errorResponse(res, 'Недостаточно средств', 400);
+    }
+
+    // Минимальная сумма вывода
+    if (amount < 100) {
+      return errorResponse(res, 'Минимальная сумма вывода 100 ₽', 400);
+    }
+
+    // Создаем запрос
+    const result = await query(
+      `INSERT INTO withdrawal_requests (user_id, amount, payment_method, payment_details)
+       VALUES (?, ?, ?, ?)`,
+      [userId, amount, payment_method, JSON.stringify(payment_details)]
+    );
+
+    // Замораживаем средства
+    await query(
+      'UPDATE user_balances SET balance = balance - ?, pending_amount = pending_amount + ? WHERE user_id = ?',
+      [amount, amount, userId]
+    );
+
+    const withdrawalRequest = await query('SELECT * FROM withdrawal_requests WHERE id = ?', [result.insertId]);
+
+    successResponse(res, withdrawalRequest[0], 'Запрос на вывод создан', 201);
+  } catch (error) {
+    console.error('Create withdrawal request error:', error);
+    errorResponse(res, 'Ошибка создания запроса на вывод');
+  }
+};
+
+// Получить запросы на вывод пользователя
+exports.getUserWithdrawalRequests = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const requests = await query(
+      'SELECT * FROM withdrawal_requests WHERE user_id = ? ORDER BY created_at DESC',
+      [userId]
+    );
+
+    successResponse(res, requests);
+  } catch (error) {
+    console.error('Get withdrawal requests error:', error);
+    errorResponse(res, 'Ошибка получения запросов на вывод');
+  }
+};
+
+// Получить все запросы на вывод (админ)
+exports.getAllWithdrawalRequests = async (req, res) => {
+  try {
+    if (req.user.user_role !== 'admin') {
+      return errorResponse(res, 'Только администратор может просматривать все запросы', 403);
+    }
+
+    const { status } = req.query;
+
+    let sql = `
+      SELECT 
+        wr.*,
+        u.full_name as user_name,
+        u.email as user_email,
+        ub.balance as user_balance
+      FROM withdrawal_requests wr
+      JOIN users u ON wr.user_id = u.id
+      LEFT JOIN user_balances ub ON u.id = ub.user_id
+    `;
+
+    const params = [];
+
+    if (status) {
+      sql += ' WHERE wr.status = ?';
+      params.push(status);
+    }
+
+    sql += ' ORDER BY wr.created_at DESC';
+
+    const requests = await query(sql, params);
+
+    successResponse(res, requests);
+  } catch (error) {
+    console.error('Get all withdrawal requests error:', error);
+    errorResponse(res, 'Ошибка получения запросов на вывод');
+  }
+};
+
+// Обработать запрос на вывод (админ)
+exports.processWithdrawalRequest = async (req, res) => {
+  try {
+    if (req.user.user_role !== 'admin') {
+      return errorResponse(res, 'Только администратор может обрабатывать запросы', 403);
+    }
+
+    const { id } = req.params;
+    const { status, admin_comment } = req.body;
+
+    if (!['completed', 'rejected'].includes(status)) {
+      return errorResponse(res, 'Неверный статус', 400);
+    }
+
+    const request = await query('SELECT * FROM withdrawal_requests WHERE id = ?', [id]);
+
+    if (request.length === 0) {
+      return errorResponse(res, 'Запрос не найден', 404);
+    }
+
+    if (request[0].status !== 'pending') {
+      return errorResponse(res, 'Запрос уже обработан', 400);
+    }
+
+    const requestData = request[0];
+
+    // Обновляем статус запроса
+    await query(
+      `UPDATE withdrawal_requests 
+       SET status = ?, admin_comment = ?, processed_by_admin_id = ?, processed_at = NOW()
+       WHERE id = ?`,
+      [status, admin_comment, req.user.id, id]
+    );
+
+    if (status === 'completed') {
+      // Создаем транзакцию вывода
+      await query(
+        `INSERT INTO transactions (user_id, type, amount, description, status, completed_at)
+         VALUES (?, 'withdrawal', ?, ?, 'completed', NOW())`,
+        [requestData.user_id, requestData.amount, `Вывод средств (${requestData.payment_method})`]
+      );
+
+      // Уменьшаем pending_amount
+      await query(
+        'UPDATE user_balances SET pending_amount = pending_amount - ?, total_withdrawn = total_withdrawn + ? WHERE user_id = ?',
+        [requestData.amount, requestData.amount, requestData.user_id]
+      );
+    } else {
+      // Возвращаем средства
+      await query(
+        'UPDATE user_balances SET balance = balance + ?, pending_amount = pending_amount - ? WHERE user_id = ?',
+        [requestData.amount, requestData.amount, requestData.user_id]
+      );
+    }
+
+    const updatedRequest = await query('SELECT * FROM withdrawal_requests WHERE id = ?', [id]);
+
+    successResponse(res, updatedRequest[0], `Запрос ${status === 'completed' ? 'одобрен' : 'отклонен'}`);
+  } catch (error) {
+    console.error('Process withdrawal request error:', error);
+    errorResponse(res, 'Ошибка обработки запроса');
+  }
+};
+
+// Получить статистику финансов (админ)
 exports.getFinanceStats = async (req, res) => {
   try {
-    const { user_id } = req.params;
-    const { start_date, end_date } = req.query;
-    
-    // Проверяем доступ
-    if (req.user.role !== 'admin' && req.user.id !== user_id) {
-      return errorResponse(res, 'Недостаточно прав', 403);
+    if (req.user.user_role !== 'admin') {
+      return errorResponse(res, 'Только администратор может просматривать статистику', 403);
     }
-    
-    const finances = await query('SELECT id FROM finance WHERE user_id = ?', [user_id]);
-    if (finances.length === 0) {
-      return errorResponse(res, 'Финансовая информация не найдена', 404);
-    }
-    
-    let dateCondition = '';
-    let params = [user_id];
-    
-    if (start_date && end_date) {
-      dateCondition = 'AND date BETWEEN ? AND ?';
-      params.push(start_date, end_date);
-    }
-    
-    // Статистика по типам транзакций
-    const typeStats = await query(
-      `SELECT type, SUM(amount) as total, COUNT(*) as count
-       FROM transactions
-       WHERE user_id = ? ${dateCondition}
-       GROUP BY type`,
-      params
-    );
-    
-    // Статистика по категориям
-    const categoryStats = await query(
-      `SELECT category, SUM(amount) as total, COUNT(*) as count
-       FROM transactions
-       WHERE user_id = ? ${dateCondition} AND category IS NOT NULL
-       GROUP BY category
-       ORDER BY total DESC`,
-      params
-    );
-    
+
+    const stats = await query(`
+      SELECT 
+        COUNT(DISTINCT user_id) as total_users_with_balance,
+        SUM(balance) as total_platform_balance,
+        SUM(total_earned) as total_platform_earned,
+        SUM(total_spent) as total_platform_spent,
+        SUM(total_withdrawn) as total_platform_withdrawn,
+        SUM(pending_amount) as total_pending
+      FROM user_balances
+    `);
+
+    const transactionStats = await query(`
+      SELECT 
+        type,
+        status,
+        COUNT(*) as count,
+        SUM(amount) as total_amount
+      FROM transactions
+      GROUP BY type, status
+    `);
+
     successResponse(res, {
-      by_type: typeStats,
-      by_category: categoryStats
+      overview: stats[0],
+      transactions_breakdown: transactionStats,
     });
-    
   } catch (error) {
     console.error('Get finance stats error:', error);
-    errorResponse(res, 'Ошибка при получении статистики');
+    errorResponse(res, 'Ошибка получения статистики');
   }
 };
-

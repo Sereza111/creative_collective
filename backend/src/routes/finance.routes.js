@@ -1,32 +1,36 @@
 const express = require('express');
 const router = express.Router();
-const { body } = require('express-validator');
 const financeController = require('../controllers/financeController');
-const { authenticate } = require('../middleware/auth');
-const { validate } = require('../middleware/validation');
+const { authenticate, adminOnly } = require('../middleware/auth');
 
-// Валидация для транзакции
-const transactionValidation = [
-  body('type').isIn(['earned', 'spent', 'bonus', 'penalty']).withMessage('Некорректный тип транзакции'),
-  body('amount').isFloat({ min: 0.01 }).withMessage('Сумма должна быть больше 0'),
-  body('description').isLength({ max: 500 }).withMessage('Описание до 500 символов'),
-  body('project_id').optional(),
-  body('category').optional().isLength({ max: 100 })
-];
-
+// Все роуты требуют аутентификации
 router.use(authenticate);
 
-// GET /api/finance/:user_id - Получить финансовую информацию пользователя
-router.get('/:user_id', financeController.getUserFinance);
+// GET /api/v1/finance/balance - Получить свой баланс
+router.get('/balance', financeController.getUserBalance);
 
-// GET /api/finance/:user_id/transactions - Получить транзакции пользователя
-router.get('/:user_id/transactions', financeController.getUserTransactions);
+// GET /api/v1/finance/transactions - Получить свои транзакции
+router.get('/transactions', financeController.getUserTransactions);
 
-// POST /api/finance/:user_id/transactions - Создать транзакцию
-router.post('/:user_id/transactions', transactionValidation, validate, financeController.createTransaction);
+// POST /api/v1/finance/transactions - Создать транзакцию
+router.post('/transactions', financeController.createTransaction);
 
-// GET /api/finance/:user_id/stats - Получить статистику
-router.get('/:user_id/stats', financeController.getFinanceStats);
+// PUT /api/v1/finance/transactions/:id/complete - Завершить транзакцию (админ)
+router.put('/transactions/:id/complete', adminOnly, financeController.completeTransaction);
+
+// POST /api/v1/finance/withdrawal - Создать запрос на вывод
+router.post('/withdrawal', financeController.createWithdrawalRequest);
+
+// GET /api/v1/finance/withdrawal - Получить свои запросы на вывод
+router.get('/withdrawal', financeController.getUserWithdrawalRequests);
+
+// GET /api/v1/finance/withdrawal/all - Получить все запросы на вывод (админ)
+router.get('/withdrawal/all', adminOnly, financeController.getAllWithdrawalRequests);
+
+// PUT /api/v1/finance/withdrawal/:id - Обработать запрос на вывод (админ)
+router.put('/withdrawal/:id', adminOnly, financeController.processWithdrawalRequest);
+
+// GET /api/v1/finance/stats - Получить статистику (админ)
+router.get('/stats', adminOnly, financeController.getFinanceStats);
 
 module.exports = router;
-
