@@ -26,6 +26,22 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
       appBar: AppBar(
         title: const Text('ФИНАНСЫ'),
         actions: [
+          // Пополнить баланс
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            tooltip: 'Пополнить баланс',
+            onPressed: () {
+              Navigator.pushNamed(context, '/add_balance');
+            },
+          ),
+          // Вывести средства
+          IconButton(
+            icon: const Icon(Icons.upload),
+            tooltip: 'Вывести средства',
+            onPressed: () {
+              Navigator.pushNamed(context, '/withdrawal');
+            },
+          ),
           // Фильтры
           PopupMenuButton<String>(
             icon: const Icon(Icons.filter_list),
