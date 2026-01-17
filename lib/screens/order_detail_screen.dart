@@ -825,5 +825,171 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     messageController.dispose();
     budgetController.dispose();
   }
+
+  Future<void> _completeOrder(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.darkerCharcoal,
+        title: Text(
+          'ЗАВЕРШИТЬ ЗАКАЗ',
+          style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 14, letterSpacing: 2),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Вы уверены, что хотите завершить этот заказ?',
+              style: TextStyle(color: AppTheme.mistGray),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppTheme.dimGray.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Будет произведена оплата:',
+                    style: TextStyle(color: AppTheme.mistGray, fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '• Фрилансеру: ${NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0).format((widget.order.budget ?? 0) * 0.9)}',
+                    style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13),
+                  ),
+                  Text(
+                    '• Комиссия: ${NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0).format((widget.order.budget ?? 0) * 0.1)}',
+                    style: TextStyle(color: AppTheme.ashGray, fontSize: 12),
+                  ),
+                  const Divider(color: AppTheme.dimGray),
+                  Text(
+                    'Итого: ${NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0).format(widget.order.budget ?? 0)}',
+                    style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('ОТМЕНА', style: TextStyle(color: AppTheme.mistGray)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.gothicGreen,
+              foregroundColor: AppTheme.charcoal,
+            ),
+            child: Text('ЗАВЕРШИТЬ', style: TextStyle(letterSpacing: 1.5)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await ApiService.completeOrder(widget.order.id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Заказ завершен, оплата произведена'),
+              backgroundColor: AppTheme.gothicGreen,
+            ),
+          );
+          Navigator.pop(context, true); // Возвращаемся с результатом
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ошибка: $e'),
+              backgroundColor: AppTheme.bloodRed,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _cancelOrder(BuildContext context) async {
+    final reasonController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.darkerCharcoal,
+        title: Text(
+          'ОТМЕНИТЬ ЗАКАЗ',
+          style: TextStyle(color: AppTheme.bloodRed, fontSize: 14, letterSpacing: 2),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Вы уверены, что хотите отменить этот заказ?',
+              style: TextStyle(color: AppTheme.mistGray),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: reasonController,
+              decoration: InputDecoration(
+                labelText: 'Причина отмены',
+                labelStyle: TextStyle(color: AppTheme.mistGray),
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(color: AppTheme.dimGray),
+                ),
+              ),
+              style: TextStyle(color: AppTheme.tombstoneWhite),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('НЕТ', style: TextStyle(color: AppTheme.mistGray)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.bloodRed,
+              foregroundColor: Colors.white,
+            ),
+            child: Text('ОТМЕНИТЬ ЗАКАЗ', style: TextStyle(letterSpacing: 1.5)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await ApiService.cancelOrder(widget.order.id, reasonController.text);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Заказ отменен'),
+              backgroundColor: AppTheme.ashGray,
+            ),
+          );
+          Navigator.pop(context, true); // Возвращаемся с результатом
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ошибка: $e'),
+              backgroundColor: AppTheme.bloodRed,
+            ),
+          );
+        }
+      }
+    }
+    reasonController.dispose();
+  }
 }
 
