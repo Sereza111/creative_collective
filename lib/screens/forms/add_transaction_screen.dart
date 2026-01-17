@@ -14,7 +14,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _categoryController = TextEditingController();
   
   String _selectedType = 'income'; // 'income', 'expense'
   bool _isSubmitting = false;
@@ -23,7 +22,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();
-    _categoryController.dispose();
     super.dispose();
   }
 
@@ -39,7 +37,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         'type': _selectedType,
         'amount': double.parse(_amountController.text),
         'description': _descriptionController.text.isNotEmpty ? _descriptionController.text : null,
-        'category': _categoryController.text.isNotEmpty ? _categoryController.text : null,
+        // category removed - not in TransactionModel
       };
 
       await ref.read(transactionsProvider.notifier).addTransaction(transactionData);
@@ -180,45 +178,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 ),
                 decoration: InputDecoration(
                   hintText: 'Описание транзакции',
-                  hintStyle: TextStyle(color: AppTheme.mistGray.withOpacity(0.5)),
-                  filled: true,
-                  fillColor: AppTheme.darkerCharcoal,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.zero,
-                    borderSide: BorderSide(color: AppTheme.dimGray.withOpacity(0.3)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.zero,
-                    borderSide: BorderSide(color: AppTheme.dimGray.withOpacity(0.3)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.zero,
-                    borderSide: const BorderSide(color: AppTheme.ashGray),
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // Категория
-              Text(
-                'КАТЕГОРИЯ',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w300,
-                  color: AppTheme.mistGray,
-                  letterSpacing: 2.0,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _categoryController,
-                style: const TextStyle(
-                  color: AppTheme.ghostWhite,
-                  fontSize: 14,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Категория (опционально)',
                   hintStyle: TextStyle(color: AppTheme.mistGray.withOpacity(0.5)),
                   filled: true,
                   fillColor: AppTheme.darkerCharcoal,
