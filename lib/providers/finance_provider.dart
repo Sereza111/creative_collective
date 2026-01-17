@@ -102,6 +102,17 @@ class TransactionsNotifier extends StateNotifier<TransactionsState> {
     }
   }
 
+  Future<void> addTransaction(Map<String, dynamic> transactionData) async {
+    try {
+      await ApiService.createTransaction(transactionData);
+      // Refresh transactions after adding
+      await loadTransactions();
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      rethrow;
+    }
+  }
+
   Future<void> refresh() async {
     await loadTransactions();
   }

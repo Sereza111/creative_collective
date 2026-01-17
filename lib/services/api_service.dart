@@ -404,10 +404,10 @@ class ApiService {
     }
   }
 
-  static Future<dynamic> createTransaction(String userId, Map<String, dynamic> transactionData) async {
+  static Future<dynamic> createTransaction(Map<String, dynamic> transactionData) async {
     final headers = await _getHeaders();
     final response = await http.post(
-      Uri.parse('$baseUrl/finance/$userId/transactions'),
+      Uri.parse('$baseUrl/finance/transactions'),
       headers: headers,
       body: jsonEncode(transactionData),
     );
