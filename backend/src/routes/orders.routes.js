@@ -46,5 +46,11 @@ router.get('/:id/applications', authenticate, ordersController.getOrderApplicati
 // POST /api/v1/orders/:id/applications/:applicationId/accept - Принять отклик
 router.post('/:id/applications/:applicationId/accept', authenticate, ordersController.acceptApplication);
 
+// POST /api/v1/orders/:id/complete - Завершить заказ (с автоматической оплатой)
+router.post('/:id/complete', authenticate, ordersController.completeOrder);
+
+// POST /api/v1/orders/:id/cancel - Отменить заказ
+router.post('/:id/cancel', authenticate, ordersController.cancelOrder);
+
 module.exports = router;
 

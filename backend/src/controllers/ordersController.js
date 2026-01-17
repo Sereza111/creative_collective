@@ -341,3 +341,115 @@ exports.acceptApplication = async (req, res) => {
   }
 };
 
+// Завершить заказ (с автоматической оплатой)
+exports.completeOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Проверка заказа
+    const orders = await query('SELECT * FROM orders WHERE id = ?', [id]);
+    if (orders.length === 0) {
+      return errorResponse(res, 'Заказ не найден', 404);
+    }
+
+    const order = orders[0];
+    
+    // Только заказчик или админ может завершить заказ
+    if (order.client_id !== userId && req.user.user_role !== 'admin') {
+      return errorResponse(res, 'Нет прав для завершения заказа', 403);
+    }
+
+    // Заказ должен быть в работе
+    if (order.status !== 'in_progress') {
+      return errorResponse(res, 'Заказ должен быть в работе', 400);
+    }
+
+    // Проверяем наличие фрилансера
+    if (!order.freelancer_id) {
+      return errorResponse(res, 'У заказа нет назначенного исполнителя', 400);
+    }
+
+    const budget = parseFloat(order.budget) || 0;
+    const commission = budget * 0.10; // 10% комиссия платформы
+    const freelancerAmount = budget - commission;
+
+    // Создаем транзакции
+    try {
+      // 1. Списание у заказчика
+      await query(
+        `INSERT INTO transactions (user_id, order_id, type, amount, description, related_user_id, status)
+         VALUES (?, ?, 'expense', ?, ?, ?, 'completed')`,
+        [order.client_id, order.id, budget, `Оплата заказа "${order.title}"`, order.freelancer_id]
+      );
+
+      // 2. Комиссия платформы
+      await query(
+        `INSERT INTO transactions (user_id, order_id, type, amount, description, status)
+         VALUES (?, ?, 'commission', ?, ?, 'completed')`,
+        [order.client_id, order.id, commission, `Комиссия платформы за заказ "${order.title}"`]
+      );
+
+      // 3. Начисление фрилансеру
+      await query(
+        `INSERT INTO transactions (user_id, order_id, type, amount, description, related_user_id, status)
+         VALUES (?, ?, 'income', ?, ?, ?, 'completed')`,
+        [order.freelancer_id, order.id, freelancerAmount, `Оплата за выполнение заказа "${order.title}"`, order.client_id]
+      );
+
+      // Обновить статус заказа
+      await query(
+        'UPDATE orders SET status = ?, completed_at = NOW() WHERE id = ?',
+        ['completed', id]
+      );
+
+      // TODO: Отправить уведомления заказчику и фрилансеру
+
+      successResponse(res, {
+        budget,
+        commission,
+        freelancerAmount
+      }, 'Заказ завершен, оплата произведена');
+    } catch (transactionError) {
+      console.error('Transaction error:', transactionError);
+      return errorResponse(res, 'Ошибка при проведении оплаты');
+    }
+  } catch (error) {
+    console.error('Complete order error:', error);
+    errorResponse(res, 'Ошибка завершения заказа');
+  }
+};
+
+// Отменить заказ (с возвратом средств если был оплачен)
+exports.cancelOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const userId = req.user.id;
+
+    // Проверка заказа
+    const orders = await query('SELECT * FROM orders WHERE id = ?', [id]);
+    if (orders.length === 0) {
+      return errorResponse(res, 'Заказ не найден', 404);
+    }
+
+    const order = orders[0];
+    
+    // Только заказчик, фрилансер или админ может отменить заказ
+    if (order.client_id !== userId && order.freelancer_id !== userId && req.user.user_role !== 'admin') {
+      return errorResponse(res, 'Нет прав для отмены заказа', 403);
+    }
+
+    // Обновить статус заказа
+    await query(
+      'UPDATE orders SET status = ?, cancelled_at = NOW(), cancellation_reason = ? WHERE id = ?',
+      ['cancelled', reason || 'Не указана', id]
+    );
+
+    successResponse(res, null, 'Заказ отменен');
+  } catch (error) {
+    console.error('Cancel order error:', error);
+    errorResponse(res, 'Ошибка отмены заказа');
+  }
+};
+
