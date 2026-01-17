@@ -1,81 +1,117 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/finance.dart';
-import '../models/transaction.dart' as app_transaction;
 import '../services/api_service.dart';
-import 'auth_provider.dart';
+import '../models/user_balance.dart';
+import '../models/transaction.dart';
 
-// Провайдер для финансовой информации
-final financeProvider = StateNotifierProvider<FinanceNotifier, AsyncValue<Finance?>>((ref) {
-  return FinanceNotifier(ref);
-});
+// State для баланса
+class BalanceState {
+  final UserBalance? balance;
+  final bool isLoading;
+  final String? error;
 
-class FinanceNotifier extends StateNotifier<AsyncValue<Finance?>> {
-  final Ref ref;
+  BalanceState({
+    this.balance,
+    this.isLoading = false,
+    this.error,
+  });
 
-  FinanceNotifier(this.ref) : super(const AsyncValue.loading()) {
-    loadFinance();
+  BalanceState copyWith({
+    UserBalance? balance,
+    bool? isLoading,
+    String? error,
+  }) {
+    return BalanceState(
+      balance: balance ?? this.balance,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+    );
+  }
+}
+
+// Notifier для баланса
+class BalanceNotifier extends StateNotifier<BalanceState> {
+  BalanceNotifier() : super(BalanceState()) {
+    loadBalance();
   }
 
-  Future<void> loadFinance() async {
+  Future<void> loadBalance() async {
+    state = state.copyWith(isLoading: true, error: null);
     try {
-      state = const AsyncValue.loading();
-      final user = ref.read(authProvider).user;
-      if (user != null) {
-        final finance = await ApiService.getFinance(user.id.toString());
-        state = AsyncValue.data(finance);
-      }
-    } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+      final data = await ApiService.getUserBalance();
+      final balance = UserBalance.fromJson(data);
+      state = state.copyWith(balance: balance, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
   Future<void> refresh() async {
-    await loadFinance();
+    await loadBalance();
   }
 }
 
-// Провайдер для списка транзакций
-final transactionsProvider = StateNotifierProvider<TransactionsNotifier, AsyncValue<List<app_transaction.Transaction>>>((ref) {
-  return TransactionsNotifier(ref);
-});
+// State для транзакций
+class TransactionsState {
+  final List<TransactionModel> transactions;
+  final bool isLoading;
+  final String? error;
+  final int total;
 
-class TransactionsNotifier extends StateNotifier<AsyncValue<List<app_transaction.Transaction>>> {
-  final Ref ref;
+  TransactionsState({
+    this.transactions = const [],
+    this.isLoading = false,
+    this.error,
+    this.total = 0,
+  });
 
-  TransactionsNotifier(this.ref) : super(const AsyncValue.loading()) {
+  TransactionsState copyWith({
+    List<TransactionModel>? transactions,
+    bool? isLoading,
+    String? error,
+    int? total,
+  }) {
+    return TransactionsState(
+      transactions: transactions ?? this.transactions,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+      total: total ?? this.total,
+    );
+  }
+}
+
+// Notifier для транзакций
+class TransactionsNotifier extends StateNotifier<TransactionsState> {
+  TransactionsNotifier() : super(TransactionsState()) {
     loadTransactions();
   }
 
-  Future<void> loadTransactions() async {
+  Future<void> loadTransactions({String? type, String? status}) async {
+    state = state.copyWith(isLoading: true, error: null);
     try {
-      state = const AsyncValue.loading();
-      final user = ref.read(authProvider).user;
-      if (user != null) {
-        final data = await ApiService.getTransactions(user.id.toString());
-        final transactions = data.map((json) => app_transaction.Transaction.fromJson(json)).toList();
-        state = AsyncValue.data(transactions);
-      }
-    } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+      final data = await ApiService.getUserTransactions(type: type, status: status);
+      final transactions = (data['transactions'] as List)
+          .map((json) => TransactionModel.fromJson(json))
+          .toList();
+      state = state.copyWith(
+        transactions: transactions,
+        total: data['total'] ?? 0,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
   Future<void> refresh() async {
     await loadTransactions();
   }
-
-  Future<void> addTransaction(Map<String, dynamic> transactionData) async {
-    try {
-      final user = ref.read(authProvider).user;
-      if (user != null) {
-        await ApiService.createTransaction(user.id.toString(), transactionData);
-        await loadTransactions();
-        // Обновляем финансовую информацию
-        await ref.read(financeProvider.notifier).refresh();
-      }
-    } catch (e) {
-      rethrow;
-    }
-  }
 }
 
+// Providers
+final balanceProvider = StateNotifierProvider<BalanceNotifier, BalanceState>((ref) {
+  return BalanceNotifier();
+});
+
+final transactionsProvider = StateNotifierProvider<TransactionsNotifier, TransactionsState>((ref) {
+  return TransactionsNotifier();
+});
