@@ -18,6 +18,7 @@ import 'screens/user_profile_screen.dart';
 import 'screens/my_stats_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'screens/withdrawal_screen.dart';
+import 'screens/add_balance_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'theme/app_theme.dart';
@@ -107,6 +108,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         '/my_stats': (context) => const MyStatsScreen(),
         '/favorites': (context) => const FavoritesScreen(),
         '/withdrawal': (context) => const WithdrawalScreen(),
+        '/add_balance': (context) => const AddBalanceScreen(),
       },
     );
   }
