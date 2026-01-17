@@ -338,55 +338,52 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 24),
             
             // Финансовая статистика
-            financeAsync.when(
-              data: (finance) {
-                if (finance == null) return const SizedBox.shrink();
-                
-                return AppTheme.fadeInAnimation(
-                  duration: const Duration(milliseconds: 900),
-                  child: AppTheme.animatedGothicCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'ФИНАНСЫ',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w300,
-                              color: AppTheme.mistGray,
-                              letterSpacing: 3.0,
-                              fontFamily: 'serif',
-                            ),
+            if (financeAsync.isLoading)
+              const SizedBox.shrink()
+            else if (financeAsync.balance != null)
+              AppTheme.fadeInAnimation(
+                duration: const Duration(milliseconds: 900),
+                child: AppTheme.animatedGothicCard(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'ФИНАНСЫ',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w300,
+                            color: AppTheme.mistGray,
+                            letterSpacing: 3.0,
+                            fontFamily: 'serif',
                           ),
-                          const SizedBox(height: 20),
-                          _buildFinanceRow(
-                            'Баланс',
-                            currencyFormat.format(finance.balance),
-                            AppTheme.ghostWhite,
-                          ),
-                          const SizedBox(height: 12),
-                          _buildFinanceRow(
-                            'Заработано',
-                            currencyFormat.format(finance.totalEarned),
-                            AppTheme.ashGray,
-                          ),
-                          const SizedBox(height: 12),
-                          _buildFinanceRow(
-                            'Потрачено',
-                            currencyFormat.format(finance.totalSpent),
-                            AppTheme.ashGray,
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 20),
+                        _buildFinanceRow(
+                          'Баланс',
+                          currencyFormat.format(financeAsync.balance!.balance),
+                          AppTheme.ghostWhite,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildFinanceRow(
+                          'Заработано',
+                          currencyFormat.format(financeAsync.balance!.totalEarned),
+                          AppTheme.ashGray,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildFinanceRow(
+                          'Потрачено',
+                          currencyFormat.format(financeAsync.balance!.totalSpent),
+                          AppTheme.ashGray,
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
-              loading: () => const SizedBox.shrink(),
-              error: (error, stack) => const SizedBox.shrink(),
-            ),
+                ),
+              )
+            else
+              const SizedBox.shrink(),
             
             const SizedBox(height: 24),
             
