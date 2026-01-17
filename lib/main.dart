@@ -17,6 +17,7 @@ import 'screens/freelancers_search_screen.dart';
 import 'screens/user_profile_screen.dart';
 import 'screens/my_stats_screen.dart';
 import 'screens/favorites_screen.dart';
+import 'screens/withdrawal_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'theme/app_theme.dart';
@@ -105,6 +106,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         '/freelancers_search': (context) => const FreelancersSearchScreen(),
         '/my_stats': (context) => const MyStatsScreen(),
         '/favorites': (context) => const FavoritesScreen(),
+        '/withdrawal': (context) => const WithdrawalScreen(),
       },
     );
   }

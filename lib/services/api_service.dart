@@ -1418,7 +1418,7 @@ class ApiService {
   static Future<void> createWithdrawalRequest({
     required double amount,
     required String paymentMethod,
-    required Map<String, dynamic> paymentDetails,
+    required String paymentDetails,
   }) async {
     final headers = await _getHeaders();
     final response = await http.post(
@@ -1428,6 +1428,7 @@ class ApiService {
         'amount': amount,
         'payment_method': paymentMethod,
         'payment_details': paymentDetails,
+        'currency': 'RUB',
       }),
     ).timeout(const Duration(seconds: 10));
 
