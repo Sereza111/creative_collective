@@ -20,12 +20,17 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen> with Single
   String _searchQuery = '';
   String? _roleFilter;
 
+  List<dynamic> _withdrawalRequests = [];
+  bool _isLoadingWithdrawals = true;
+  String? _withdrawalStatusFilter;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _loadStats();
     _loadUsers();
+    _loadWithdrawalRequests();
   }
 
   @override
@@ -68,6 +73,26 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen> with Single
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Ошибка загрузки пользователей: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadWithdrawalRequests() async {
+    setState(() => _isLoadingWithdrawals = true);
+    try {
+      final requests = await ApiService.getAllWithdrawalRequests(
+        status: _withdrawalStatusFilter,
+      );
+      setState(() {
+        _withdrawalRequests = requests;
+        _isLoadingWithdrawals = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingWithdrawals = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка загрузки запросов: $e')),
         );
       }
     }
@@ -158,6 +183,7 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen> with Single
           tabs: const [
             Tab(icon: Icon(Icons.analytics), text: 'Статистика'),
             Tab(icon: Icon(Icons.people), text: 'Пользователи'),
+            Tab(icon: Icon(Icons.account_balance_wallet), text: 'Вывод средств'),
           ],
         ),
       ),
@@ -166,6 +192,7 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen> with Single
         children: [
           _buildStatsTab(),
           _buildUsersTab(),
+          _buildWithdrawalsTab(),
         ],
       ),
     );
@@ -383,6 +410,218 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen> with Single
         ),
       ],
     );
+  }
+
+  Widget _buildWithdrawalsTab() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Запросы на вывод средств',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              DropdownButton<String?>(
+                value: _withdrawalStatusFilter,
+                hint: const Text('Статус'),
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('Все')),
+                  DropdownMenuItem(value: 'pending', child: Text('На рассмотрении')),
+                  DropdownMenuItem(value: 'completed', child: Text('Одобрено')),
+                  DropdownMenuItem(value: 'rejected', child: Text('Отклонено')),
+                ],
+                onChanged: (value) {
+                  setState(() => _withdrawalStatusFilter = value);
+                  _loadWithdrawalRequests();
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: _loadWithdrawalRequests,
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _isLoadingWithdrawals
+              ? const Center(child: CircularProgressIndicator())
+              : _withdrawalRequests.isEmpty
+                  ? const Center(child: Text('Запросов нет'))
+                  : ListView.builder(
+                      itemCount: _withdrawalRequests.length,
+                      itemBuilder: (context, index) {
+                        final request = _withdrawalRequests[index];
+                        final status = request['status'] ?? 'pending';
+                        final amount = _formatMoney(request['amount']);
+                        final userName = request['user_name'] ?? 'Неизвестный';
+                        final userEmail = request['user_email'] ?? '';
+                        final paymentMethod = request['payment_method'] ?? '';
+                        final paymentDetails = request['payment_details'] ?? '';
+                        final createdAt = request['created_at'] ?? '';
+                        final processedAt = request['processed_at'];
+                        final adminComment = request['admin_comment'];
+
+                        Color statusColor;
+                        String statusLabel;
+                        switch (status) {
+                          case 'pending':
+                            statusColor = Colors.orange;
+                            statusLabel = 'На рассмотрении';
+                            break;
+                          case 'completed':
+                            statusColor = Colors.green;
+                            statusLabel = 'Одобрено';
+                            break;
+                          case 'rejected':
+                            statusColor = Colors.red;
+                            statusLabel = 'Отклонено';
+                            break;
+                          default:
+                            statusColor = Colors.grey;
+                            statusLabel = status;
+                        }
+
+                        return Card(
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: ExpansionTile(
+                            leading: CircleAvatar(
+                              backgroundColor: statusColor,
+                              child: Icon(
+                                status == 'pending'
+                                    ? Icons.schedule
+                                    : status == 'completed'
+                                        ? Icons.check
+                                        : Icons.close,
+                                color: Colors.white,
+                              ),
+                            ),
+                            title: Text('$userName ($amount)'),
+                            subtitle: Text('$paymentMethod • $statusLabel'),
+                            trailing: status == 'pending'
+                                ? Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.check_circle, color: Colors.green),
+                                        tooltip: 'Одобрить',
+                                        onPressed: () => _processWithdrawal(request['id'], 'completed', 'Одобрен администратором'),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.cancel, color: Colors.red),
+                                        tooltip: 'Отклонить',
+                                        onPressed: () => _rejectWithdrawal(request['id']),
+                                      ),
+                                    ],
+                                  )
+                                : null,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildInfoRow('Email', userEmail),
+                                    const SizedBox(height: 8),
+                                    _buildInfoRow('Сумма', amount),
+                                    const SizedBox(height: 8),
+                                    _buildInfoRow('Метод вывода', paymentMethod),
+                                    const SizedBox(height: 8),
+                                    _buildInfoRow('Реквизиты', paymentDetails),
+                                    const SizedBox(height: 8),
+                                    _buildInfoRow('Дата создания', createdAt),
+                                    if (processedAt != null) ...[
+                                      const SizedBox(height: 8),
+                                      _buildInfoRow('Дата обработки', processedAt.toString()),
+                                    ],
+                                    if (adminComment != null && adminComment.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      _buildInfoRow('Комментарий', adminComment),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 140,
+          child: Text(
+            '$label:',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        Expanded(
+          child: Text(value),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _processWithdrawal(int requestId, String status, String comment) async {
+    try {
+      await ApiService.processWithdrawalRequest(requestId, status, comment);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Запрос ${status == 'completed' ? 'одобрен' : 'отклонен'}')),
+        );
+      }
+      _loadWithdrawalRequests();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _rejectWithdrawal(int requestId) async {
+    final commentController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Отклонить запрос?'),
+        content: TextField(
+          controller: commentController,
+          decoration: const InputDecoration(
+            labelText: 'Причина отклонения',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 3,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Отклонить'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _processWithdrawal(requestId, 'rejected', commentController.text);
+    }
+    commentController.dispose();
   }
 
   String _getRoleLabel(String? role) {

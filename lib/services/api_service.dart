@@ -1456,4 +1456,40 @@ class ApiService {
       throw Exception('Ошибка получения запросов на вывод');
     }
   }
+
+  // Получить все запросы на вывод средств (админ)
+  static Future<List<dynamic>> getAllWithdrawalRequests({String? status}) async {
+    final headers = await _getHeaders();
+    final queryParams = status != null ? {'status': status} : <String, String>{};
+    final uri = Uri.parse('$baseUrl/finance/withdrawals').replace(queryParameters: queryParams);
+    final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data'] as List;
+      }
+      return [];
+    } else {
+      throw Exception('Ошибка получения запросов на вывод');
+    }
+  }
+
+  // Обработать запрос на вывод средств (админ)
+  static Future<void> processWithdrawalRequest(int requestId, String status, String comment) async {
+    final headers = await _getHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/finance/withdrawals/$requestId/process'),
+      headers: headers,
+      body: jsonEncode({
+        'status': status,
+        'admin_comment': comment,
+      }),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка обработки запроса');
+    }
+  }
 }
