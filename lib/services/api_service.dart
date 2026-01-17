@@ -1492,4 +1492,35 @@ class ApiService {
       throw Exception(error['message'] ?? 'Ошибка обработки запроса');
     }
   }
+
+  // === ORDER MANAGEMENT METHODS ===
+
+  // Завершить заказ (с автоматической оплатой)
+  static Future<void> completeOrder(int orderId) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/orders/$orderId/complete'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка завершения заказа');
+    }
+  }
+
+  // Отменить заказ
+  static Future<void> cancelOrder(int orderId, String reason) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/orders/$orderId/cancel'),
+      headers: headers,
+      body: jsonEncode({'reason': reason}),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка отмены заказа');
+    }
+  }
 }
