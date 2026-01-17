@@ -21,7 +21,8 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
   String _searchQuery = '';
   double? _minBudget;
   double? _maxBudget;
-  String _sortBy = 'date_desc'; // date_desc, date_asc, budget_desc, budget_asc
+  DateTime? _maxDeadline; // Фильтр по дедлайну (до какой даты)
+  String _sortBy = 'date_desc'; // date_desc, date_asc, budget_desc, budget_asc, deadline_asc
 
   @override
   void dispose() {
@@ -60,6 +61,14 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
       }).toList();
     }
 
+    // Фильтр по дедлайну
+    if (_maxDeadline != null) {
+      filteredOrders = filteredOrders.where((order) {
+        if (order.deadline == null) return false;
+        return order.deadline!.isBefore(_maxDeadline!) || order.deadline!.isAtSameMomentAs(_maxDeadline!);
+      }).toList();
+    }
+
     // Сортировка
     switch (_sortBy) {
       case 'date_desc':
@@ -73,6 +82,14 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
         break;
       case 'budget_asc':
         filteredOrders.sort((a, b) => (a.budget ?? 0).compareTo(b.budget ?? 0));
+        break;
+      case 'deadline_asc':
+        filteredOrders.sort((a, b) {
+          if (a.deadline == null && b.deadline == null) return 0;
+          if (a.deadline == null) return 1;
+          if (b.deadline == null) return -1;
+          return a.deadline!.compareTo(b.deadline!);
+        });
         break;
     }
 
@@ -127,6 +144,16 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                     Icon(Icons.arrow_upward, size: 16, color: _sortBy == 'budget_asc' ? AppTheme.electricBlue : AppTheme.ashGray),
                     const SizedBox(width: 8),
                     Text('Бюджет ↑', style: TextStyle(color: _sortBy == 'budget_asc' ? AppTheme.electricBlue : AppTheme.ashGray)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'deadline_asc',
+                child: Row(
+                  children: [
+                    Icon(Icons.schedule, size: 16, color: _sortBy == 'deadline_asc' ? AppTheme.electricBlue : AppTheme.ashGray),
+                    const SizedBox(width: 8),
+                    Text('Ближайший дедлайн', style: TextStyle(color: _sortBy == 'deadline_asc' ? AppTheme.electricBlue : AppTheme.ashGray)),
                   ],
                 ),
               ),
@@ -497,6 +524,69 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 24),
+              // Дедлайн
+              Text(
+                'ДЕДЛАЙН',
+                style: TextStyle(
+                  color: AppTheme.mistGray,
+                  fontSize: 12,
+                  letterSpacing: 1.5,
+                  fontWeight: FontWeight.w300,
+                ),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final DateTime? picked = await showDatePicker(
+                    context: context,
+                    initialDate: _maxDeadline ?? DateTime.now().add(Duration(days: 30)),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(Duration(days: 365)),
+                    builder: (context, child) {
+                      return Theme(
+                        data: ThemeData.dark().copyWith(
+                          colorScheme: ColorScheme.dark(
+                            primary: AppTheme.electricBlue,
+                            onPrimary: AppTheme.charcoal,
+                            surface: AppTheme.darkerCharcoal,
+                            onSurface: AppTheme.tombstoneWhite,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _maxDeadline = picked;
+                    });
+                  }
+                },
+                icon: Icon(Icons.calendar_today, size: 16, color: AppTheme.mistGray),
+                label: Text(
+                  _maxDeadline != null
+                      ? 'До ${DateFormat('dd.MM.yyyy').format(_maxDeadline!)}'
+                      : 'Выбрать дату',
+                  style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 12),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: AppTheme.dimGray),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+              ),
+              if (_maxDeadline != null) ...[
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _maxDeadline = null;
+                    });
+                  },
+                  icon: Icon(Icons.close, size: 14, color: AppTheme.bloodRed),
+                  label: Text('Сбросить дедлайн', style: TextStyle(color: AppTheme.bloodRed, fontSize: 11)),
+                ),
+              ],
             ],
           ),
         ),
@@ -508,6 +598,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                 _selectedCategory = null;
                 _minBudget = null;
                 _maxBudget = null;
+                _maxDeadline = null;
               });
               ref.read(ordersProvider.notifier).loadOrders();
               Navigator.pop(context);
