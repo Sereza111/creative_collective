@@ -21,6 +21,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
   String _searchQuery = '';
   double? _minBudget;
   double? _maxBudget;
+  String _sortBy = 'date_desc'; // date_desc, date_asc, budget_desc, budget_asc
 
   @override
   void dispose() {
@@ -59,10 +60,78 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
       }).toList();
     }
 
+    // Сортировка
+    switch (_sortBy) {
+      case 'date_desc':
+        filteredOrders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        break;
+      case 'date_asc':
+        filteredOrders.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        break;
+      case 'budget_desc':
+        filteredOrders.sort((a, b) => (b.budget ?? 0).compareTo(a.budget ?? 0));
+        break;
+      case 'budget_asc':
+        filteredOrders.sort((a, b) => (a.budget ?? 0).compareTo(b.budget ?? 0));
+        break;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('МАРКЕТПЛЕЙС'),
         actions: [
+          // Сортировка
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.sort),
+            tooltip: 'Сортировка',
+            onSelected: (value) {
+              setState(() {
+                _sortBy = value;
+              });
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'date_desc',
+                child: Row(
+                  children: [
+                    Icon(Icons.arrow_downward, size: 16, color: _sortBy == 'date_desc' ? AppTheme.electricBlue : AppTheme.ashGray),
+                    const SizedBox(width: 8),
+                    Text('Сначала новые', style: TextStyle(color: _sortBy == 'date_desc' ? AppTheme.electricBlue : AppTheme.ashGray)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'date_asc',
+                child: Row(
+                  children: [
+                    Icon(Icons.arrow_upward, size: 16, color: _sortBy == 'date_asc' ? AppTheme.electricBlue : AppTheme.ashGray),
+                    const SizedBox(width: 8),
+                    Text('Сначала старые', style: TextStyle(color: _sortBy == 'date_asc' ? AppTheme.electricBlue : AppTheme.ashGray)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'budget_desc',
+                child: Row(
+                  children: [
+                    Icon(Icons.arrow_downward, size: 16, color: _sortBy == 'budget_desc' ? AppTheme.electricBlue : AppTheme.ashGray),
+                    const SizedBox(width: 8),
+                    Text('Бюджет ↓', style: TextStyle(color: _sortBy == 'budget_desc' ? AppTheme.electricBlue : AppTheme.ashGray)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'budget_asc',
+                child: Row(
+                  children: [
+                    Icon(Icons.arrow_upward, size: 16, color: _sortBy == 'budget_asc' ? AppTheme.electricBlue : AppTheme.ashGray),
+                    const SizedBox(width: 8),
+                    Text('Бюджет ↑', style: TextStyle(color: _sortBy == 'budget_asc' ? AppTheme.electricBlue : AppTheme.ashGray)),
+                  ],
+                ),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.filter_list),
             onPressed: _showFilterDialog,
