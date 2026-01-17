@@ -23,7 +23,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     Future.microtask(() {
       ref.read(projectsProvider.notifier).loadProjects();
       ref.read(tasksProvider.notifier).loadTasks();
-      ref.read(financeProvider.notifier).loadFinance();
+      ref.read(balanceProvider.notifier).loadBalance();
     });
   }
 
@@ -31,7 +31,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final projectsState = ref.watch(projectsProvider);
     final tasksState = ref.watch(tasksProvider);
-    final financeAsync = ref.watch(financeProvider);
+    final financeAsync = ref.watch(balanceProvider);
     final currencyFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
     
     return Scaffold(

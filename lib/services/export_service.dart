@@ -3,7 +3,7 @@ import 'package:csv/csv.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/project.dart';
 import '../models/task.dart';
-import '../models/transaction.dart';
+import '../models/transaction.dart' as transaction_model;
 
 class ExportService {
   /// Экспорт проектов в CSV
@@ -66,7 +66,7 @@ class ExportService {
   }
 
   /// Экспорт транзакций в CSV
-  static Future<File> exportTransactionsToCSV(List<Transaction> transactions) async {
+  static Future<File> exportTransactionsToCSV(List<transaction_model.TransactionModel> transactions) async {
     final directory = await getApplicationDocumentsDirectory();
     final path = '${directory.path}/transactions_export_${DateTime.now().millisecondsSinceEpoch}.csv';
     

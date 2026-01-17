@@ -19,7 +19,7 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final financeAsync = ref.watch(financeProvider);
+    final financeAsync = ref.watch(balanceProvider);
     final currencyFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
 
     if (authState.isLoading) {
@@ -730,7 +730,7 @@ class ProfileScreen extends ConsumerWidget {
   Future<void> _exportTransactions(BuildContext context, WidgetRef ref) async {
     try {
       final transactionsAsync = ref.read(transactionsProvider);
-      final transactions = transactionsAsync.valueOrNull ?? [];
+      final transactions = transactionsAsync.transactions;
       final file = await ExportService.exportTransactionsToCSV(transactions);
       
       if (context.mounted) {
@@ -759,7 +759,7 @@ class ProfileScreen extends ConsumerWidget {
       final projects = ref.read(projectsProvider).projects;
       final tasks = ref.read(tasksProvider).tasks;
       final transactionsAsync = ref.read(transactionsProvider);
-      final transactions = transactionsAsync.valueOrNull ?? [];
+      final transactions = transactionsAsync.transactions;
       
       final file = await ExportService.exportAllDataToCSV(
         projects: projects,
