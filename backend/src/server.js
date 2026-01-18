@@ -23,6 +23,8 @@ const adminRoutes = require('./routes/admin.routes');
 const favoritesRoutes = require('./routes/favorites.routes');
 const notificationsRoutes = require('./routes/notifications.routes');
 const disputesRoutes = require('./routes/disputes.routes');
+const financeRoutes = require('./routes/finance.routes');
+const legalRoutes = require('./routes/legal.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -99,6 +101,7 @@ app.use(`/api/${API_VERSION}/admin`, adminRoutes);
 app.use(`/api/${API_VERSION}/favorites`, favoritesRoutes);
 app.use(`/api/${API_VERSION}/notifications`, notificationsRoutes);
 app.use(`/api/${API_VERSION}/disputes`, disputesRoutes);
+app.use(`/api/${API_VERSION}/legal`, legalRoutes);
 
 // 404 обработчик
 app.use(notFound);
@@ -124,6 +127,10 @@ async function startServer() {
     
     // Инициализируем схему БД
     await initializeDatabase();
+    
+    // Инициализируем планировщик задач
+    const { initScheduler } = require('./jobs/scheduler');
+    initScheduler();
     
     // Запускаем сервер
     app.listen(PORT, () => {
