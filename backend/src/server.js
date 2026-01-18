@@ -23,7 +23,6 @@ const adminRoutes = require('./routes/admin.routes');
 const favoritesRoutes = require('./routes/favorites.routes');
 const notificationsRoutes = require('./routes/notifications.routes');
 const disputesRoutes = require('./routes/disputes.routes');
-const financeRoutes = require('./routes/finance.routes');
 const legalRoutes = require('./routes/legal.routes');
 
 const app = express();
