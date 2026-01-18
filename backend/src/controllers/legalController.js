@@ -248,13 +248,3 @@ exports.processIgnoredApplications = async (req, res) => {
   }
 };
 
-module.exports = {
-  getActiveDocument,
-  getAllActiveDocuments,
-  signDocument,
-  checkUserAgreement,
-  getUserAgreements,
-  markApplicationViewed,
-  processIgnoredApplications
-};
-
