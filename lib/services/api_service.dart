@@ -1523,4 +1523,69 @@ class ApiService {
       throw Exception(error['message'] ?? 'Ошибка отмены заказа');
     }
   }
+
+  // === LEGAL DOCUMENTS METHODS ===
+
+  // Получить юридический документ
+  static Future<Map<String, dynamic>> getLegalDocument(String documentType) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/legal/documents/$documentType'),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data'];
+      }
+      throw Exception(data['message'] ?? 'Ошибка получения документа');
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка получения документа');
+    }
+  }
+
+  // Подписать юридический документ
+  static Future<void> signLegalDocument({
+    required int documentId,
+    required String documentType,
+    int? orderId,
+  }) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/legal/sign'),
+      headers: headers,
+      body: jsonEncode({
+        'document_id': documentId,
+        'document_type': documentType,
+        'order_id': orderId,
+      }),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка подписания документа');
+    }
+  }
+
+  // Проверить, подписал ли пользователь документ
+  static Future<bool> checkUserAgreement(String documentType, {int? orderId}) async {
+    final headers = await _getHeaders();
+    final queryParams = {'document_type': documentType};
+    if (orderId != null) {
+      queryParams['order_id'] = orderId.toString();
+    }
+    
+    final uri = Uri.parse('$baseUrl/legal/check').replace(queryParameters: queryParams);
+    final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data']['signed'] ?? false;
+      }
+      return false;
+    } else {
+      return false;
+    }
+  }
 }

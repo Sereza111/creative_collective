@@ -9,6 +9,7 @@ import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import 'chat_screen.dart';
 import 'forms/add_review_screen.dart';
+import 'legal_document_screen.dart';
 
 class OrderDetailScreen extends ConsumerStatefulWidget {
   final Order order;
@@ -746,6 +747,45 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   }
 
   Future<void> _applyToOrder(BuildContext context, WidgetRef ref) async {
+    // ПРОВЕРКА ПОДПИСИ ДОКУМЕНТОВ
+    try {
+      final hasSignedFreelancerTerms = await ApiService.checkUserAgreement('freelancer_terms');
+      
+      if (!hasSignedFreelancerTerms) {
+        final signed = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LegalDocumentScreen(
+              documentType: 'freelancer_terms',
+              title: 'Условия для фрилансеров',
+            ),
+          ),
+        );
+        
+        if (signed != true) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Необходимо принять условия для продолжения'),
+                backgroundColor: AppTheme.bloodRed,
+              ),
+            );
+          }
+          return;
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка проверки документов: $e'),
+            backgroundColor: AppTheme.bloodRed,
+          ),
+        );
+      }
+      return;
+    }
+
     final messageController = TextEditingController();
     final budgetController = TextEditingController();
     
@@ -760,6 +800,30 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.charcoal,
+                border: Border.all(color: AppTheme.dimGray.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppTheme.electricBlue, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Стоимость отклика: 50 ₽',
+                      style: TextStyle(
+                        color: AppTheme.electricBlue,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: messageController,
               decoration: InputDecoration(
