@@ -214,6 +214,29 @@ exports.applyToOrder = async (req, res) => {
       return errorResponse(res, 'Вы уже откликнулись на этот заказ', 400);
     }
 
+    // ОПЛАТА ЗА ОТКЛИК (50 рублей)
+    const applicationFee = 50; // Стоимость отклика
+
+    // Проверяем баланс фрилансера
+    const balance = await query('SELECT balance FROM user_balances WHERE user_id = ?', [freelancerId]);
+    
+    if (balance.length === 0 || balance[0].balance < applicationFee) {
+      return errorResponse(res, 'Недостаточно средств для отправки отклика. Пополните баланс.', 402);
+    }
+
+    // Списываем средства за отклик
+    await query(
+      'UPDATE user_balances SET balance = balance - ?, total_spent = total_spent + ? WHERE user_id = ?',
+      [applicationFee, applicationFee, freelancerId]
+    );
+
+    // Создаем транзакцию
+    await query(
+      `INSERT INTO transactions (user_id, type, amount, description, status, order_id)
+       VALUES (?, 'expense', ?, ?, 'completed', ?)`,
+      [freelancerId, applicationFee, `Отклик на заказ "${order.title}"`, id]
+    );
+
     const result = await query(
       `INSERT INTO order_applications (order_id, freelancer_id, message, proposed_budget, proposed_deadline)
        VALUES (?, ?, ?, ?, ?)`,
@@ -334,6 +357,41 @@ exports.acceptApplication = async (req, res) => {
       ['rejected', id, applicationId]
     );
 
+    // СОЗДАТЬ ПРОЕКТ ИЗ ЗАКАЗА
+    try {
+      const projectResult = await query(
+        `INSERT INTO projects (name, description, status, start_date, end_date, budget, user_id, order_id)
+         VALUES (?, ?, 'active', NOW(), ?, ?, ?, ?)`,
+        [
+          order.title,
+          order.description,
+          order.deadline,
+          order.budget,
+          order.client_id,
+          order.id
+        ]
+      );
+
+      // СОЗДАТЬ ЗАДАЧУ ИЗ ЗАКАЗА
+      await query(
+        `INSERT INTO tasks (title, description, status, start_date, end_date, project_id, assigned_to, order_id)
+         VALUES (?, ?, 'in_progress', NOW(), ?, ?, ?, ?)`,
+        [
+          order.title,
+          order.description || 'Выполнить заказ',
+          order.deadline,
+          projectResult.insertId,
+          application.freelancer_id,
+          order.id
+        ]
+      );
+
+      console.log(`Project and task created for order ${id}`);
+    } catch (projectError) {
+      console.error('Error creating project/task:', projectError);
+      // Не прерываем выполнение, если проект не создался
+    }
+
     successResponse(res, null, 'Исполнитель назначен');
   } catch (error) {
     console.error('Accept application error:', error);
@@ -371,7 +429,7 @@ exports.completeOrder = async (req, res) => {
     }
 
     const budget = parseFloat(order.budget) || 0;
-    const commission = budget * 0.10; // 10% комиссия платформы
+    const commission = budget * 0.03; // ИЗМЕНЕНО: 3% вместо 10%
     const freelancerAmount = budget - commission;
 
     // Создаем транзакции

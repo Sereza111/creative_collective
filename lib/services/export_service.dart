@@ -80,8 +80,8 @@ class ExportService {
         transaction.type,
         transaction.amount,
         transaction.description ?? '',
-        transaction.status,
-        transaction.createdAt.toString().split(' ')[0],
+        transaction.status, // Исправлено: было category, должно быть status
+        transaction.date.toString().split(' ')[0], // Исправлено: было createdAt, должно быть date
       ]);
     }
 
@@ -145,7 +145,7 @@ class ExportService {
         transaction.type,
         transaction.amount,
         transaction.description ?? '',
-        transaction.createdAt.toString().split(' ')[0],
+        transaction.date.toString().split(' ')[0], // Исправлено: было createdAt, должно быть date
       ]);
     }
 
