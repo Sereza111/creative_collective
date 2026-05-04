@@ -1,5 +1,6 @@
 const { query } = require('../config/database');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
+const { newId } = require('../utils/id');
 
 // Создать отзыв
 exports.createReview = async (req, res) => {
@@ -51,9 +52,10 @@ exports.createReview = async (req, res) => {
     }
 
     // Создаем отзыв
-    const result = await query(
-      'INSERT INTO reviews (order_id, reviewer_id, reviewee_id, rating, comment) VALUES (?, ?, ?, ?, ?)',
-      [orderId, reviewerId, revieweeId, rating, comment]
+    const reviewId = newId();
+    await query(
+      'INSERT INTO reviews (id, order_id, reviewer_id, reviewee_id, rating, comment) VALUES (?, ?, ?, ?, ?, ?)',
+      [reviewId, orderId, reviewerId, revieweeId, rating, comment]
     );
 
     // Получаем созданный отзыв с данными пользователей
@@ -65,10 +67,10 @@ exports.createReview = async (req, res) => {
        LEFT JOIN users reviewer ON r.reviewer_id = reviewer.id
        LEFT JOIN users reviewee ON r.reviewee_id = reviewee.id
        WHERE r.id = ?`,
-      [result.insertId]
+      [reviewId]
     );
 
-    console.log(`✅ Отзыв создан с ID: ${result.insertId}`);
+    console.log(`✅ Отзыв создан с ID: ${reviewId}`);
     successResponse(res, newReview[0], 'Отзыв успешно добавлен', 201);
   } catch (error) {
     console.error('Create review error:', error);

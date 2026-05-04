@@ -1,15 +1,17 @@
 const { query } = require('../config/database');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
+const { newId } = require('../utils/id');
 
 // Создание уведомления
 exports.createNotification = async (userId, type, title, message, relatedId = null, relatedType = null) => {
   try {
-    const result = await query(
-      `INSERT INTO notifications (user_id, type, title, message, related_id, related_type) 
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [userId, type, title, message, relatedId, relatedType]
+    const id = newId();
+    await query(
+      `INSERT INTO notifications (id, user_id, type, title, message, related_id, related_type) 
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [id, userId, type, title, message, relatedId, relatedType]
     );
-    return result.insertId;
+    return id;
   } catch (error) {
     console.error('Create notification error:', error);
     throw error;

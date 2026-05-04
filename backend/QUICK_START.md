@@ -68,15 +68,17 @@ curl -X POST http://localhost:3000/api/v1/auth/login \
 ### 2. Получить задачи
 
 ```bash
+ACCESS_TOKEN="paste_access_token_here"
+
 curl http://localhost:3000/api/v1/tasks \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+  -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
 ### 3. Создать задачу
 
 ```bash
 curl -X POST http://localhost:3000/api/v1/tasks \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Моя первая задача",

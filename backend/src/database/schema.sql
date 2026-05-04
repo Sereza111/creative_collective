@@ -199,10 +199,11 @@ CREATE TABLE IF NOT EXISTS files (
 CREATE TABLE IF NOT EXISTS notifications (
   id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
   user_id VARCHAR(36) NOT NULL,
+  type VARCHAR(50) NOT NULL,
   title VARCHAR(200) NOT NULL,
   message TEXT NOT NULL,
-  type ENUM('task', 'project', 'finance', 'team', 'system') NOT NULL,
-  entity_id VARCHAR(36),
+  related_id VARCHAR(36) NULL,
+  related_type VARCHAR(50) NULL,
   is_read BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   read_at TIMESTAMP NULL,

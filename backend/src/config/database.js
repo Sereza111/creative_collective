@@ -60,7 +60,20 @@ async function createDatabaseIfNotExists() {
   }
 }
 
+function getDbConfig() {
+  return { ...dbConfig };
+}
+
+async function createMigrationConnection() {
+  return mysql.createConnection({
+    ...dbConfig,
+    multipleStatements: true
+  });
+}
+
 module.exports = {
+  getDbConfig,
+  createMigrationConnection,
   pool,
   query,
   testConnection,

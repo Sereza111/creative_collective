@@ -17,7 +17,11 @@ const authenticate = async (req, res, next) => {
     
     // Проверяем, существует ли пользователь
     const users = await query(
-      'SELECT id, email, full_name, role, user_role, is_active FROM users WHERE id = ?',
+      `SELECT id, email,
+              CONCAT_WS(' ', first_name, last_name) AS full_name,
+              role, user_role, status
+       FROM users
+       WHERE id = ?`,
       [decoded.userId]
     );
     
@@ -30,7 +34,7 @@ const authenticate = async (req, res, next) => {
     
     const user = users[0];
     
-    if (!user.is_active) {
+    if (user.status !== 'active') {
       return res.status(403).json({
         success: false,
         message: 'Аккаунт заблокирован'
@@ -91,7 +95,9 @@ const optionalAuth = async (req, res, next) => {
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const users = await query(
-        'SELECT id, email, full_name, role, user_role FROM users WHERE id = ? AND is_active = TRUE',
+        `SELECT id, email, CONCAT_WS(' ', first_name, last_name) AS full_name, role, user_role
+         FROM users
+         WHERE id = ? AND status = 'active'`,
         [decoded.userId]
       );
       
@@ -116,7 +122,7 @@ const adminOnly = (req, res, next) => {
     });
   }
   
-  if (req.user.user_role !== 'admin') {
+  if (req.user.role !== 'admin') {
     return res.status(403).json({
       success: false,
       message: 'Доступ только для администраторов'

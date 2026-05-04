@@ -1,5 +1,6 @@
 const { query } = require('../config/database');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
+const { newId } = require('../utils/id');
 
 // Получить или создать чат для заказа
 exports.getOrCreateChat = async (req, res) => {
@@ -36,11 +37,11 @@ exports.getOrCreateChat = async (req, res) => {
     if (chats.length === 0) {
       console.log('➕ Создаем новый чат');
       // Создаем новый чат
-      const result = await query(
-        'INSERT INTO chats (order_id, client_id, freelancer_id) VALUES (?, ?, ?)',
-        [orderId, order.client_id, order.freelancer_id]
+      chatId = newId();
+      await query(
+        'INSERT INTO chats (id, order_id, client_id, freelancer_id) VALUES (?, ?, ?, ?)',
+        [chatId, orderId, order.client_id, order.freelancer_id]
       );
-      chatId = result.insertId;
       console.log(`✅ Чат создан с ID: ${chatId}`);
     } else {
       chatId = chats[0].id;
@@ -198,12 +199,13 @@ exports.sendMessage = async (req, res) => {
     console.log(`✅ Доступ к чату разрешен`);
 
     // Сохраняем сообщение
-    const result = await query(
-      'INSERT INTO messages (chat_id, sender_id, message) VALUES (?, ?, ?)',
-      [chatId, senderId, message.trim()]
+    const messageId = newId();
+    await query(
+      'INSERT INTO messages (id, chat_id, sender_id, message) VALUES (?, ?, ?, ?)',
+      [messageId, chatId, senderId, message.trim()]
     );
 
-    console.log(`✅ Сообщение сохранено с ID: ${result.insertId}`);
+    console.log(`✅ Сообщение сохранено с ID: ${messageId}`);
 
     // Обновляем чат (last_message и last_message_at)
     await query(
@@ -220,7 +222,7 @@ exports.sendMessage = async (req, res) => {
        FROM messages m
        LEFT JOIN users u ON m.sender_id = u.id
        WHERE m.id = ?`,
-      [result.insertId]
+      [messageId]
     );
 
     successResponse(res, newMessage[0], 'Сообщение отправлено', 201);

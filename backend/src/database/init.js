@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { pool, createDatabaseIfNotExists } = require('../config/database');
+const { runMigrations } = require('./migrations/run');
 
 async function initializeDatabase() {
   try {
@@ -8,32 +9,11 @@ async function initializeDatabase() {
     
     // Создаем базу данных если не существует
     await createDatabaseIfNotExists();
-    
-    // Читаем и выполняем schema.sql
-    console.log('📝 Creating tables...');
-    const schemaSQL = fs.readFileSync(
-      path.join(__dirname, 'schema.sql'),
-      'utf8'
-    );
-    
-    // Разбиваем на отдельные запросы
-    const queries = schemaSQL
-      .split(';')
-      .map(q => q.trim())
-      .filter(q => q.length > 0 && !q.startsWith('--'));
-    
-    for (const query of queries) {
-      if (query.includes('DELIMITER')) continue;
-      try {
-        await pool.query(query);
-      } catch (error) {
-        if (!error.message.includes('already exists')) {
-          console.error('Error executing query:', error.message);
-        }
-      }
-    }
-    
-    console.log('✅ Database schema created successfully');
+
+    // Применяем baseline schema.sql + миграции (атомарнее, без split(';'))
+    console.log('📝 Applying database migrations...');
+    await runMigrations();
+    console.log('✅ Database migrations applied successfully');
     
     // Проверяем, есть ли уже данные
     const [users] = await pool.query('SELECT COUNT(*) as count FROM users');

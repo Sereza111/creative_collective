@@ -1,5 +1,6 @@
 const { query } = require('../config/database');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
+const { newId } = require('../utils/id');
 
 // Создать работу в портфолио
 exports.createPortfolioItem = async (req, res) => {
@@ -20,18 +21,19 @@ exports.createPortfolioItem = async (req, res) => {
     );
     const newOrder = maxOrder[0].max_order + 1;
 
-    const result = await query(
-      `INSERT INTO portfolio (user_id, title, description, image_url, project_url, category, skills, completed_at, display_order) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, title, description, image_url, project_url, category, skills ? JSON.stringify(skills) : null, completed_at, newOrder]
+    const id = newId();
+    await query(
+      `INSERT INTO portfolio (id, user_id, title, description, image_url, project_url, category, skills, completed_at, display_order) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, userId, title, description, image_url, project_url, category, skills ? JSON.stringify(skills) : null, completed_at, newOrder]
     );
 
     const newItem = await query(
       'SELECT * FROM portfolio WHERE id = ?',
-      [result.insertId]
+      [id]
     );
 
-    console.log(`✅ Работа добавлена в портфолио с ID: ${result.insertId}`);
+    console.log(`✅ Работа добавлена в портфолио с ID: ${id}`);
     successResponse(res, newItem[0], 'Работа добавлена в портфолио', 201);
   } catch (error) {
     console.error('Create portfolio item error:', error);

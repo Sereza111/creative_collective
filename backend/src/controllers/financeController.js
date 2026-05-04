@@ -1,5 +1,6 @@
 const { query } = require('../config/database');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
+const { newId } = require('../utils/id');
 
 // Получить баланс пользователя
 exports.getUserBalance = async (req, res) => {
@@ -11,7 +12,7 @@ exports.getUserBalance = async (req, res) => {
     
     if (balance.length === 0) {
       // Создаем баланс, если его нет
-      await query('INSERT INTO user_balances (user_id) VALUES (?)', [userId]);
+      await query('INSERT INTO user_balances (id, user_id) VALUES (?, ?)', [newId(), userId]);
       balance = await query('SELECT * FROM user_balances WHERE user_id = ?', [userId]);
     }
 
@@ -92,13 +93,14 @@ exports.createTransaction = async (req, res) => {
       return errorResponse(res, 'Недостаточно прав', 403);
     }
 
-    const result = await query(
-      `INSERT INTO transactions (user_id, order_id, type, amount, description, related_user_id, status)
-       VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-      [user_id, order_id, type, amount, description, related_user_id]
+    const id = newId();
+    await query(
+      `INSERT INTO transactions (id, user_id, order_id, type, amount, description, related_user_id, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
+      [id, user_id, order_id || null, type, amount, description || null, related_user_id || null]
     );
 
-    const transaction = await query('SELECT * FROM transactions WHERE id = ?', [result.insertId]);
+    const transaction = await query('SELECT * FROM transactions WHERE id = ?', [id]);
 
     successResponse(res, transaction[0], 'Транзакция создана', 201);
   } catch (error) {
@@ -160,11 +162,7 @@ exports.createWithdrawalRequest = async (req, res) => {
     }
 
     // Создаем запрос
-    const result = await query(
-      `INSERT INTO withdrawal_requests (user_id, amount, payment_method, payment_details)
-       VALUES (?, ?, ?, ?)`,
-      [userId, amount, payment_method, JSON.stringify(payment_details)]
-    );
+    const id = newId();
 
     // Замораживаем средства
     await query(
@@ -172,7 +170,13 @@ exports.createWithdrawalRequest = async (req, res) => {
       [amount, amount, userId]
     );
 
-    const withdrawalRequest = await query('SELECT * FROM withdrawal_requests WHERE id = ?', [result.insertId]);
+    await query(
+      `INSERT INTO withdrawal_requests (id, user_id, amount, payment_method, payment_details)
+       VALUES (?, ?, ?, ?, ?)`,
+      [id, userId, amount, payment_method, JSON.stringify(payment_details)]
+    );
+
+    const withdrawalRequest = await query('SELECT * FROM withdrawal_requests WHERE id = ?', [id]);
 
     successResponse(res, withdrawalRequest[0], 'Запрос на вывод создан', 201);
   } catch (error) {

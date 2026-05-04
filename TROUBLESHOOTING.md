@@ -86,7 +86,7 @@ http://85.198.103.11:3000/api/v1/auth/login
                     },
                     body: JSON.stringify({
                         email: 'admin@creative.local',
-                        password: 'admin123'
+                        password: 'YOUR_PASSWORD'
                     })
                 });
                 

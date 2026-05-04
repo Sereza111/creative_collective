@@ -161,9 +161,9 @@ exports.createTask = async (req, res) => {
     // Создаем уведомление для назначенного пользователя
     if (assigned_to && assigned_to !== created_by) {
       await query(
-        `INSERT INTO notifications (id, user_id, title, message, type, entity_id)
-         VALUES (?, ?, ?, ?, 'task', ?)`,
-        [generateUUID(), assigned_to, 'Новая задача', `Вам назначена задача: ${title}`, taskId]
+        `INSERT INTO notifications (id, user_id, type, title, message, related_id, related_type)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [generateUUID(), assigned_to, 'task', 'Новая задача', `Вам назначена задача: ${title}`, taskId, 'task']
       );
     }
     

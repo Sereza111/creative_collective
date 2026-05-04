@@ -1,6 +1,7 @@
 const { query } = require('../config/database');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
 const { createNotification } = require('./notificationsController');
+const { newId } = require('../utils/id');
 
 // Создать спор
 exports.createDispute = async (req, res) => {
@@ -33,12 +34,11 @@ exports.createDispute = async (req, res) => {
     }
 
     // Создаем спор
-    const result = await query(
-      'INSERT INTO disputes (order_id, opened_by_user_id, against_user_id, reason, description) VALUES (?, ?, ?, ?, ?)',
-      [order_id, userId, againstUserId, reason, description]
+    const disputeId = newId();
+    await query(
+      'INSERT INTO disputes (id, order_id, opened_by_user_id, against_user_id, reason, description) VALUES (?, ?, ?, ?, ?, ?)',
+      [disputeId, order_id, userId, againstUserId, reason, description]
     );
-
-    const disputeId = result.insertId;
 
     // Записываем в историю
     await query(
@@ -211,9 +211,10 @@ exports.addDisputeMessage = async (req, res) => {
     }
 
     // Добавляем сообщение
-    const result = await query(
-      'INSERT INTO dispute_messages (dispute_id, user_id, message, attachments) VALUES (?, ?, ?, ?)',
-      [id, userId, message, attachments ? JSON.stringify(attachments) : null]
+    const messageId = newId();
+    await query(
+      'INSERT INTO dispute_messages (id, dispute_id, user_id, message, attachments) VALUES (?, ?, ?, ?, ?)',
+      [messageId, id, userId, message, attachments ? JSON.stringify(attachments) : null]
     );
 
     // Записываем в историю
@@ -243,7 +244,7 @@ exports.addDisputeMessage = async (req, res) => {
        FROM dispute_messages dm
        JOIN users u ON dm.user_id = u.id
        WHERE dm.id = ?`,
-      [result.insertId]
+      [messageId]
     );
 
     successResponse(res, addedMessage[0], 'Сообщение добавлено', 201);

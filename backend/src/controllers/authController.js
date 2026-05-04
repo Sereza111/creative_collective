@@ -3,10 +3,46 @@ const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
 const { successResponse, errorResponse, generateUUID } = require('../utils/helpers');
 
+const buildFullName = (user) => {
+  const first = user.first_name || '';
+  const last = user.last_name || '';
+  return `${first} ${last}`.trim() || null;
+};
+
+const splitFullName = (fullName) => {
+  const trimmed = (fullName || '').trim();
+  if (!trimmed) return { firstName: null, lastName: null };
+  const parts = trimmed.split(/\s+/);
+  const firstName = parts.shift() || null;
+  const lastName = parts.join(' ') || null;
+  return { firstName, lastName };
+};
+
+const makeBaseUsername = (email) => {
+  const localPart = String(email || '').split('@')[0] || 'user';
+  return localPart.toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 40) || 'user';
+};
+
+const getUniqueUsername = async (email) => {
+  const base = makeBaseUsername(email);
+  let candidate = base;
+  let suffix = 1;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const users = await query('SELECT id FROM users WHERE username = ? LIMIT 1', [candidate]);
+    if (users.length === 0) return candidate;
+    candidate = `${base}_${suffix++}`;
+  }
+};
+
 // Регистрация нового пользователя
 exports.register = async (req, res) => {
   try {
     const { email, password, full_name, role = 'member', user_role = 'freelancer' } = req.body;
+
+    if (!email || !password) {
+      return errorResponse(res, 'Email и пароль обязательны', 400);
+    }
     
     // Проверяем, существует ли пользователь
     const existingUser = await query(
@@ -20,22 +56,31 @@ exports.register = async (req, res) => {
     
     // Хешируем пароль
     const hashedPassword = await bcrypt.hash(password, 10);
-    
+
+    const userId = generateUUID();
+    const financeId = generateUUID();
+    const { firstName, lastName } = splitFullName(full_name);
+    const username = await getUniqueUsername(email);
+
     // Создаем пользователя
-    const userResult = await query(
-      `INSERT INTO users (email, password, full_name, role, user_role) 
-       VALUES (?, ?, ?, ?, ?)`,
-      [email, hashedPassword, full_name || null, role, user_role]
+    await query(
+      `INSERT INTO users (id, email, username, password_hash, first_name, last_name, full_name, role, user_role, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
+      [userId, email, username, hashedPassword, firstName, lastName, full_name || null, role, user_role]
     );
-    
-    const userId = userResult.insertId;
-    
+
     // Создаем финансовый аккаунт для пользователя
     await query(
-      'INSERT INTO finance (user_id, balance, total_earned, total_spent) VALUES (?, 0, 0, 0)',
-      [userId]
+      'INSERT INTO finances (id, user_id, balance, total_earned, total_spent) VALUES (?, ?, 0, 0, 0)',
+      [financeId, userId]
     );
-    
+
+    // Создаем баланс маркетплейса (используется orders/withdrawals)
+    await query(
+      'INSERT INTO user_balances (id, user_id) VALUES (?, ?)',
+      [generateUUID(), userId]
+    );
+
     // Генерируем токены
     const accessToken = jwt.sign(
       { userId, email, role, userRole: user_role },
@@ -59,7 +104,7 @@ exports.register = async (req, res) => {
       user: {
         id: userId,
         email,
-        full_name,
+        full_name: full_name || buildFullName({ first_name: firstName, last_name: lastName }),
         role,
         user_role
       },
@@ -89,19 +134,19 @@ exports.login = async (req, res) => {
     }
     
     const user = users[0];
-    
+
     // Проверяем статус
-    if (!user.is_active) {
+    if (user.status !== 'active') {
       return errorResponse(res, 'Аккаунт заблокирован', 403);
     }
-    
+
     // Проверяем пароль
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+
     if (!isPasswordValid) {
       return errorResponse(res, 'Неверный email или пароль', 401);
     }
-    
+
     // Обновляем last_login
     await query(
       'UPDATE users SET last_login = NOW() WHERE id = ?',
@@ -131,7 +176,7 @@ exports.login = async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        full_name: user.full_name,
+        full_name: buildFullName(user),
         role: user.role,
         user_role: user.user_role || 'freelancer',
         avatar_url: user.avatar_url
@@ -219,11 +264,11 @@ exports.me = async (req, res) => {
     const userId = req.user.id;
     
     const users = await query(
-      `SELECT u.id, u.email, u.full_name, u.avatar_url, 
-              u.role, u.user_role, u.created_at,
+      `SELECT u.id, u.email, u.first_name, u.last_name, u.avatar_url,
+              u.role, u.created_at,
               f.balance, f.total_earned, f.total_spent
        FROM users u
-       LEFT JOIN finance f ON f.user_id = u.id
+       LEFT JOIN finances f ON f.user_id = u.id
        WHERE u.id = ?`,
       [userId]
     );
@@ -232,7 +277,12 @@ exports.me = async (req, res) => {
       return errorResponse(res, 'Пользователь не найден', 404);
     }
     
-    successResponse(res, users[0], 'Данные пользователя получены');
+    const user = users[0];
+    successResponse(res, {
+      ...user,
+      full_name: buildFullName(user),
+      user_role: user.user_role || 'freelancer'
+    }, 'Данные пользователя получены');
     
   } catch (error) {
     console.error('Get me error:', error);
@@ -259,7 +309,12 @@ exports.updateProfile = async (req, res) => {
     
     // Update user data
     const updateData = {};
-    if (full_name !== undefined) updateData.full_name = full_name;
+    if (full_name !== undefined) {
+      const { firstName, lastName } = splitFullName(full_name);
+      updateData.first_name = firstName;
+      updateData.last_name = lastName;
+      updateData.full_name = full_name || null;
+    }
     if (email !== undefined) updateData.email = email;
     updateData.updated_at = new Date();
     
@@ -273,16 +328,20 @@ exports.updateProfile = async (req, res) => {
     
     // Get updated user data
     const users = await query(
-      `SELECT u.id, u.email, u.full_name, u.avatar_url, 
+      `SELECT u.id, u.email, u.first_name, u.last_name, u.avatar_url, 
               u.role, u.created_at,
               f.balance, f.total_earned, f.total_spent
        FROM users u
-       LEFT JOIN finance f ON f.user_id = u.id
+       LEFT JOIN finances f ON f.user_id = u.id
        WHERE u.id = ?`,
       [userId]
     );
-    
-    successResponse(res, users[0], 'Профиль обновлен');
+
+    const user = users[0];
+    successResponse(res, {
+      ...user,
+      full_name: buildFullName(user)
+    }, 'Профиль обновлен');
     
   } catch (error) {
     console.error('Update profile error:', error);

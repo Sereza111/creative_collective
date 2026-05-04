@@ -1,5 +1,6 @@
 const { query } = require('../config/database');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
+const { newId } = require('../utils/id');
 
 // Получить активный документ по типу
 exports.getActiveDocument = async (req, res) => {
@@ -75,13 +76,14 @@ exports.signDocument = async (req, res) => {
     }
 
     // Создаем подпись
-    const result = await query(
-      `INSERT INTO user_agreements (user_id, document_id, document_type, document_version, ip_address, user_agent, order_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [userId, document_id, document_type, documentVersion, ipAddress, userAgent, order_id || null]
+    const id = newId();
+    await query(
+      `INSERT INTO user_agreements (id, user_id, document_id, document_type, document_version, ip_address, user_agent, order_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, userId, document_id, document_type, documentVersion, ipAddress, userAgent, order_id || null]
     );
 
-    successResponse(res, { id: result.insertId }, 'Документ подписан', 201);
+    successResponse(res, { id }, 'Документ подписан', 201);
   } catch (error) {
     console.error('Sign document error:', error);
     errorResponse(res, 'Ошибка подписания документа');
@@ -168,8 +170,8 @@ exports.markApplicationViewed = async (req, res) => {
 
     // Записываем в историю просмотров
     await query(
-      'INSERT INTO application_views (application_id, order_id, client_id) VALUES (?, ?, ?)',
-      [applicationId, application.order_id, userId]
+      'INSERT INTO application_views (id, application_id, order_id, client_id) VALUES (?, ?, ?, ?)',
+      [newId(), applicationId, application.order_id, userId]
     );
 
     successResponse(res, null, 'Просмотр отмечен');
@@ -213,17 +215,18 @@ exports.processIgnoredApplications = async (req, res) => {
         );
 
         // Создаем транзакцию возврата
-        const transactionResult = await query(
-          `INSERT INTO transactions (user_id, type, amount, description, status, order_id)
-           VALUES (?, 'refund', ?, ?, 'completed', ?)`,
-          [app.freelancer_id, applicationFee, 'Возврат за игнорированный отклик', app.order_id]
+        const transactionId = newId();
+        await query(
+          `INSERT INTO transactions (id, user_id, type, amount, description, status, order_id)
+           VALUES (?, ?, 'refund', ?, ?, 'completed', ?)`,
+          [transactionId, app.freelancer_id, applicationFee, 'Возврат за игнорированный отклик', app.order_id]
         );
 
         // Записываем возврат
         await query(
           `INSERT INTO application_refunds (application_id, freelancer_id, order_id, refund_amount, reason, transaction_id)
            VALUES (?, ?, ?, ?, 'ignored_by_client', ?)`,
-          [app.id, app.freelancer_id, app.order_id, applicationFee, transactionResult.insertId]
+          [app.id, app.freelancer_id, app.order_id, applicationFee, transactionId]
         );
 
         // Обновляем статус отклика

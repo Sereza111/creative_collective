@@ -1,4 +1,5 @@
 const { query } = require('../config/database');
+const { newId } = require('../utils/id');
 
 /**
  * Автоматический возврат средств за игнорированные отклики
@@ -36,10 +37,12 @@ async function refundIgnoredApplications() {
         );
 
         // Создаем транзакцию возврата
-        const transactionResult = await query(
-          `INSERT INTO transactions (user_id, type, amount, description, status, order_id)
-           VALUES (?, 'refund', ?, ?, 'completed', ?)`,
+        const transactionId = newId();
+        await query(
+          `INSERT INTO transactions (id, user_id, type, amount, description, status, order_id)
+           VALUES (?, ?, 'refund', ?, ?, 'completed', ?)`,
           [
+            transactionId,
             app.freelancer_id,
             applicationFee,
             `Возврат за игнорированный отклик на заказ "${app.order_title}"`,
@@ -51,7 +54,7 @@ async function refundIgnoredApplications() {
         await query(
           `INSERT INTO application_refunds (application_id, freelancer_id, order_id, refund_amount, reason, transaction_id)
            VALUES (?, ?, ?, ?, 'ignored_by_client', ?)`,
-          [app.id, app.freelancer_id, app.order_id, applicationFee, transactionResult.insertId]
+          [app.id, app.freelancer_id, app.order_id, applicationFee, transactionId]
         );
 
         // Обновляем статус отклика
@@ -62,23 +65,25 @@ async function refundIgnoredApplications() {
 
         // Создаем уведомление фрилансеру
         await query(
-          `INSERT INTO notifications (user_id, type, entity_type, entity_id, message)
-           VALUES (?, 'admin_message', 'order', ?, ?)`,
+          `INSERT INTO notifications (user_id, type, title, message, related_id, related_type)
+           VALUES (?, 'admin_message', ?, ?, ?, 'order')`,
           [
             app.freelancer_id,
-            app.order_id,
-            `Возврат 50 ₽ за игнорированный отклик на заказ "${app.order_title}"`
+            'Возврат средств',
+            `Возврат 50 ₽ за игнорированный отклик на заказ "${app.order_title}"`,
+            app.order_id
           ]
         );
 
         // Создаем уведомление заказчику (предупреждение)
         await query(
-          `INSERT INTO notifications (user_id, type, entity_type, entity_id, message)
-           VALUES (?, 'admin_message', 'order', ?, ?)`,
+          `INSERT INTO notifications (user_id, type, title, message, related_id, related_type)
+           VALUES (?, 'admin_message', ?, ?, ?, 'order')`,
           [
             app.client_id,
-            app.order_id,
-            `⚠️ Вы игнорировали отклик на заказ "${app.order_title}". Средства возвращены фрилансеру.`
+            'Игнорирование отклика',
+            `Вы игнорировали отклик на заказ "${app.order_title}". Средства возвращены фрилансеру.`,
+            app.order_id
           ]
         );
 

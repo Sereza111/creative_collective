@@ -1,5 +1,6 @@
 const { query } = require('../config/database');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
+const { newId } = require('../utils/id');
 
 // Добавить в избранное
 exports.addFavorite = async (req, res) => {
@@ -30,8 +31,8 @@ exports.addFavorite = async (req, res) => {
 
     // Добавляем в избранное (игнорируем дубликаты)
     await query(
-      'INSERT IGNORE INTO favorites (user_id, item_type, item_id) VALUES (?, ?, ?)',
-      [userId, item_type, item_id]
+      'INSERT IGNORE INTO favorites (id, user_id, item_type, item_id) VALUES (?, ?, ?, ?)',
+      [newId(), userId, item_type, item_id]
     );
 
     successResponse(res, { message: 'Добавлено в избранное' }, 'Успешно', 201);

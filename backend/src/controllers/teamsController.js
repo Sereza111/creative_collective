@@ -194,8 +194,8 @@ exports.addTeamMember = async (req, res) => {
     
     // Уведомление
     await query(
-      'INSERT INTO notifications (id, user_id, title, message, type, entity_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [generateUUID(), user_id, 'Новая команда', `Вы добавлены в команду: ${teams[0].name}`, 'team', id]
+      'INSERT INTO notifications (id, user_id, type, title, message, related_id, related_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [generateUUID(), user_id, 'team', 'Новая команда', `Вы добавлены в команду: ${teams[0].name}`, id, 'team']
     );
     
     successResponse(res, { id: memberId }, 'Участник добавлен в команду', 201);

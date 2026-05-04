@@ -135,19 +135,18 @@ exports.createProject = async (req, res) => {
       spent = 0
     } = req.body;
     const created_by = req.user.id;
+    const projectId = generateUUID();
     
-    const result = await query(
-      `INSERT INTO projects (name, description, status, start_date, end_date, progress, budget, spent, created_by) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [name, description, status, start_date, end_date, progress, budget, spent, created_by]
+    await query(
+      `INSERT INTO projects (id, name, description, status, start_date, end_date, progress, budget, spent, created_by) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [projectId, name, description, status, start_date, end_date, progress, budget, spent, created_by]
     );
-    
-    const projectId = result.insertId;
     
     // Автоматически добавляем создателя как участника
     await query(
-      'INSERT INTO project_members (project_id, user_id, role) VALUES (?, ?, ?)',
-      [projectId, created_by, 'owner']
+      'INSERT INTO project_members (id, project_id, user_id, role) VALUES (?, ?, ?, ?)',
+      [generateUUID(), projectId, created_by, 'owner']
     );
     
     const newProject = await query('SELECT * FROM projects WHERE id = ?', [projectId]);
@@ -253,8 +252,8 @@ exports.addProjectMember = async (req, res) => {
     // Уведомление
     const project = await query('SELECT name FROM projects WHERE id = ?', [id]);
     await query(
-      'INSERT INTO notifications (id, user_id, title, message, type, entity_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [generateUUID(), user_id, 'Новый проект', `Вы добавлены в проект: ${project[0].name}`, 'project', id]
+      'INSERT INTO notifications (id, user_id, type, title, message, related_id, related_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [generateUUID(), user_id, 'project', 'Новый проект', `Вы добавлены в проект: ${project[0].name}`, id, 'project']
     );
     
     successResponse(res, { id: memberId }, 'Участник добавлен в проект', 201);

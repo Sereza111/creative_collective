@@ -17,10 +17,11 @@ services:
       DB_HOST: eskopeboyed.beget.app
       DB_PORT: 3306
       DB_USER: creative_collective
-      DB_PASSWORD: tVog4KLomh!l
+      # Secrets must come from your deployment environment / `.env` (do not commit real passwords)
+      DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: creative_collective
-      JWT_SECRET: creative_collective_secret_key_2025_change_in_production
+      JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: 7d
-      JWT_REFRESH_SECRET: creative_collective_refresh_secret_2025
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       JWT_REFRESH_EXPIRES_IN: 30d
       CORS_ORIGIN: "*"

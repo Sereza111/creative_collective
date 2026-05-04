@@ -169,8 +169,10 @@ LIMIT 1;
 2. **Запусти возврат через API (Postman или curl):**
 
 ```bash
+ACCESS_TOKEN="paste_admin_access_token_here"
+
 curl -X POST http://localhost:3000/api/v1/legal/process-ignored \
-  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+  -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
 3. **Проверь результат:**

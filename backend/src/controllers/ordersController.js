@@ -1,5 +1,6 @@
 const { query } = require('../config/database');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
+const { newId } = require('../utils/id');
 
 // Получить все заказы (маркетплейс)
 exports.getAllOrders = async (req, res) => {
@@ -82,10 +83,11 @@ exports.createOrder = async (req, res) => {
       return errorResponse(res, 'Только заказчики могут создавать заказы', 403);
     }
 
-    const result = await query(
-      `INSERT INTO orders (title, description, budget, deadline, category, client_id, status)
-       VALUES (?, ?, ?, ?, ?, ?, 'published')`,
-      [title, description || null, budget, deadline, category || null, clientId]
+    const id = newId();
+    await query(
+      `INSERT INTO orders (id, title, description, budget, deadline, category, client_id, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'published')`,
+      [id, title, description || null, budget, deadline, category || null, clientId]
     );
 
     const newOrder = await query(
@@ -94,7 +96,7 @@ exports.createOrder = async (req, res) => {
        FROM orders o
        LEFT JOIN users c ON o.client_id = c.id
        WHERE o.id = ?`,
-      [result.insertId]
+      [id]
     );
 
     successResponse(res, newOrder[0], 'Заказ создан', 201);
@@ -237,10 +239,11 @@ exports.applyToOrder = async (req, res) => {
       [freelancerId, applicationFee, `Отклик на заказ "${order.title}"`, id]
     );
 
-    const result = await query(
-      `INSERT INTO order_applications (order_id, freelancer_id, message, proposed_budget, proposed_deadline)
-       VALUES (?, ?, ?, ?, ?)`,
-      [id, freelancerId, message || null, proposed_budget || null, proposed_deadline || null]
+    const applicationId = newId();
+    await query(
+      `INSERT INTO order_applications (id, order_id, freelancer_id, message, proposed_budget, proposed_deadline)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [applicationId, id, freelancerId, message || null, proposed_budget || null, proposed_deadline || null]
     );
 
     const newApplication = await query(
@@ -249,7 +252,7 @@ exports.applyToOrder = async (req, res) => {
        FROM order_applications oa
        LEFT JOIN users f ON oa.freelancer_id = f.id
        WHERE oa.id = ?`,
-      [result.insertId]
+      [applicationId]
     );
 
     successResponse(res, newApplication[0], 'Отклик отправлен', 201);
@@ -359,29 +362,35 @@ exports.acceptApplication = async (req, res) => {
 
     // СОЗДАТЬ ПРОЕКТ ИЗ ЗАКАЗА
     try {
-      const projectResult = await query(
-        `INSERT INTO projects (name, description, status, start_date, end_date, budget, user_id, order_id)
-         VALUES (?, ?, 'active', NOW(), ?, ?, ?, ?)`,
+      const endDate = order.deadline || new Date().toISOString().slice(0, 10);
+      const budgetValue = order.budget ?? 0;
+      const projectId = newId();
+      await query(
+        `INSERT INTO projects (id, name, description, status, start_date, end_date, budget, team_id, created_by, order_id)
+         VALUES (?, ?, ?, 'active', CURDATE(), ?, ?, NULL, ?, ?)`,
         [
+          projectId,
           order.title,
-          order.description,
-          order.deadline,
-          order.budget,
+          order.description || null,
+          endDate,
+          budgetValue,
           order.client_id,
           order.id
         ]
       );
 
-      // СОЗДАТЬ ЗАДАЧУ ИЗ ЗАКАЗА
+      const taskId = newId();
       await query(
-        `INSERT INTO tasks (title, description, status, start_date, end_date, project_id, assigned_to, order_id)
-         VALUES (?, ?, 'in_progress', NOW(), ?, ?, ?, ?)`,
+        `INSERT INTO tasks (id, title, description, status, due_date, project_id, assigned_to, created_by, order_id)
+         VALUES (?, ?, ?, 'in_progress', ?, ?, ?, ?, ?)`,
         [
+          taskId,
           order.title,
           order.description || 'Выполнить заказ',
-          order.deadline,
-          projectResult.insertId,
+          order.deadline || null,
+          projectId,
           application.freelancer_id,
+          order.client_id,
           order.id
         ]
       );
