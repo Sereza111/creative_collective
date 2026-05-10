@@ -1,11 +1,10 @@
-# HTTPS для `arc303.ru` и `api.arc303.ru` (пошагово)
+# HTTPS для `arc303.ru` и `api.arc303.ru` (Caddy, без certbot)
 
-Сейчас стек работает в **HTTP-first** режиме (чтобы nginx гарантированно стартовал):
+Текущая схема использует один контейнер `web` (Caddy), который сам получает и обновляет TLS-сертификаты Let's Encrypt.
 
-- nginx (`site`) слушает `80`
-- `arc303.ru` отдаёт landing
-- `api.arc303.ru` проксирует backend (`api:3000`)
-- ACME директория доступна как `/var/www/certbot`
+- `arc303.ru` и `www.arc303.ru` -> статический landing (`site/index.html`)
+- `api.arc303.ru` -> reverse proxy в backend (`api:3000`)
+- Caddy автоматически слушает `80` и `443`
 
 ## 0) DNS
 
@@ -14,30 +13,21 @@
 - `arc303.ru` → IP сервера
 - `api.arc303.ru` → IP сервера
 
-## 1) Первый выпуск сертификата (один раз, отдельно)
+## 1) Что нужно для первого выпуска сертификата
 
-Это делается отдельной командой на сервере/в Portainer, потом включается HTTPS-конфиг.
-
-1) Убедись, что стек поднят и порт 80 открыт.
-2) Выпусти сертификат (пример):
-
-```bash
-certbot certonly --webroot -w /path/to/certbot_www \
-  -d arc303.ru -d www.arc303.ru -d api.arc303.ru \
-  --email YOU@EMAIL.COM --agree-tos --no-eff-email
-```
-
-3) После получения сертификатов включить HTTPS-конфиг и открыть 443.
+1. A-записи `arc303.ru` и `api.arc303.ru` должны указывать на IP сервера.
+2. На сервере должны быть доступны входящие порты `80` и `443`.
+3. Сделать redeploy стека в Portainer. Дальше Caddy сам выпустит сертификаты.
 
 ## 2) Проверка
 
-- `http://arc303.ru/`
-- `http://arc303.ru/health`
-- `http://api.arc303.ru/health`
-- `http://api.arc303.ru/api/v1/auth/me` (нужен токен)
+- `https://arc303.ru/`
+- `https://api.arc303.ru/health`
+- `https://api.arc303.ru/api/v1/auth/me` (нужен токен)
 
 ## 3) Важно
 
-- После стабилизации можно отдельно включить HTTPS и убрать публичный `8080`.
-- Основной nginx-конфиг: `site/conf.d/default.conf`.
+- Если сертификат не выдался, проверь DNS и что `80/443` не заняты другим сервисом.
+- Публичный `8080` можно оставить временно как fallback, но для клиентов лучше использовать `api.arc303.ru` по HTTPS.
+- Конфиг Caddy: `site/Caddyfile`.
 
