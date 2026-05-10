@@ -45,7 +45,10 @@ services:
 
   # Public web entrypoint with automatic HTTPS
   web:
-    image: caddy:2.9-alpine
+    build:
+      context: ./site
+      dockerfile: Dockerfile.caddy
+    image: creative_collective_web:latest
     container_name: creative_collective_web
     restart: unless-stopped
     depends_on:
@@ -55,8 +58,6 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./site/index.html:/srv/index.html:ro
-      - ./site/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
 

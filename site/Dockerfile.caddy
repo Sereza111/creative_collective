@@ -1,0 +1,8 @@
+FROM caddy:2.9-alpine
+
+# Site landing
+COPY index.html /srv/index.html
+
+# Caddy config
+COPY Caddyfile /etc/caddy/Caddyfile
+
