@@ -2,6 +2,8 @@
 
 Backend API для системы управления творческим коллективом Creative Collective.
 
+**Продакшен:** [docs/PRODUCTION_READINESS.md](../docs/PRODUCTION_READINESS.md) · [ротация секретов](../docs/SECRETS_AND_ROTATION.md) · [релиз](../docs/RELEASE_PROCESS.md).
+
 ## 🚀 Технологии
 
 - **Node.js** - Runtime environment

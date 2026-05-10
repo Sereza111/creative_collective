@@ -1,5 +1,7 @@
 # 🚀 Развертывание через GitHub + Portainer
 
+**Production checklist:** см. [docs/PRODUCTION_READINESS.md](../docs/PRODUCTION_READINESS.md) (секреты, бэкапы, smoke, релиз).
+
 ## Шаг 1: Залить проект на GitHub
 
 ### 1.1 Создайте репозиторий на GitHub

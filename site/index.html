@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Creative Collective</title>
+    <meta name="description" content="Creative Collective — биржа и менеджмент для творческих команд." />
+    <style>
+      :root {
+        --bg: #0b1020;
+        --card: rgba(255, 255, 255, 0.06);
+        --border: rgba(255, 255, 255, 0.12);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.68);
+        --accent: #7c5cff;
+        --accent2: #2ee59d;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: radial-gradient(1200px 600px at 20% 10%, rgba(124, 92, 255, 0.35), transparent 60%),
+                    radial-gradient(1200px 600px at 80% 20%, rgba(46, 229, 157, 0.22), transparent 55%),
+                    var(--bg);
+        color: var(--text);
+      }
+      .wrap { max-width: 980px; margin: 0 auto; padding: 48px 20px; }
+      .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 36px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+      }
+      .logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        box-shadow: 0 10px 30px rgba(124, 92, 255, 0.25);
+      }
+      .pill {
+        font-size: 12px;
+        color: var(--muted);
+        padding: 6px 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 999px;
+      }
+      .hero {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 18px;
+        align-items: start;
+      }
+      @media (max-width: 860px) {
+        .hero { grid-template-columns: 1fr; }
+      }
+      .card {
+        border: 1px solid var(--border);
+        background: var(--card);
+        border-radius: 18px;
+        padding: 22px;
+        backdrop-filter: blur(8px);
+      }
+      h1 { margin: 0 0 10px; font-size: 34px; line-height: 1.12; }
+      p { margin: 0 0 12px; color: var(--muted); line-height: 1.6; }
+      .buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+      a.btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        color: var(--text);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.05);
+      }
+      a.btn.primary {
+        border-color: rgba(124, 92, 255, 0.55);
+        background: rgba(124, 92, 255, 0.18);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 18px;
+      }
+      @media (max-width: 860px) {
+        .grid { grid-template-columns: 1fr; }
+      }
+      .kpi { padding: 14px; border-radius: 14px; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.03); }
+      .kpi .t { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+      .kpi .v { font-size: 16px; font-weight: 650; }
+      .footer { margin-top: 26px; color: rgba(255,255,255,0.55); font-size: 13px; }
+      code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>Creative Collective</div>
+        </div>
+        <div class="pill">API + Marketplace + Management</div>
+      </div>
+
+      <div class="hero">
+        <div class="card">
+          <h1>Биржа и менеджмент для творческих команд</h1>
+          <p>
+            Этот сайт — минимальная стартовая страница проекта. Основной продукт работает через приложение
+            (Windows/Android) и backend API.
+          </p>
+          <p>
+            Проверить статус сервера можно по <code>/health</code>, а API доступно по <code>/api/v1</code>.
+          </p>
+          <div class="buttons">
+            <a class="btn primary" href="/health">Health</a>
+            <a class="btn" href="/api/v1/auth/me">API (пример)</a>
+            <a class="btn" href="/api/v1/legal/documents">Legal docs</a>
+          </div>
+
+          <div class="grid" aria-label="features">
+            <div class="kpi">
+              <div class="t">Менеджмент</div>
+              <div class="v">Команды · Проекты · Задачи</div>
+            </div>
+            <div class="kpi">
+              <div class="t">Маркетплейс</div>
+              <div class="v">Заказы · Отклики · Чат</div>
+            </div>
+            <div class="kpi">
+              <div class="t">Финансы</div>
+              <div class="v">Транзакции · Баланс · Вывод</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 style="margin:0 0 12px; font-size:16px;">Быстрые ссылки</h2>
+          <p style="margin-bottom:10px;">Если разворачиваешь через Portainer:</p>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <a class="btn" href="/api/v1/orders">Список заказов</a>
+            <a class="btn" href="/api/v1/notifications/unread-count">Уведомления (unread)</a>
+            <a class="btn" href="/api/v1/finance/balance">Баланс</a>
+          </div>
+          <div class="footer">
+            Если нужен полноценный веб-интерфейс биржи — можно сделать web-версию отдельно, но “хоть что-то”
+            для старта уже есть.
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

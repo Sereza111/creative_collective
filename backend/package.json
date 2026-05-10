@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "test": "jest --watchAll",
     "migrate": "node src/database/migrations/run.js",
-    "db:reset": "node src/database/migrations/run.js reset"
+    "db:reset": "node src/database/migrations/run.js reset",
+    "verify-schema": "node scripts/verify-schema.js"
   },
   "keywords": [
     "creative",

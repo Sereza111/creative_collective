@@ -34,9 +34,14 @@ const API_VERSION = process.env.API_VERSION || 'v1';
 // Безопасность
 app.use(helmet());
 
-// CORS
+// CORS (default * if unset; production should set comma-separated origins)
+const corsOriginEnv = process.env.CORS_ORIGIN;
+const corsOrigin =
+  !corsOriginEnv || corsOriginEnv === '*'
+    ? '*'
+    : corsOriginEnv.split(',').map((s) => s.trim()).filter(Boolean);
 app.use(cors({
-  origin: process.env.CORS_ORIGIN === '*' ? '*' : process.env.CORS_ORIGIN.split(','),
+  origin: corsOrigin,
   credentials: true
 }));
 
