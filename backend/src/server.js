@@ -116,45 +116,46 @@ app.use(errorHandler);
 // ===== ЗАПУСК СЕРВЕРА =====
 
 async function startServer() {
-  try {
-    console.log('🚀 Starting Creative Collective API Server...');
-    console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
-    
+  console.log('🚀 Starting Creative Collective API Server...');
+  console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
+
+  // 1) Start HTTP immediately (so container is alive even if DB is down)
+  app.listen(PORT, () => {
+    console.log(`✅ Server is running on port ${PORT}`);
+    console.log(`🌐 API: http://localhost:${PORT}/api/${API_VERSION}`);
+    console.log(`📝 Health check: http://localhost:${PORT}/health`);
+    console.log('');
+  });
+
+  // 2) Initialize DB in background with retries
+  async function initDbOnce() {
     // Создаем БД если не существует
     await createDatabaseIfNotExists();
-    
+
     // Проверяем подключение к БД
     const connected = await testConnection();
     if (!connected) {
       throw new Error('Failed to connect to database');
     }
-    
+
     // Инициализируем схему БД
     await initializeDatabase();
-    
-    // Инициализируем планировщик задач
+
+    // Инициализируем планировщик задач (требует рабочую БД)
     const { initScheduler } = require('./jobs/scheduler');
     initScheduler();
-    
-    // Запускаем сервер
-    app.listen(PORT, () => {
-      console.log(`✅ Server is running on port ${PORT}`);
-      console.log(`🌐 API: http://localhost:${PORT}/api/${API_VERSION}`);
-      console.log(`📝 Health check: http://localhost:${PORT}/health`);
-      console.log('');
-      console.log('📚 Available endpoints:');
-      console.log(`   POST   /api/${API_VERSION}/auth/register`);
-      console.log(`   POST   /api/${API_VERSION}/auth/login`);
-      console.log(`   GET    /api/${API_VERSION}/tasks`);
-      console.log(`   GET    /api/${API_VERSION}/projects`);
-      console.log(`   GET    /api/${API_VERSION}/teams`);
-      console.log(`   GET    /api/${API_VERSION}/finance/:user_id`);
-      console.log('');
-    });
-    
-  } catch (error) {
-    console.error('❌ Failed to start server:', error);
-    process.exit(1);
+  }
+
+  const retryMs = parseInt(process.env.DB_INIT_RETRY_MS || '10000', 10);
+  while (true) {
+    try {
+      await initDbOnce();
+      console.log('✅ Database initialized successfully');
+      break;
+    } catch (error) {
+      console.error(`❌ Database init failed (retry in ${retryMs}ms):`, error.message);
+      await new Promise((r) => setTimeout(r, retryMs));
+    }
   }
 }
 
