@@ -41,5 +41,5 @@ certbot certonly --webroot -w /var/www/certbot \
 
 - После включения HTTPS можно убрать публичный порт `8080` (не обязателен, если используешь только `api.arc303.ru`).
 - HSTS в `site/nginx.conf` закомментирован — включай после того, как убедишься, что HTTPS стабильно работает.
-  - Основной nginx-конфиг лежит в `site/conf.d/default.conf` и монтируется как директория — так надежнее для Portainer.
+- Основной nginx-конфиг лежит в `site/conf.d/default.conf` и копируется в image `site` на этапе build (без bind-mount конфигов, чтобы не было проблем с путями в Portainer).
 

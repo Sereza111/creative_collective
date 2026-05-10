@@ -45,7 +45,10 @@ services:
 
   # Minimal landing website + reverse proxy to API
   site:
-    image: nginx:1.27-alpine
+    build:
+      context: ./site
+      dockerfile: Dockerfile
+    image: creative_collective_site:latest
     container_name: creative_collective_site
     restart: unless-stopped
     depends_on:
@@ -55,8 +58,6 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./site:/usr/share/nginx/html:ro
-      - ./site/conf.d:/etc/nginx/conf.d:ro
       - letsencrypt:/etc/letsencrypt
       - certbot_www:/var/www/certbot
 
