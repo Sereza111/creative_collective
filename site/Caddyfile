@@ -6,6 +6,6 @@ arc303.ru, www.arc303.ru {
 
 api.arc303.ru {
   encode zstd gzip
-  reverse_proxy api:3000
+  reverse_proxy creative_collective_api:3000
 }
 
