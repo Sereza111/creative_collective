@@ -1,12 +1,11 @@
-# HTTPS для `arc303.ru` и `api.arc303.ru` (nginx + certbot)
+# HTTPS для `arc303.ru` и `api.arc303.ru` (пошагово)
 
-В репозитории уже настроено:
+Сейчас стек работает в **HTTP-first** режиме (чтобы nginx гарантированно стартовал):
 
-- nginx (`site`) слушает `80` и `443`
+- nginx (`site`) слушает `80`
 - `arc303.ru` отдаёт landing
 - `api.arc303.ru` проксирует backend (`api:3000`)
-- сертификаты Let's Encrypt хранятся в volume `letsencrypt`
-- `certbot` в фоне делает `renew` каждые 12 часов
+- ACME директория доступна как `/var/www/certbot`
 
 ## 0) DNS
 
@@ -15,31 +14,30 @@
 - `arc303.ru` → IP сервера
 - `api.arc303.ru` → IP сервера
 
-## 1) Первый выпуск сертификата (один раз)
+## 1) Первый выпуск сертификата (один раз, отдельно)
 
-Это нужно сделать через Portainer (Exec в контейнере `creative_collective_certbot`) или по SSH на сервере.
+Это делается отдельной командой на сервере/в Portainer, потом включается HTTPS-конфиг.
 
 1) Убедись, что стек поднят и порт 80 открыт.
-2) Выпусти сертификат:
+2) Выпусти сертификат (пример):
 
 ```bash
-certbot certonly --webroot -w /var/www/certbot \
+certbot certonly --webroot -w /path/to/certbot_www \
   -d arc303.ru -d www.arc303.ru -d api.arc303.ru \
   --email YOU@EMAIL.COM --agree-tos --no-eff-email
 ```
 
-3) Перезапусти nginx контейнер `creative_collective_site` (redeploy / restart).
+3) После получения сертификатов включить HTTPS-конфиг и открыть 443.
 
 ## 2) Проверка
 
-- `https://arc303.ru/`
-- `https://arc303.ru/health`
-- `https://api.arc303.ru/health`
-- `https://api.arc303.ru/api/v1/auth/me` (нужен токен)
+- `http://arc303.ru/`
+- `http://arc303.ru/health`
+- `http://api.arc303.ru/health`
+- `http://api.arc303.ru/api/v1/auth/me` (нужен токен)
 
 ## 3) Важно
 
-- После включения HTTPS можно убрать публичный порт `8080` (не обязателен, если используешь только `api.arc303.ru`).
-- HSTS в `site/nginx.conf` закомментирован — включай после того, как убедишься, что HTTPS стабильно работает.
-- Основной nginx-конфиг лежит в `site/conf.d/default.conf` и копируется в image `site` на этапе build (без bind-mount конфигов, чтобы не было проблем с путями в Portainer).
+- После стабилизации можно отдельно включить HTTPS и убрать публичный `8080`.
+- Основной nginx-конфиг: `site/conf.d/default.conf`.
 
