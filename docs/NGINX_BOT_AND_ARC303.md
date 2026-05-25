@@ -13,20 +13,39 @@ Let's Encrypt для `arc303.ru` / `api.arc303.ru` — через **certbot + ng
 
 ## 1. Portainer — deploy stack
 
-В compose у `web` должно быть **`127.0.0.1:8081:80`**, не `80:80`.
+В compose у `web` должно быть **`8081:80`**, не `80:80` и не только API без `web`.
+
+Если `curl http://127.0.0.1:8081/` даёт **000**:
+
+```bash
+ss -tlnp | grep 8081
+docker logs creative_collective_web --tail 40
+docker port creative_collective_web
+```
+
+В Portainer обновляй **Stack** (не «Deploy container» отдельно). Порт: **8081 → 80 TCP**.
 
 Update stack → контейнеры `creative_collective_api` и `creative_collective_web` running.
 
 ## 2. nginx — отдельный vhost (бот не трогаем)
 
-На сервере (из клона репо или скопируй файл):
+Репозитория на VPS может не быть — создай конфиг вручную (см. ниже) или:
 
 ```bash
-sudo cp deploy/nginx-host-arc303.conf /etc/nginx/sites-available/arc303.conf
+sudo curl -fsSL -o /etc/nginx/sites-available/arc303.conf \
+  https://raw.githubusercontent.com/Sereza111/creative_collective/main/deploy/nginx-host-arc303.conf
 sudo ln -sf /etc/nginx/sites-available/arc303.conf /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
+sudo nginx -t && sudo systemctl reload nginx
 ```
+
+### Если nginx уже сломан (битая ссылка в sites-enabled)
+
+```bash
+sudo rm -f /etc/nginx/sites-enabled/arc303.conf
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Потом снова создай `arc303.conf` и включи его.
 
 Конфиг бота в `sites-enabled` **оставь как есть** — у него другой `server_name`.
 

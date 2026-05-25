@@ -54,9 +54,9 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    # Только localhost: nginx на VPS (бот) держит 80/443, сюда проксирует deploy/nginx-host-arc303.conf
+    # nginx проксирует сюда; 8081:80 (не 127.0.0.1 — иначе на части хостов порт не биндится)
     ports:
-      - "127.0.0.1:8081:80"
+      - "8081:80"
     volumes:
       - caddy_data:/data
       - caddy_config:/config
