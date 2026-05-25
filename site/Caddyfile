@@ -1,6 +1,6 @@
-# Замени email на свой (для Let's Encrypt)
+# TLS и Let's Encrypt — на хостовом nginx (certbot). Caddy только HTTP внутри Docker.
 {
-  email admin@arc303.ru
+  auto_https off
 }
 
 # Сайт + API на основном домене (один сертификат)

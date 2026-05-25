@@ -54,10 +54,9 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    # ВАЖНО: снаружи должны быть именно 80 и 443, иначе Let's Encrypt не выдаст сертификат
+    # Только localhost: nginx на VPS (бот) держит 80/443, сюда проксирует deploy/nginx-host-arc303.conf
     ports:
-      - "80:80"
-      - "443:443"
+      - "127.0.0.1:8081:80"
     volumes:
       - caddy_data:/data
       - caddy_config:/config
