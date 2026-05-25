@@ -1552,9 +1552,9 @@ class ApiService {
 
   // Подписать юридический документ
   static Future<void> signLegalDocument({
-    required int documentId,
+    required String documentId,
     required String documentType,
-    int? orderId,
+    String? orderId,
   }) async {
     final headers = await _getHeaders();
     final response = await http.post(
@@ -1563,7 +1563,7 @@ class ApiService {
       body: jsonEncode({
         'document_id': documentId,
         'document_type': documentType,
-        'order_id': orderId,
+        if (orderId != null) 'order_id': orderId,
       }),
     ).timeout(const Duration(seconds: 10));
 
@@ -1574,11 +1574,11 @@ class ApiService {
   }
 
   // Проверить, подписал ли пользователь документ
-  static Future<bool> checkUserAgreement(String documentType, {int? orderId}) async {
+  static Future<bool> checkUserAgreement(String documentType, {String? orderId}) async {
     final headers = await _getHeaders();
     final queryParams = {'document_type': documentType};
     if (orderId != null) {
-      queryParams['order_id'] = orderId.toString();
+      queryParams['order_id'] = orderId;
     }
     
     final uri = Uri.parse('$baseUrl/legal/check').replace(queryParameters: queryParams);

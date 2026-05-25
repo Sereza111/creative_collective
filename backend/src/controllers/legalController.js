@@ -52,6 +52,9 @@ exports.getAllActiveDocuments = async (req, res) => {
 exports.signDocument = async (req, res) => {
   try {
     const { document_id, document_type, order_id } = req.body;
+    if (!document_id || !document_type) {
+      return errorResponse(res, 'document_id и document_type обязательны', 400);
+    }
     const userId = req.user.id;
     const ipAddress = req.ip || req.connection.remoteAddress;
     const userAgent = req.get('User-Agent');
@@ -86,7 +89,11 @@ exports.signDocument = async (req, res) => {
     successResponse(res, { id }, 'Документ подписан', 201);
   } catch (error) {
     console.error('Sign document error:', error);
-    errorResponse(res, 'Ошибка подписания документа');
+    const msg =
+      process.env.NODE_ENV === 'development' && error?.message
+        ? `Ошибка подписания документа: ${error.message}`
+        : 'Ошибка подписания документа';
+    errorResponse(res, msg);
   }
 };
 

@@ -7,7 +7,7 @@ import '../services/api_service.dart';
 class LegalDocumentScreen extends ConsumerStatefulWidget {
   final String documentType;
   final String title;
-  final int? orderId; // Для order_contract
+  final String? orderId; // Для order_contract (UUID)
   final VoidCallback? onSigned;
 
   const LegalDocumentScreen({
@@ -91,7 +91,7 @@ class _LegalDocumentScreenState extends ConsumerState<LegalDocumentScreen> {
 
     try {
       await ApiService.signLegalDocument(
-        documentId: _document!['id'],
+        documentId: _document!['id'].toString(),
         documentType: widget.documentType,
         orderId: widget.orderId,
       );
