@@ -1,55 +1,66 @@
-# Почему не работает HTTPS и как починить (arc303.ru)
+# Почему Caddy не выдаёт сертификат (по твоим логам)
 
-Ошибки в браузере/Flutter:
+## Что видно в логах
 
-- `NET::ERR_CERT_COMMON_NAME_INVALID` — сертификат **не на то имя** (например, выдан только для `api.arc303.ru`, а открываешь `arc303.ru`).
-- `Hostname mismatch` — то же самое в клиенте.
+1. **HTTP challenge → 404** на `93.189.230.198`:
+   - `http://arc303.ru/.well-known/acme-challenge/...` → **404**
+   - `http://api.arc303.ru/.well-known/acme-challenge/...` → **404**  
+   Let's Encrypt доходит до сервера, но **не Caddy отвечает токеном** (часто порт 80 занят не Caddy, или запрос уходит в API).
 
-## Как должно быть
+2. **`www.arc303.ru` → другой IP `5.101.152.161`** (Connection refused / 500).  
+   Пока DNS `www` не на VPS `93.189.230.198`, сертификат на `www` **не выдастся**. В новом `Caddyfile` **www убран** из запроса.
 
-1. DNS **A-запись**:
-   - `arc303.ru` → IP VPS (например `93.189.230.198`)
-   - `api.arc303.ru` → **тот же IP**
-   - `www.arc303.ru` → тот же IP (по желанию)
+3. **TLS challenge** `tls: no application protocol` на 443 — побочный эффект, пока нет валидного cert.
 
-2. На VPS порты **80 и 443** слушает только контейнер **`creative_collective_web` (Caddy)**.  
-   Если на хосте ещё nginx/apache — выключи, иначе отдаётся чужой сертификат.
+## Что сделать на VPS
 
-3. Caddy в `site/Caddyfile` запрашивает **один** сертификат на три имени:  
-   `arc303.ru`, `www.arc303.ru`, `api.arc303.ru`.
+### 1. Только Caddy на 80/443
 
-## Обязательный сброс старых сертификатов (Portainer)
+На сервере (SSH):
 
-Старый неверный cert лежит в volume **`caddy_data`**.
+```bash
+sudo systemctl stop nginx
+sudo systemctl disable nginx
+sudo ss -tlnp | grep -E ':80|:443'
+```
 
-1. Останови стек `creative_collective`.
-2. **Volumes** → удали **`caddy_data`** (и при необходимости `caddy_config`).
-3. **Pull and redeploy** стека (пересобери `creative_collective_web`).
-4. Подожди 1–2 минуты, смотри логи `creative_collective_web` — должны быть строки про `certificate obtained` / `succeeded`.
+Должен быть **docker-proxy** → контейнер `creative_collective_web`, не `nginx`.
 
-## Проверка
+### 2. DNS (панель домена)
 
-В браузере (без предупреждений):
+| Запись | A → |
+|--------|-----|
+| `arc303.ru` | `93.189.230.198` |
+| `api.arc303.ru` | `93.189.230.198` |
+| `www` | либо тот же IP, либо **удали** запись, пока не нужен |
 
-- `https://arc303.ru/`
-- `https://arc303.ru/health`
-- `https://api.arc303.ru/health`
+### 3. Portainer
 
-Flutter:
+1. Stop stack  
+2. Удали volume **`caddy_data`**  
+3. Pull and redeploy (пересобери `creative_collective_web`)  
+4. Подожди 2–3 мин, смотри логи — ищи **`certificate obtained successfully`**
+
+### 4. Проверка
+
+- `http://arc303.ru/.well-known/` — не обязательно открывать вручную  
+- `https://arc303.ru/health` — без предупреждения в браузере  
+- `https://api.arc303.ru/health` — то же  
+
+## Flutter после успешного HTTPS
 
 ```powershell
 flutter build windows --dart-define=API_BASE_URL=https://arc303.ru/api/v1
 ```
 
-или
+## Если снова 404 на acme-challenge
+
+Значит **порт 80 не Caddy**. Проверь, не проброшен ли 80 на другой контейнер и не крутится ли nginx на хосте.
+
+## Для диплома без HTTPS (работает уже сейчас)
+
+API у тебя живой — используй:
 
 ```powershell
-flutter build windows --dart-define=API_BASE_URL=https://api.arc303.ru/api/v1
+flutter build windows --dart-define=API_BASE_URL=http://93.189.230.198:3000/api/v1
 ```
-
-## Если снова не выдаётся cert
-
-- Проверь `nslookup arc303.ru` — IP = твой VPS.
-- Открой с VPS: `curl -I http://arc303.ru` (должен ответить Caddy, не Beget-заглушка).
-- У хостера открой входящие TCP **80** и **443**.
-- Временно для защиты: `http://IP:3000/api/v1` без HTTPS.
