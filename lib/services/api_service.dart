@@ -14,7 +14,13 @@ import '../models/portfolio_item.dart';
 import 'secure_storage_service.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://85.198.103.11:8080/api/v1'; // Используем порт 8080
+  /// Базовый URL API. По умолчанию — локальный Docker (`backend/docker-compose.yml`: API на :3000).
+  /// Прод (HTTPS, один сертификат с сайтом): `https://arc303.ru/api/v1`
+  /// Альтернатива: `https://api.arc303.ru/api/v1` (нужен отдельный cert на поддомен)
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://127.0.0.1:3000/api/v1',
+  );
   
   // Get headers with authorization
   static Future<Map<String, String>> _getHeaders() async {
