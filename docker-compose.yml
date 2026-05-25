@@ -55,8 +55,8 @@ services:
       api:
         condition: service_healthy
     ports:
-      - "80:80"
-      - "443:443"
+      - "8081:80"
+      - "8443:443"
     volumes:
       - caddy_data:/data
       - caddy_config:/config
