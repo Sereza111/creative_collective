@@ -1,13 +1,15 @@
+import '../utils/ids.dart';
+
 class UserBalance {
-  final int id;
-  final int userId;
+  final String id;
+  final String userId;
   final double balance;
   final double totalEarned;
   final double totalSpent;
   final double totalWithdrawn;
   final double pendingAmount;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   UserBalance({
     required this.id,
@@ -17,21 +19,21 @@ class UserBalance {
     required this.totalSpent,
     required this.totalWithdrawn,
     required this.pendingAmount,
-    required this.createdAt,
-    required this.updatedAt,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory UserBalance.fromJson(Map<String, dynamic> json) {
     return UserBalance(
-      id: json['id'],
-      userId: json['user_id'],
+      id: idFromJson(json['id']),
+      userId: idFromJson(json['user_id']),
       balance: _parseDouble(json['balance']),
       totalEarned: _parseDouble(json['total_earned']),
       totalSpent: _parseDouble(json['total_spent']),
       totalWithdrawn: _parseDouble(json['total_withdrawn']),
       pendingAmount: _parseDouble(json['pending_amount']),
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null,
+      updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at'].toString()) : null,
     );
   }
 
@@ -43,4 +45,3 @@ class UserBalance {
     return 0.0;
   }
 }
-

@@ -26,6 +26,12 @@ class _AddBalanceScreenState extends ConsumerState<AddBalanceScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => ref.read(balanceProvider.notifier).refresh());
+  }
+
+  @override
   void dispose() {
     _amountController.dispose();
     super.dispose();
