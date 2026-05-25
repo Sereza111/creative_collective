@@ -1,16 +1,17 @@
+import '../utils/ids.dart';
+
 class Chat {
-  final int id;
-  final int? orderId;
-  final int clientId;
-  final int freelancerId;
+  final String id;
+  final String? orderId;
+  final String clientId;
+  final String freelancerId;
   final String? lastMessage;
   final DateTime? lastMessageAt;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  
-  // Дополнительные поля из JOIN
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
   final String? orderTitle;
-  final int? otherUserId;
+  final String? otherUserId;
   final String? otherUserName;
   final String? otherUserEmail;
   final String? otherUserAvatar;
@@ -23,8 +24,8 @@ class Chat {
     required this.freelancerId,
     this.lastMessage,
     this.lastMessageAt,
-    required this.createdAt,
-    required this.updatedAt,
+    this.createdAt,
+    this.updatedAt,
     this.orderTitle,
     this.otherUserId,
     this.otherUserName,
@@ -35,30 +36,28 @@ class Chat {
 
   factory Chat.fromJson(Map<String, dynamic> json) {
     return Chat(
-      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
-      orderId: json['order_id'] != null 
-          ? (json['order_id'] is int ? json['order_id'] : int.parse(json['order_id'].toString()))
+      id: idFromJson(json['id']),
+      orderId: json['order_id'] != null ? idFromJson(json['order_id']) : null,
+      clientId: idFromJson(json['client_id']),
+      freelancerId: idFromJson(json['freelancer_id']),
+      lastMessage: json['last_message']?.toString(),
+      lastMessageAt: json['last_message_at'] != null
+          ? DateTime.tryParse(json['last_message_at'].toString())
           : null,
-      clientId: json['client_id'] is int 
-          ? json['client_id'] 
-          : int.parse(json['client_id'].toString()),
-      freelancerId: json['freelancer_id'] is int 
-          ? json['freelancer_id'] 
-          : int.parse(json['freelancer_id'].toString()),
-      lastMessage: json['last_message'],
-      lastMessageAt: json['last_message_at'] != null 
-          ? DateTime.parse(json['last_message_at']) 
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'].toString())
           : null,
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-      orderTitle: json['order_title'],
-      otherUserId: json['other_user_id'] != null
-          ? (json['other_user_id'] is int ? json['other_user_id'] : int.parse(json['other_user_id'].toString()))
+      updatedAt: json['updated_at'] != null
+          ? DateTime.tryParse(json['updated_at'].toString())
           : null,
-      otherUserName: json['other_user_name'],
-      otherUserEmail: json['other_user_email'],
-      otherUserAvatar: json['other_user_avatar'],
-      unreadCount: json['unread_count'] is int ? json['unread_count'] : int.parse(json['unread_count'].toString()),
+      orderTitle: json['order_title']?.toString(),
+      otherUserId: json['other_user_id'] != null ? idFromJson(json['other_user_id']) : null,
+      otherUserName: json['other_user_name']?.toString(),
+      otherUserEmail: json['other_user_email']?.toString(),
+      otherUserAvatar: json['other_user_avatar']?.toString(),
+      unreadCount: json['unread_count'] is int
+          ? json['unread_count']
+          : int.tryParse(json['unread_count']?.toString() ?? '0') ?? 0,
     );
   }
 
@@ -70,9 +69,8 @@ class Chat {
       'freelancer_id': freelancerId,
       'last_message': lastMessage,
       'last_message_at': lastMessageAt?.toIso8601String(),
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
     };
   }
 }
-

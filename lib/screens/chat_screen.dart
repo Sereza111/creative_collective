@@ -185,11 +185,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           final message = _messages[index];
                           final isMyMessage = message.senderId == user?.id;
                           final showDate = index == 0 ||
-                              !_isSameDay(_messages[index - 1].createdAt, message.createdAt);
+                              !_isSameDay(_messages[index - 1].displayCreatedAt, message.displayCreatedAt);
 
                           return Column(
                             children: [
-                              if (showDate) _buildDateDivider(message.createdAt),
+                              if (showDate) _buildDateDivider(message.displayCreatedAt),
                               _buildMessageBubble(message, isMyMessage),
                             ],
                           );
@@ -335,7 +335,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    DateFormat('HH:mm').format(message.createdAt),
+                    DateFormat('HH:mm').format(message.displayCreatedAt),
                     style: TextStyle(
                       fontSize: 9,
                       color: isMyMessage 

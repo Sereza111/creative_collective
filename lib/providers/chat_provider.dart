@@ -63,7 +63,7 @@ class ChatsNotifier extends StateNotifier<ChatsState> {
     }
   }
 
-  void updateChatLastMessage(int chatId, String message, DateTime timestamp) {
+  void updateChatLastMessage(String chatId, String message, DateTime timestamp) {
     final updatedChats = state.chats.map((chat) {
       if (chat.id == chatId) {
         return Chat(

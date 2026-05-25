@@ -1,12 +1,13 @@
+import '../utils/ids.dart';
+
 class Message {
-  final int id;
-  final int chatId;
-  final int senderId;
+  final String id;
+  final String chatId;
+  final String senderId;
   final String message;
   final bool isRead;
-  final DateTime createdAt;
-  
-  // Дополнительные поля из JOIN
+  final DateTime? createdAt;
+
   final String? senderName;
   final String? senderEmail;
   final String? senderAvatar;
@@ -17,7 +18,7 @@ class Message {
     required this.senderId,
     required this.message,
     this.isRead = false,
-    required this.createdAt,
+    this.createdAt,
     this.senderName,
     this.senderEmail,
     this.senderAvatar,
@@ -25,15 +26,17 @@ class Message {
 
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
-      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
-      chatId: json['chat_id'] is int ? json['chat_id'] : int.parse(json['chat_id'].toString()),
-      senderId: json['sender_id'] is int ? json['sender_id'] : int.parse(json['sender_id'].toString()),
-      message: json['message'],
+      id: idFromJson(json['id']),
+      chatId: idFromJson(json['chat_id']),
+      senderId: idFromJson(json['sender_id']),
+      message: json['message']?.toString() ?? '',
       isRead: json['is_read'] == 1 || json['is_read'] == true,
-      createdAt: DateTime.parse(json['created_at']),
-      senderName: json['sender_name'],
-      senderEmail: json['sender_email'],
-      senderAvatar: json['sender_avatar'],
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'].toString())
+          : null,
+      senderName: json['sender_name']?.toString(),
+      senderEmail: json['sender_email']?.toString(),
+      senderAvatar: json['sender_avatar']?.toString(),
     );
   }
 
@@ -44,14 +47,16 @@ class Message {
       'sender_id': senderId,
       'message': message,
       'is_read': isRead,
-      'created_at': createdAt.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
     };
   }
 
+  DateTime get displayCreatedAt => createdAt ?? DateTime.now();
+
   Message copyWith({
-    int? id,
-    int? chatId,
-    int? senderId,
+    String? id,
+    String? chatId,
+    String? senderId,
     String? message,
     bool? isRead,
     DateTime? createdAt,
@@ -72,4 +77,3 @@ class Message {
     );
   }
 }
-

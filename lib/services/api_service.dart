@@ -766,7 +766,7 @@ class ApiService {
   }
 
   // Получить сообщения чата
-  static Future<List<Message>> getChatMessages(int chatId, {int limit = 50, int offset = 0}) async {
+  static Future<List<Message>> getChatMessages(String chatId, {int limit = 50, int offset = 0}) async {
     final headers = await _getHeaders();
     final response = await http.get(
       Uri.parse('$baseUrl/chat/$chatId/messages?limit=$limit&offset=$offset'),
@@ -786,7 +786,7 @@ class ApiService {
   }
 
   // Отправить сообщение
-  static Future<Message> sendMessage(int chatId, String message) async {
+  static Future<Message> sendMessage(String chatId, String message) async {
     final headers = await _getHeaders();
     final response = await http.post(
       Uri.parse('$baseUrl/chat/$chatId/messages'),

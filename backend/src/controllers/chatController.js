@@ -80,7 +80,8 @@ exports.getOrCreateChat = async (req, res) => {
     successResponse(res, fullChatInfo[0]);
   } catch (error) {
     console.error('Get or create chat error:', error);
-    errorResponse(res, 'Ошибка получения чата');
+    const detail = error?.message ? `: ${error.message}` : '';
+    errorResponse(res, `Ошибка получения чата${detail}`);
   }
 };
 
@@ -228,7 +229,8 @@ exports.sendMessage = async (req, res) => {
     successResponse(res, newMessage[0], 'Сообщение отправлено', 201);
   } catch (error) {
     console.error('Send message error:', error);
-    errorResponse(res, 'Ошибка отправки сообщения');
+    const detail = error?.message ? `: ${error.message}` : '';
+    errorResponse(res, `Ошибка отправки сообщения${detail}`);
   }
 };
 
