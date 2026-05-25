@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { pool, createDatabaseIfNotExists } = require('../config/database');
 const { runMigrations } = require('./migrations/run');
+const { seedLegalDocuments } = require('./seedLegalDocuments');
 
 async function initializeDatabase() {
   try {
@@ -14,7 +15,16 @@ async function initializeDatabase() {
     console.log('📝 Applying database migrations...');
     await runMigrations();
     console.log('✅ Database migrations applied successfully');
-    
+
+    try {
+      const legalSeed = await seedLegalDocuments();
+      if (legalSeed.seeded) {
+        console.log(`✅ Legal documents seeded (${legalSeed.count} rows)`);
+      }
+    } catch (error) {
+      console.error('⚠️  Legal documents seed failed:', error.message);
+    }
+
     // Проверяем, есть ли уже данные
     const [users] = await pool.query('SELECT COUNT(*) as count FROM users');
     
