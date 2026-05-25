@@ -59,4 +59,38 @@ class TransactionModel {
     if (value is String) return double.tryParse(value) ?? 0.0;
     return 0.0;
   }
+
+  DateTime get displayDate => createdAt ?? updatedAt ?? DateTime.now();
+
+  String get typeLabel {
+    switch (type) {
+      case 'income':
+        return 'Доход';
+      case 'expense':
+        return 'Расход';
+      case 'commission':
+        return 'Комиссия';
+      case 'withdrawal':
+        return 'Вывод средств';
+      case 'refund':
+        return 'Возврат';
+      default:
+        return type;
+    }
+  }
+
+  String get statusLabel {
+    switch (status) {
+      case 'pending':
+        return 'В ожидании';
+      case 'completed':
+        return 'Завершена';
+      case 'cancelled':
+        return 'Отменена';
+      case 'refunded':
+        return 'Возвращена';
+      default:
+        return status;
+    }
+  }
 }

@@ -321,7 +321,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                     ),
                   const SizedBox(height: 4),
                   Text(
-                    DateFormat('dd.MM.yyyy HH:mm', 'ru_RU').format(transaction.createdAt),
+                    DateFormat('dd.MM.yyyy HH:mm', 'ru_RU').format(transaction.displayDate),
                     style: TextStyle(
                       fontSize: 10,
                       color: AppTheme.dimGray,
