@@ -1,7 +1,16 @@
-# Основной домен: сайт + API (один TLS-сертификат — без hostname mismatch в клиенте)
-arc303.ru, www.arc303.ru {
+# Один TLS-сертификат на все имена (Let's Encrypt через Caddy)
+# После смены конфига: удалить volume caddy_data в Portainer и redeploy стека.
+
+arc303.ru, www.arc303.ru, api.arc303.ru {
   encode zstd gzip
 
+  # Поддомен api — весь трафик в backend
+  @apiHost host api.arc303.ru
+  handle @apiHost {
+    reverse_proxy creative_collective_api:3000
+  }
+
+  # Основной домен: API по путям
   handle /health {
     reverse_proxy creative_collective_api:3000
   }
@@ -10,14 +19,9 @@ arc303.ru, www.arc303.ru {
     reverse_proxy creative_collective_api:3000
   }
 
+  # Основной домен: лендинг
   handle {
     root * /srv
     file_server
   }
-}
-
-# Поддомен API (отдельный cert; если 502/mismatch — используй https://arc303.ru/api/v1)
-api.arc303.ru {
-  encode zstd gzip
-  reverse_proxy creative_collective_api:3000
 }
