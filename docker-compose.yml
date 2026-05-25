@@ -54,9 +54,10 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    # ВАЖНО: снаружи должны быть именно 80 и 443, иначе Let's Encrypt не выдаст сертификат
     ports:
-      - "8081:80"
-      - "8443:443"
+      - "80:80"
+      - "443:443"
     volumes:
       - caddy_data:/data
       - caddy_config:/config
