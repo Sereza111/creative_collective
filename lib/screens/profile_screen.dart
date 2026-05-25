@@ -788,7 +788,7 @@ class ProfileScreen extends ConsumerWidget {
 
 // Виджет для отображения рейтинга пользователя
 class _RatingWidget extends ConsumerStatefulWidget {
-  final int userId;
+  final String userId;
 
   const _RatingWidget({required this.userId});
 

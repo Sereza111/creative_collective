@@ -1,5 +1,7 @@
+import '../utils/ids.dart';
+
 class User {
-  final int id;
+  final String id;
   final String email;
   final String? fullName;
   final String? avatarUrl;
@@ -31,7 +33,7 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
+      id: idFromJson(json['id']),
       email: json['email'] ?? '',
       fullName: json['full_name'],
       avatarUrl: json['avatar_url'],
@@ -78,7 +80,7 @@ class User {
   }
 
   User copyWith({
-    int? id,
+    String? id,
     String? email,
     String? fullName,
     String? avatarUrl,

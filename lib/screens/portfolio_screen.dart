@@ -5,7 +5,7 @@ import '../services/api_service.dart';
 import 'forms/add_portfolio_item_screen.dart';
 
 class PortfolioScreen extends StatefulWidget {
-  final int userId;
+  final String userId;
   final bool isOwnProfile;
 
   const PortfolioScreen({

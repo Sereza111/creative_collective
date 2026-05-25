@@ -1,23 +1,24 @@
+import '../utils/ids.dart';
+
 class Order {
-  final int id;
+  final String id;
   final String title;
   final String? description;
   final double? budget;
   final DateTime? deadline;
   final String status; // draft, published, in_progress, review, completed, cancelled
-  final int clientId;
+  final String clientId;
   final String? clientName;
   final String? clientEmail;
-  final int? freelancerId;
+  final String? freelancerId;
   final String? freelancerName;
   final String? freelancerEmail;
   final String? category;
   final int applicationsCount;
   final DateTime createdAt;
   final DateTime? updatedAt;
-  
-  // Alias для freelancerId (для совместимости)
-  int? get acceptedFreelancerId => freelancerId;
+
+  String? get acceptedFreelancerId => freelancerId;
 
   Order({
     required this.id,
@@ -40,28 +41,28 @@ class Order {
 
   factory Order.fromJson(Map<String, dynamic> json) {
     return Order(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
+      id: idFromJson(json['id']),
       title: json['title'] ?? 'Без названия',
       description: json['description'],
-      budget: json['budget'] != null 
-          ? (json['budget'] is String ? double.tryParse(json['budget']) : (json['budget'] as num).toDouble())
+      budget: json['budget'] != null
+          ? (json['budget'] is String
+              ? double.tryParse(json['budget'])
+              : (json['budget'] as num).toDouble())
           : null,
       deadline: json['deadline'] != null ? DateTime.parse(json['deadline']) : null,
       status: json['status'] ?? 'draft',
-      clientId: json['client_id'] is int ? json['client_id'] : int.tryParse(json['client_id'].toString()) ?? 0,
+      clientId: idFromJson(json['client_id']),
       clientName: json['client_name'],
       clientEmail: json['client_email'],
-      freelancerId: json['freelancer_id'] is int 
-          ? json['freelancer_id'] 
-          : (json['freelancer_id'] != null ? int.tryParse(json['freelancer_id'].toString()) : null),
+      freelancerId: json['freelancer_id'] != null ? idFromJson(json['freelancer_id']) : null,
       freelancerName: json['freelancer_name'],
       freelancerEmail: json['freelancer_email'],
       category: json['category'],
-      applicationsCount: json['applications_count'] is int 
-          ? json['applications_count'] 
+      applicationsCount: json['applications_count'] is int
+          ? json['applications_count']
           : int.tryParse(json['applications_count']?.toString() ?? '0') ?? 0,
-      createdAt: json['created_at'] != null 
-          ? DateTime.parse(json['created_at']) 
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
           : DateTime.now(),
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
     );
@@ -78,6 +79,9 @@ class Order {
       'client_id': clientId,
       'freelancer_id': freelancerId,
       'category': category,
+      'applications_count': applicationsCount,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
     };
   }
 
@@ -100,4 +104,3 @@ class Order {
     }
   }
 }
-

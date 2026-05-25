@@ -8,7 +8,7 @@ import '../providers/chat_provider.dart';
 import 'chat_screen.dart';
 
 class UserProfileScreen extends ConsumerStatefulWidget {
-  final int userId;
+  final String userId;
 
   const UserProfileScreen({Key? key, required this.userId}) : super(key: key);
 

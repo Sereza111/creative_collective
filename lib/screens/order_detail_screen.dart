@@ -361,7 +361,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
             ),
             const SizedBox(height: 24),
             // Кнопка откликнуться для фрилансеров
-            if (isFreelancer && widget.order.status == 'published' && widget.order.freelancerId == null) ...[
+            if (isFreelancer &&
+                !isOwner &&
+                widget.order.status == 'published' &&
+                widget.order.freelancerId == null) ...[
               AppTheme.fadeInAnimation(
                 duration: const Duration(milliseconds: 700),
                 child: AppTheme.gothicButton(
@@ -475,7 +478,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     );
   }
 
-  Widget _buildReviewButton(int userId) {
+  Widget _buildReviewButton(String userId) {
     // Проверяем, оставил ли пользователь уже отзыв
     final hasReviewed = _reviews?.any((r) => r.reviewerId == userId) ?? false;
     
@@ -665,7 +668,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     );
   }
 
-  Future<void> _acceptApplication(int applicationId) async {
+  Future<void> _acceptApplication(String applicationId) async {
     try {
       await ApiService.acceptApplication(widget.order.id, applicationId);
       if (mounted) {
@@ -689,7 +692,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     }
   }
 
-  Future<void> _rejectApplication(int applicationId) async {
+  Future<void> _rejectApplication(String applicationId) async {
     try {
       await ApiService.rejectApplication(widget.order.id, applicationId);
       if (mounted) {

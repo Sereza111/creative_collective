@@ -69,7 +69,7 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
     }
   }
 
-  Future<void> updateOrder(int orderId, Map<String, dynamic> orderData) async {
+  Future<void> updateOrder(String orderId, Map<String, dynamic> orderData) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final updatedOrder = await ApiService.updateOrder(orderId, orderData);
@@ -86,7 +86,7 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
     }
   }
 
-  Future<void> deleteOrder(int orderId) async {
+  Future<void> deleteOrder(String orderId) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       await ApiService.deleteOrder(orderId);
@@ -103,7 +103,7 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
     }
   }
 
-  Future<void> applyToOrder(int orderId, Map<String, dynamic> applicationData) async {
+  Future<void> applyToOrder(String orderId, Map<String, dynamic> applicationData) async {
     try {
       await ApiService.applyToOrder(orderId, applicationData);
       // Обновляем список заказов после отклика

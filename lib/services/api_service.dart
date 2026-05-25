@@ -560,7 +560,7 @@ class ApiService {
     }
   }
 
-  static Future<Order> getOrderById(int orderId) async {
+  static Future<Order> getOrderById(String orderId) async {
     final headers = await _getHeaders();
     final response = await http.get(
       Uri.parse('$baseUrl/orders/$orderId'),
@@ -599,7 +599,7 @@ class ApiService {
     }
   }
 
-  static Future<Order> updateOrder(int orderId, Map<String, dynamic> orderData) async {
+  static Future<Order> updateOrder(String orderId, Map<String, dynamic> orderData) async {
     final headers = await _getHeaders();
     final response = await http.put(
       Uri.parse('$baseUrl/orders/$orderId'),
@@ -619,7 +619,7 @@ class ApiService {
     }
   }
 
-  static Future<void> deleteOrder(int orderId) async {
+  static Future<void> deleteOrder(String orderId) async {
     final headers = await _getHeaders();
     final response = await http.delete(
       Uri.parse('$baseUrl/orders/$orderId'),
@@ -632,7 +632,7 @@ class ApiService {
     }
   }
 
-  static Future<OrderApplication> applyToOrder(int orderId, Map<String, dynamic> applicationData) async {
+  static Future<OrderApplication> applyToOrder(String orderId, Map<String, dynamic> applicationData) async {
     final headers = await _getHeaders();
     final response = await http.post(
       Uri.parse('$baseUrl/orders/$orderId/apply'),
@@ -652,7 +652,7 @@ class ApiService {
     }
   }
 
-  static Future<List<OrderApplication>> getOrderApplications(int orderId) async {
+  static Future<List<OrderApplication>> getOrderApplications(String orderId) async {
     final headers = await _getHeaders();
     final response = await http.get(
       Uri.parse('$baseUrl/orders/$orderId/applications'),
@@ -671,7 +671,7 @@ class ApiService {
     }
   }
 
-  static Future<void> acceptApplication(int orderId, int applicationId) async {
+  static Future<void> acceptApplication(String orderId, String applicationId) async {
     final headers = await _getHeaders();
     final response = await http.post(
       Uri.parse('$baseUrl/orders/$orderId/applications/$applicationId/accept'),
@@ -685,7 +685,7 @@ class ApiService {
     }
   }
 
-  static Future<void> rejectApplication(int orderId, int applicationId) async {
+  static Future<void> rejectApplication(String orderId, String applicationId) async {
     final headers = await _getHeaders();
     final response = await http.post(
       Uri.parse('$baseUrl/orders/$orderId/applications/$applicationId/reject'),
@@ -700,7 +700,7 @@ class ApiService {
   }
 
   // Алиас для совместимости
-  static Future<List<OrderApplication>> getApplicationsForOrder(int orderId) {
+  static Future<List<OrderApplication>> getApplicationsForOrder(String orderId) {
     return getOrderApplications(orderId);
   }
 
@@ -746,7 +746,7 @@ class ApiService {
   }
 
   // Получить или создать чат для заказа
-  static Future<Chat> getOrCreateChatForOrder(int orderId) async {
+  static Future<Chat> getOrCreateChatForOrder(String orderId) async {
     final headers = await _getHeaders();
     final response = await http.get(
       Uri.parse('$baseUrl/chat/order/$orderId'),
@@ -828,7 +828,7 @@ class ApiService {
   // ==================== REVIEWS METHODS ====================
 
   // Создать отзыв для заказа
-  static Future<Review> createReview(int orderId, int rating, String? comment) async {
+  static Future<Review> createReview(String orderId, int rating, String? comment) async {
     final headers = await _getHeaders();
     final response = await http.post(
       Uri.parse('$baseUrl/reviews/orders/$orderId/review'),
@@ -870,7 +870,7 @@ class ApiService {
   }
 
   // Получить статистику рейтинга пользователя
-  static Future<UserRating> getUserRating(int userId) async {
+  static Future<UserRating> getUserRating(String userId) async {
     final response = await http.get(
       Uri.parse('$baseUrl/reviews/users/$userId/rating'),
     ).timeout(const Duration(seconds: 10));
@@ -887,7 +887,7 @@ class ApiService {
   }
 
   // Получить отзывы для заказа
-  static Future<List<Review>> getOrderReviews(int orderId) async {
+  static Future<List<Review>> getOrderReviews(String orderId) async {
     final response = await http.get(
       Uri.parse('$baseUrl/reviews/orders/$orderId/reviews'),
     ).timeout(const Duration(seconds: 10));
@@ -982,7 +982,7 @@ class ApiService {
   }
 
   // Получить портфолио пользователя
-  static Future<List<PortfolioItem>> getUserPortfolio(int userId) async {
+  static Future<List<PortfolioItem>> getUserPortfolio(String userId) async {
     final response = await http.get(
       Uri.parse('$baseUrl/portfolio/user/$userId'),
     ).timeout(const Duration(seconds: 10));
@@ -1213,12 +1213,12 @@ class ApiService {
   // ==================== ALIASES FOR COMPATIBILITY ====================
 
   // Alias for getUserPortfolio
-  static Future<List<PortfolioItem>> getPortfolioItems(int userId) async {
+  static Future<List<PortfolioItem>> getPortfolioItems(String userId) async {
     return getUserPortfolio(userId);
   }
 
   // Get reviews for user (for compatibility with new screens)
-  static Future<List<dynamic>> getReviewsForUser(int userId) async {
+  static Future<List<dynamic>> getReviewsForUser(String userId) async {
     final response = await http.get(
       Uri.parse('$baseUrl/reviews/user/$userId'),
     ).timeout(const Duration(seconds: 10));
@@ -1502,7 +1502,7 @@ class ApiService {
   // === ORDER MANAGEMENT METHODS ===
 
   // Завершить заказ (с автоматической оплатой)
-  static Future<void> completeOrder(int orderId) async {
+  static Future<void> completeOrder(String orderId) async {
     final headers = await _getHeaders();
     final response = await http.post(
       Uri.parse('$baseUrl/orders/$orderId/complete'),
@@ -1516,7 +1516,7 @@ class ApiService {
   }
 
   // Отменить заказ
-  static Future<void> cancelOrder(int orderId, String reason) async {
+  static Future<void> cancelOrder(String orderId, String reason) async {
     final headers = await _getHeaders();
     final response = await http.post(
       Uri.parse('$baseUrl/orders/$orderId/cancel'),

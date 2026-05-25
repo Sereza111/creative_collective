@@ -83,7 +83,7 @@ class _MyStatsScreenState extends ConsumerState<MyStatsScreen> {
     }
   }
 
-  double _calculateTotalEarned(List<dynamic> orders, int userId) {
+  double _calculateTotalEarned(List<dynamic> orders, String userId) {
     double total = 0;
     for (var order in orders) {
       if (order.acceptedFreelancerId == userId && order.status == 'completed') {

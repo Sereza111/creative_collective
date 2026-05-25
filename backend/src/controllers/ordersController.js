@@ -206,6 +206,10 @@ exports.applyToOrder = async (req, res) => {
       return errorResponse(res, 'На этот заказ нельзя откликнуться', 400);
     }
 
+    if (order.client_id === freelancerId) {
+      return errorResponse(res, 'Нельзя откликаться на свой заказ. Войдите как другой фрилансер.', 400);
+    }
+
     // Проверка, не откликался ли уже
     const existingApplications = await query(
       'SELECT * FROM order_applications WHERE order_id = ? AND freelancer_id = ?',
@@ -219,11 +223,19 @@ exports.applyToOrder = async (req, res) => {
     // ОПЛАТА ЗА ОТКЛИК (50 рублей)
     const applicationFee = 50; // Стоимость отклика
 
-    // Проверяем баланс фрилансера
-    const balance = await query('SELECT balance FROM user_balances WHERE user_id = ?', [freelancerId]);
-    
-    if (balance.length === 0 || balance[0].balance < applicationFee) {
-      return errorResponse(res, 'Недостаточно средств для отправки отклика. Пополните баланс.', 402);
+    let balance = await query('SELECT balance FROM user_balances WHERE user_id = ?', [freelancerId]);
+
+    if (balance.length === 0) {
+      await query('INSERT INTO user_balances (id, user_id, balance) VALUES (?, ?, 0)', [newId(), freelancerId]);
+      balance = await query('SELECT balance FROM user_balances WHERE user_id = ?', [freelancerId]);
+    }
+
+    if (balance[0].balance < applicationFee) {
+      return errorResponse(
+        res,
+        `Недостаточно средств для отклика (нужно ${applicationFee} ₽, на балансе ${balance[0].balance} ₽). Пополните баланс.`,
+        402
+      );
     }
 
     // Списываем средства за отклик
@@ -232,11 +244,11 @@ exports.applyToOrder = async (req, res) => {
       [applicationFee, applicationFee, freelancerId]
     );
 
-    // Создаем транзакцию
+    const transactionId = newId();
     await query(
-      `INSERT INTO transactions (user_id, type, amount, description, status, order_id)
-       VALUES (?, 'expense', ?, ?, 'completed', ?)`,
-      [freelancerId, applicationFee, `Отклик на заказ "${order.title}"`, id]
+      `INSERT INTO transactions (id, user_id, type, amount, description, status, order_id)
+       VALUES (?, ?, 'expense', ?, ?, 'completed', ?)`,
+      [transactionId, freelancerId, applicationFee, `Отклик на заказ "${order.title}"`, id]
     );
 
     const applicationId = newId();
@@ -258,7 +270,11 @@ exports.applyToOrder = async (req, res) => {
     successResponse(res, newApplication[0], 'Отклик отправлен', 201);
   } catch (error) {
     console.error('Apply to order error:', error);
-    errorResponse(res, 'Ошибка отправки отклика');
+    const msg =
+      process.env.NODE_ENV === 'development' && error?.message
+        ? `Ошибка отправки отклика: ${error.message}`
+        : 'Ошибка отправки отклика';
+    errorResponse(res, msg);
   }
 };
 

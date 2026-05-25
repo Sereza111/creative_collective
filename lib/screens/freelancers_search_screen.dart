@@ -407,7 +407,7 @@ class _FreelancersSearchScreenState extends ConsumerState<FreelancersSearchScree
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => UserProfileScreen(userId: freelancer['id']),
+                builder: (context) => UserProfileScreen(userId: freelancer['id'].toString()),
               ),
             );
           },
@@ -533,7 +533,7 @@ class _FreelancersSearchScreenState extends ConsumerState<FreelancersSearchScree
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => UserProfileScreen(userId: freelancer['id']),
+                              builder: (context) => UserProfileScreen(userId: freelancer['id'].toString()),
                             ),
                           );
                         },

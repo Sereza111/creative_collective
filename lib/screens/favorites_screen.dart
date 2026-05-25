@@ -265,7 +265,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> with SingleTi
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => UserProfileScreen(userId: favorite['item_id']),
+                builder: (context) => UserProfileScreen(userId: favorite['item_id'].toString()),
               ),
             );
           },
