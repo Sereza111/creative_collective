@@ -1,6 +1,7 @@
-const { query } = require('../config/database');
+const { query, pool } = require('../config/database');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
 const { newId } = require('../utils/id');
+const { recordMarketplaceExpense } = require('../utils/recordMarketplaceTransaction');
 
 // Получить все заказы (маркетплейс)
 exports.getAllOrders = async (req, res) => {
@@ -230,7 +231,7 @@ exports.applyToOrder = async (req, res) => {
       balance = await query('SELECT balance FROM user_balances WHERE user_id = ?', [freelancerId]);
     }
 
-    if (balance[0].balance < applicationFee) {
+    if (Number(balance[0].balance) < applicationFee) {
       return errorResponse(
         res,
         `Недостаточно средств для отклика (нужно ${applicationFee} ₽, на балансе ${balance[0].balance} ₽). Пополните баланс.`,
@@ -238,24 +239,47 @@ exports.applyToOrder = async (req, res) => {
       );
     }
 
-    // Списываем средства за отклик
-    await query(
-      'UPDATE user_balances SET balance = balance - ?, total_spent = total_spent + ? WHERE user_id = ?',
-      [applicationFee, applicationFee, freelancerId]
-    );
-
-    const transactionId = newId();
-    await query(
-      `INSERT INTO transactions (id, user_id, type, amount, description, status, order_id)
-       VALUES (?, ?, 'expense', ?, ?, 'completed', ?)`,
-      [transactionId, freelancerId, applicationFee, `Отклик на заказ "${order.title}"`, id]
-    );
-
     const applicationId = newId();
-    await query(
-      `INSERT INTO order_applications (id, order_id, freelancer_id, message, proposed_budget, proposed_deadline)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [applicationId, id, freelancerId, message || null, proposed_budget || null, proposed_deadline || null]
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      const [updated] = await conn.execute(
+        'UPDATE user_balances SET balance = balance - ?, total_spent = total_spent + ? WHERE user_id = ? AND balance >= ?',
+        [applicationFee, applicationFee, freelancerId, applicationFee]
+      );
+
+      if (updated.affectedRows === 0) {
+        await conn.rollback();
+        return errorResponse(res, 'Недостаточно средств для отклика. Пополните баланс.', 402);
+      }
+
+      await conn.execute(
+        `INSERT INTO order_applications (id, order_id, freelancer_id, message, proposed_budget, proposed_deadline)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          applicationId,
+          id,
+          freelancerId,
+          message || null,
+          proposed_budget ?? null,
+          proposed_deadline || null,
+        ]
+      );
+
+      await conn.commit();
+    } catch (txErr) {
+      await conn.rollback();
+      throw txErr;
+    } finally {
+      conn.release();
+    }
+
+    await recordMarketplaceExpense(
+      freelancerId,
+      id,
+      applicationFee,
+      `Отклик на заказ "${order.title}"`
     );
 
     const newApplication = await query(
@@ -270,11 +294,8 @@ exports.applyToOrder = async (req, res) => {
     successResponse(res, newApplication[0], 'Отклик отправлен', 201);
   } catch (error) {
     console.error('Apply to order error:', error);
-    const msg =
-      process.env.NODE_ENV === 'development' && error?.message
-        ? `Ошибка отправки отклика: ${error.message}`
-        : 'Ошибка отправки отклика';
-    errorResponse(res, msg);
+    const detail = error?.message ? `: ${error.message}` : '';
+    errorResponse(res, `Ошибка отправки отклика${detail}`);
   }
 };
 
