@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Node.js API Server - подключается к внешней БД на Beget
   api:
     build:
       context: ./backend
@@ -19,8 +18,6 @@ services:
     volumes:
       - creative_uploads:/app/uploads
     healthcheck:
-      # Liveness: container is up if HTTP server responds on /
-      # Readiness (DB connected) is still available at /health
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 30s
       timeout: 10s
@@ -29,12 +26,11 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DB_HOST: ${DB_HOST:-eskopeboyed.beget.app}
+      DB_HOST: ${DB_HOST}
       DB_PORT: 3306
-      DB_USER: ${DB_USER:-creative_collective}
-      # Secrets must come from your deployment environment / `.env` (do not commit real passwords)
+      DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME:-creative_collective}
+      DB_NAME: ${DB_NAME}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
@@ -43,21 +39,19 @@ services:
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
       RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
 
-  # Public web entrypoint with automatic HTTPS
+  # Лендинг на :80 → хост 8081 → nginx VPS → https://arc303.ru
   web:
     build:
       context: ./site
-      dockerfile: Dockerfile.caddy
+      dockerfile: Dockerfile.nginx
     image: creative_collective_web:latest
     container_name: creative_collective_web
     restart: unless-stopped
     depends_on:
       api:
         condition: service_healthy
-    # nginx проксирует сюда; 8081:80 (не 127.0.0.1 — иначе на части хостов порт не биндится)
     ports:
       - "8081:80"
-    # Без caddy_data/caddy_config — старый autosave в volume держал :443 вместо :80
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/"]
       interval: 30s
