@@ -8,6 +8,7 @@ import 'screens/finance_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/admin_panel_screen.dart';
 import 'screens/projects_screen.dart';
+import 'screens/team_screen.dart';
 import 'screens/marketplace_screen.dart';
 import 'screens/my_orders_screen.dart';
 import 'screens/my_applications_screen.dart';
@@ -109,6 +110,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         '/favorites': (context) => const FavoritesScreen(),
         '/withdrawal': (context) => const WithdrawalScreen(),
         '/add_balance': (context) => const AddBalanceScreen(),
+        '/teams': (context) => const TeamScreen(),
       },
     );
   }

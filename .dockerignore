@@ -1,0 +1,14 @@
+.git
+.github
+.idea
+.vscode
+build
+.dart_tool
+android
+ios
+linux
+macos
+windows
+backend/node_modules
+**/*.md
+!site/index.html

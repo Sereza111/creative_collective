@@ -39,11 +39,11 @@ services:
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
       RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
 
-  # Лендинг на :80 → хост 8081 → nginx VPS → https://arc303.ru
+  # Лендинг + Flutter Web (/app/) на :80 → хост 8081 → nginx VPS → https://arc303.ru
   web:
     build:
-      context: ./site
-      dockerfile: Dockerfile.nginx
+      context: .
+      dockerfile: site/Dockerfile.nginx
     image: creative_collective_web:latest
     container_name: creative_collective_web
     restart: unless-stopped

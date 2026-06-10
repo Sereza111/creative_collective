@@ -268,6 +268,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   const SizedBox(height: 16),
                   AppTheme.gothicButton(
+                    text: 'Команды',
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/teams');
+                    },
+                    isPrimary: false,
+                  ),
+                  const SizedBox(height: 16),
+                  AppTheme.gothicButton(
                       text: 'Обновить данные',
                       onPressed: () async {
                         await ref.read(tasksProvider.notifier).loadTasks();

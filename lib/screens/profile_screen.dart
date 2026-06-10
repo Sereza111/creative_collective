@@ -675,13 +675,13 @@ class ProfileScreen extends ConsumerWidget {
   Future<void> _exportProjects(BuildContext context, WidgetRef ref) async {
     try {
       final projects = ref.read(projectsProvider).projects;
-      final file = await ExportService.exportProjectsToCSV(projects);
+      final result = await ExportService.exportProjectsToCSV(projects);
       
       if (context.mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Проекты экспортированы: ${file.path}'),
+            content: Text(result.message),
             backgroundColor: AppTheme.shadowGray,
           ),
         );
@@ -701,13 +701,13 @@ class ProfileScreen extends ConsumerWidget {
   Future<void> _exportTasks(BuildContext context, WidgetRef ref) async {
     try {
       final tasks = ref.read(tasksProvider).tasks;
-      final file = await ExportService.exportTasksToCSV(tasks);
+      final result = await ExportService.exportTasksToCSV(tasks);
       
       if (context.mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Задачи экспортированы: ${file.path}'),
+            content: Text(result.message),
             backgroundColor: AppTheme.shadowGray,
           ),
         );
@@ -728,13 +728,13 @@ class ProfileScreen extends ConsumerWidget {
     try {
       final transactionsAsync = ref.read(transactionsProvider);
       final transactions = transactionsAsync.transactions;
-      final file = await ExportService.exportTransactionsToCSV(transactions);
+      final result = await ExportService.exportTransactionsToCSV(transactions);
       
       if (context.mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Транзакции экспортированы: ${file.path}'),
+            content: Text(result.message),
             backgroundColor: AppTheme.shadowGray,
           ),
         );
@@ -758,7 +758,7 @@ class ProfileScreen extends ConsumerWidget {
       final transactionsAsync = ref.read(transactionsProvider);
       final transactions = transactionsAsync.transactions;
       
-      final file = await ExportService.exportAllDataToCSV(
+      final result = await ExportService.exportAllDataToCSV(
         projects: projects,
         tasks: tasks,
         transactions: transactions,
@@ -768,7 +768,7 @@ class ProfileScreen extends ConsumerWidget {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Все данные экспортированы: ${file.path}'),
+            content: Text(result.message),
             backgroundColor: AppTheme.shadowGray,
           ),
         );
