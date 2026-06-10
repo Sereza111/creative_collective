@@ -1,29 +1,36 @@
-# TLS и Let's Encrypt — на хостовом nginx (certbot). Caddy только HTTP внутри Docker.
+# TLS на хостовом nginx (certbot). Caddy только HTTP :80 внутри Docker (маппинг 8081:80).
 {
   auto_https off
 }
 
-# Сайт + API на основном домене (один сертификат)
-arc303.ru {
-  encode zstd gzip
+:80 {
+  @arc303 host arc303.ru
+  handle @arc303 {
+    encode zstd gzip
 
-  handle /health {
+    handle /health {
+      reverse_proxy creative_collective_api:3000
+    }
+
+    handle /api/* {
+      reverse_proxy creative_collective_api:3000
+    }
+
+    handle {
+      root * /srv
+      file_server
+    }
+  }
+
+  @api host api.arc303.ru
+  handle @api {
+    encode zstd gzip
     reverse_proxy creative_collective_api:3000
   }
 
-  handle /api/* {
-    reverse_proxy creative_collective_api:3000
-  }
-
+  # Прямой заход http://IP:8081 или без Host — лендинг
   handle {
     root * /srv
     file_server
   }
-}
-
-# API на поддомене (отдельный сертификат)
-# www.arc303.ru НЕ в списке — у тебя DNS www → 5.101.152.161 (другой сервер), из-за этого LE падает
-api.arc303.ru {
-  encode zstd gzip
-  reverse_proxy creative_collective_api:3000
 }
