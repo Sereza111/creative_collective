@@ -1,8 +1,10 @@
 FROM caddy:2.9-alpine
 
+RUN apk add --no-cache wget
+
 # Site landing
 COPY index.html /srv/index.html
 
-# Caddy config
+# Caddy config (TLS на хостовом nginx; только :80)
 COPY Caddyfile /etc/caddy/Caddyfile
 

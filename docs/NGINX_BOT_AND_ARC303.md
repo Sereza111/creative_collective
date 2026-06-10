@@ -11,6 +11,26 @@
 
 Let's Encrypt для `arc303.ru` / `api.arc303.ru` — через **certbot + nginx**, не через Caddy на 80.
 
+## Если `curl http://127.0.0.1:8081/` → 000 или 502 на arc303.ru
+
+Старые volumes `caddy_config` / `caddy_data` сохраняли конфиг с портом **443** вместо **80**.
+
+На VPS:
+
+```bash
+docker stop creative_collective_web
+docker volume rm creative_collective_caddy_config creative_collective_caddy_data 2>/dev/null || true
+```
+
+Portainer → stack → убери volumes у `web` → **Rebuild** `creative_collective_web`.
+
+В логах должно быть: `enabling HTTP listener` **`addr=:80`**, не только `:443`.
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8081/
+# 200
+```
+
 ## 1. Portainer — deploy stack
 
 В compose у `web` должно быть **`8081:80`**, не `80:80` и не только API без `web`.

@@ -57,14 +57,14 @@ services:
     # nginx проксирует сюда; 8081:80 (не 127.0.0.1 — иначе на части хостов порт не биндится)
     ports:
       - "8081:80"
-    volumes:
-      - caddy_data:/data
-      - caddy_config:/config
+    # Без caddy_data/caddy_config — старый autosave в volume держал :443 вместо :80
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   creative_uploads:
-    driver: local
-  caddy_data:
-    driver: local
-  caddy_config:
     driver: local
