@@ -8,8 +8,7 @@
 
 | URL | Что |
 |-----|-----|
-| `https://arc303.ru/` | Лендинг |
-| `https://arc303.ru/app/` | **Веб-приложение** (задачи, проекты, команды, маркет, чаты) |
+| `https://arc303.ru/` | **Веб-приложение** (задачи, проекты, команды, маркет, чаты) |
 | `https://arc303.ru/api/v1` | API |
 | `https://api.arc303.ru/health` | Health API (прямой порт 8080) |
 
@@ -17,8 +16,8 @@
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8081/
-curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8081/app/
-curl -s -o /dev/null -w "%{http_code}\n" https://arc303.ru/app/
+curl -s http://127.0.0.1:8081/ | head -5
+curl -s -o /dev/null -w "%{http_code}\n" https://arc303.ru/
 ```
 
-Ожидается **200** на все три.
+Ожидается **200**, в HTML — `<base href="/">` (Flutter), не лендинг.

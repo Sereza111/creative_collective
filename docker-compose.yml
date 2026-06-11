@@ -39,7 +39,7 @@ services:
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
       RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
 
-  # Лендинг + Flutter Web (/app/) на :80 → хост 8081 → nginx VPS → https://arc303.ru
+  # Flutter Web на :80 → хост 8081 → nginx VPS → https://arc303.ru
   web:
     build:
       context: .
