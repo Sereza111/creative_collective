@@ -66,7 +66,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final data = await ApiService.login(email, password);
       final userJson = data['user'];
       if (userJson is! Map<String, dynamic>) {
-        throw Exception('Некорректный ответ сервера при регистрации');
+        throw Exception('Некорректный ответ сервера');
       }
       final user = User.fromJson(userJson);
       state = AuthState(
@@ -99,7 +99,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       final userJson = data['user'];
       if (userJson is! Map<String, dynamic>) {
-        throw Exception('Некорректный ответ сервера при регистрации');
+        throw Exception('Некорректный ответ сервера');
       }
       final user = User.fromJson(userJson);
       state = AuthState(
