@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../main.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 
@@ -41,7 +42,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           userRole: _selectedRole,
         );
         if (mounted) {
-          Navigator.pop(context);
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+            (route) => false,
+          );
         }
       } catch (e) {
         if (mounted) {
