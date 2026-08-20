@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Sereza111/creative_collective/actions/workflows/ci.yml/badge.svg)](https://github.com/Sereza111/creative_collective/actions/workflows/ci.yml)
 [![Flutter](https://img.shields.io/badge/Flutter-3.19%2B-02569B?logo=flutter)](https://flutter.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Full-stack freelance marketplace for clients, freelancers, and platform administrators. The project combines a Flutter application with an Express/MySQL API and covers the workflow from publishing an order to selecting a contractor, communicating, reviewing the result, and resolving disputes.
@@ -50,7 +50,7 @@ The repository contains:
 ### Prerequisites
 
 - Flutter 3.19 or newer
-- Node.js 18 or newer
+- Node.js 20 or newer
 - MySQL 8
 
 ### Backend
