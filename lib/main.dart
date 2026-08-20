@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/home_screen.dart';
 import 'screens/tasks_screen.dart';
 import 'screens/finance_screen.dart';
-import 'screens/profile_screen.dart';
+import 'screens/profile_overview_screen.dart';
 import 'screens/admin_panel_screen.dart';
 import 'screens/projects_screen.dart';
 import 'screens/team_screen.dart';
@@ -170,7 +170,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     MarketplaceScreen(),
     ChatsListWithSearchScreen(),
     FinanceScreen(),
-    ProfileScreen(),
+    ProfileOverviewScreen(),
   ];
 
   final List<NavigationItem> _navigationItems = const [
@@ -310,18 +310,19 @@ class _DesktopNavigation extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Creative',
+                            'CREATIVE',
                             style: TextStyle(
                               color: AppTheme.ghostWhite,
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.w700,
+                              fontFamily: 'Georgia',
                             ),
                           ),
                           Text(
-                            'Collective',
+                            'COLLECTIVE',
                             style: TextStyle(
-                              color: AppTheme.mistGray,
-                              fontSize: 12,
+                              color: AppTheme.goldenrod,
+                              fontSize: 10,
                             ),
                           ),
                         ],
@@ -334,7 +335,7 @@ class _DesktopNavigation extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
-                  'РАБОЧЕЕ ПРОСТРАНСТВО',
+                  'НАВИГАЦИЯ',
                   style: TextStyle(
                     color: AppTheme.mistGray,
                     fontSize: 10,
@@ -404,11 +405,11 @@ class _DesktopNavigation extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
-                  'Все рабочие данные собраны в одном месте.',
+                  'EST. MMXXVI',
                   style: TextStyle(
-                    color: AppTheme.mistGray,
+                    color: AppTheme.goldenrod,
                     fontSize: 11,
-                    height: 1.4,
+                    fontFamily: 'Georgia',
                   ),
                 ),
               ),
@@ -429,13 +430,19 @@ class _BrandMark extends StatelessWidget {
       width: 36,
       height: 36,
       decoration: BoxDecoration(
-        color: AppTheme.subtleAccent,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: const Icon(
-        Icons.hub_outlined,
         color: AppTheme.deepBlack,
-        size: 21,
+        border: Border.all(color: AppTheme.goldenrod),
+        borderRadius: BorderRadius.circular(2),
+      ),
+      alignment: Alignment.center,
+      child: const Text(
+        'CC',
+        style: TextStyle(
+          color: AppTheme.tombstoneWhite,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          fontFamily: 'Georgia',
+        ),
       ),
     );
   }

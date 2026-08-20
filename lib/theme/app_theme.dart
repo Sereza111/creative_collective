@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const Color deepBlack = Color(0xFF101317);
-  static const Color voidBlack = Color(0xFF171B20);
-  static const Color shadowGray = Color(0xFF20262D);
+  static const Color deepBlack = Color(0xFF0B0C0E);
+  static const Color voidBlack = Color(0xFF131417);
+  static const Color shadowGray = Color(0xFF1B1D21);
   static const Color charcoal = voidBlack;
   static const Color darkerCharcoal = deepBlack;
 
-  static const Color tombstoneWhite = Color(0xFFF3F5F7);
-  static const Color ashGray = Color(0xFFC4CAD1);
-  static const Color mistGray = Color(0xFF8E98A3);
-  static const Color dimGray = Color(0xFF343C45);
+  static const Color tombstoneWhite = Color(0xFFE8E2D9);
+  static const Color ashGray = Color(0xFFB8B0A6);
+  static const Color mistGray = Color(0xFF817B75);
+  static const Color dimGray = Color(0xFF383439);
 
-  static const Color subtleAccent = Color(0xFF58C2AA);
-  static const Color ghostWhite = Color(0xFFF8FAFB);
-  static const Color bloodRed = Color(0xFFE26767);
-  static const Color electricBlue = Color(0xFF70A7F8);
-  static const Color goldenrod = Color(0xFFE6B566);
+  static const Color subtleAccent = Color(0xFFB7465D);
+  static const Color ghostWhite = Color(0xFFF2EDE5);
+  static const Color bloodRed = Color(0xFFD45D61);
+  static const Color electricBlue = Color(0xFF718CA8);
+  static const Color goldenrod = Color(0xFFB79A65);
 
   static const Color midnightBlack = deepBlack;
   static const Color charcoalGray = shadowGray;
@@ -36,8 +36,8 @@ class AppTheme {
   static const Color darkGray = shadowGray;
   static const Color silverGray = ashGray;
   static const Color crimsonRed = bloodRed;
-  static const Color deepPurple = Color(0xFF8B7CC8);
-  static const Color gothicGreen = subtleAccent;
+  static const Color deepPurple = Color(0xFF8D6B94);
+  static const Color gothicGreen = Color(0xFF6F9180);
   static const Color gothicOrange = goldenrod;
   static const Color gothicBlue = electricBlue;
 
@@ -71,6 +71,7 @@ class AppTheme {
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: tombstoneWhite,
+        fontFamily: 'Georgia',
       ),
       iconTheme: IconThemeData(color: ashGray, size: 21),
     ),
@@ -80,22 +81,26 @@ class AppTheme {
         fontWeight: FontWeight.w700,
         color: ghostWhite,
         height: 1.2,
+        fontFamily: 'Georgia',
       ),
       displayMedium: TextStyle(
         fontSize: 24,
         fontWeight: FontWeight.w700,
         color: tombstoneWhite,
         height: 1.25,
+        fontFamily: 'Georgia',
       ),
       headlineSmall: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.w600,
         color: tombstoneWhite,
+        fontFamily: 'Georgia',
       ),
       titleLarge: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: tombstoneWhite,
+        fontFamily: 'Georgia',
       ),
       titleMedium: TextStyle(
         fontSize: 15,
@@ -151,7 +156,7 @@ class AppTheme {
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: subtleAccent,
-        foregroundColor: deepBlack,
+        foregroundColor: ghostWhite,
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
@@ -235,7 +240,7 @@ class AppTheme {
           decoration: BoxDecoration(
             color: voidBlack,
             border: Border.all(color: borderColor ?? dimGray),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(3),
           ),
           child: child,
         ),
@@ -251,6 +256,7 @@ class AppTheme {
         fontWeight: FontWeight.w700,
         color: color ?? ghostWhite,
         height: 1.25,
+        fontFamily: 'Georgia',
       ),
     );
   }
@@ -266,7 +272,7 @@ class AppTheme {
       decoration: BoxDecoration(
         color: voidBlack,
         border: Border.all(color: borderColor ?? dimGray),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(3),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,7 +304,7 @@ class AppTheme {
             onPressed: onPressed,
             style: ElevatedButton.styleFrom(
               backgroundColor: color,
-              foregroundColor: deepBlack,
+              foregroundColor: ghostWhite,
             ),
             child: Text(text),
           )

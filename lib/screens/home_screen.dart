@@ -65,7 +65,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Обзор работы'),
+        title: const Text('Главная'),
         actions: [
           _NotificationButton(
             count: notifications.unreadCount,
@@ -228,13 +228,22 @@ class _Header extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Text(
+                'РАБОЧИЙ КАБИНЕТ',
+                style: TextStyle(
+                  color: AppTheme.goldenrod,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 7),
               Text(
-                'Добрый день, $name',
+                name.toUpperCase(),
                 style: Theme.of(context).textTheme.displayMedium,
               ),
               const SizedBox(height: 8),
               const Text(
-                'Текущие проекты, ближайшие задачи и важные действия.',
+                'Creative Collective / проекты и задачи',
                 style: TextStyle(color: AppTheme.mistGray),
               ),
               const SizedBox(height: 12),
@@ -322,40 +331,54 @@ class _MetricCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.voidBlack,
         border: Border.all(color: AppTheme.dimGray),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(3),
       ),
-      child: Row(
+      child: Stack(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: metric.color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(metric.icon, color: metric.color, size: 22),
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            child: Container(width: 2, color: metric.color),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.only(left: 2),
+            child: Row(
               children: [
-                Text(
-                  metric.value.toString(),
-                  style: const TextStyle(
-                    color: AppTheme.ghostWhite,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: metric.color.withOpacity(0.55)),
+                    borderRadius: BorderRadius.circular(2),
                   ),
+                  child: Icon(metric.icon, color: metric.color, size: 20),
                 ),
-                Text(
-                  metric.label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppTheme.mistGray,
-                    fontSize: 12,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        metric.value.toString(),
+                        style: const TextStyle(
+                          color: AppTheme.ghostWhite,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Georgia',
+                        ),
+                      ),
+                      Text(
+                        metric.label,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppTheme.mistGray,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -449,7 +472,7 @@ class _Panel extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.voidBlack,
         border: Border.all(color: AppTheme.dimGray),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(3),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,6 +491,7 @@ class _Panel extends StatelessWidget {
                         color: AppTheme.tombstoneWhite,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
+                        fontFamily: 'Georgia',
                       ),
                     ),
                     Text(
