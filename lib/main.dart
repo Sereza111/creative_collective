@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/home_screen.dart';
 import 'screens/tasks_screen.dart';
 import 'screens/finance_screen.dart';
-import 'screens/profile_screen.dart';
+import 'screens/profile_overview_screen.dart';
 import 'screens/admin_panel_screen.dart';
 import 'screens/projects_screen.dart';
 import 'screens/team_screen.dart';
@@ -143,7 +143,8 @@ class SplashScreen extends StatelessWidget {
             ),
             const SizedBox(height: 40),
             CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.tombstoneWhite),
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(AppTheme.tombstoneWhite),
             ),
           ],
         ),
@@ -152,189 +153,111 @@ class SplashScreen extends StatelessWidget {
   }
 }
 
-class MainScreen extends StatefulWidget {
+class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
 
   @override
-  State<MainScreen> createState() => _MainScreenState();
+  ConsumerState<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin {
+class _MainScreenState extends ConsumerState<MainScreen> {
   int _selectedIndex = 0;
-  late AnimationController _animationController;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const TasksScreen(),
-    const ProjectsScreen(),
-    const MarketplaceScreen(),
-    const ChatsListWithSearchScreen(),
-    const FinanceScreen(),
-    const ProfileScreen(),
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    TasksScreen(),
+    ProjectsScreen(),
+    MarketplaceScreen(),
+    ChatsListWithSearchScreen(),
+    FinanceScreen(),
+    ProfileOverviewScreen(),
   ];
 
-  final List<NavigationItem> _navigationItems = [
-    NavigationItem(icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Главная'),
-    NavigationItem(icon: Icons.checklist_outlined, activeIcon: Icons.checklist, label: 'Задачи'),
-    NavigationItem(icon: Icons.folder_outlined, activeIcon: Icons.folder, label: 'Проекты'),
-    NavigationItem(icon: Icons.shopping_bag_outlined, activeIcon: Icons.shopping_bag, label: 'Маркет'),
-    NavigationItem(icon: Icons.chat_bubble_outline, activeIcon: Icons.chat_bubble, label: 'Чаты'),
-    NavigationItem(icon: Icons.account_balance_wallet_outlined, activeIcon: Icons.account_balance_wallet, label: 'Финансы'),
-    NavigationItem(icon: Icons.person_outline, activeIcon: Icons.person, label: 'Профиль'),
+  final List<NavigationItem> _navigationItems = const [
+    NavigationItem(
+        icon: Icons.home_outlined,
+        activeIcon: Icons.home_rounded,
+        label: 'Главная'),
+    NavigationItem(
+        icon: Icons.check_circle_outline,
+        activeIcon: Icons.check_circle,
+        label: 'Задачи'),
+    NavigationItem(
+        icon: Icons.folder_outlined,
+        activeIcon: Icons.folder_rounded,
+        label: 'Проекты'),
+    NavigationItem(
+        icon: Icons.storefront_outlined,
+        activeIcon: Icons.storefront,
+        label: 'Маркет'),
+    NavigationItem(
+        icon: Icons.chat_bubble_outline,
+        activeIcon: Icons.chat_bubble,
+        label: 'Чаты'),
+    NavigationItem(
+        icon: Icons.account_balance_wallet_outlined,
+        activeIcon: Icons.account_balance_wallet,
+        label: 'Финансы'),
+    NavigationItem(
+        icon: Icons.person_outline, activeIcon: Icons.person, label: 'Профиль'),
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
 
   void _onItemTapped(int index) {
     if (_selectedIndex != index) {
-      setState(() {
-        _selectedIndex = index;
-      });
-      _animationController.forward(from: 0.0);
+      setState(() => _selectedIndex = index);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 400),
-        switchInCurve: Curves.easeInOut,
-        switchOutCurve: Curves.easeInOut,
-        child: Container(
-          key: ValueKey<int>(_selectedIndex),
-          child: _screens[_selectedIndex],
-        ),
+    final unreadCount = ref.watch(unreadCounterProvider);
+    final isDesktop = MediaQuery.sizeOf(context).width >= 980;
+    final content = AnimatedSwitcher(
+      duration: const Duration(milliseconds: 180),
+      child: KeyedSubtree(
+        key: ValueKey<int>(_selectedIndex),
+        child: _screens[_selectedIndex],
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.voidBlack,
-          border: Border(
-            top: BorderSide(
-              color: AppTheme.dimGray.withOpacity(0.3),
-              width: 1,
+    );
+
+    if (isDesktop) {
+      return Scaffold(
+        body: Row(
+          children: [
+            _DesktopNavigation(
+              selectedIndex: _selectedIndex,
+              items: _navigationItems,
+              unreadCount: unreadCount,
+              onSelected: _onItemTapped,
             ),
-          ),
+            const VerticalDivider(width: 1),
+            Expanded(child: content),
+          ],
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(_navigationItems.length, (index) {
-                final item = _navigationItems[index];
-                final isSelected = _selectedIndex == index;
-                
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => _onItemTapped(index),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.easeInOut,
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-                      decoration: BoxDecoration(
-                        color: isSelected 
-                            ? AppTheme.shadowGray.withOpacity(0.2)
-                            : Colors.transparent,
-                        border: isSelected
-                            ? Border.all(
-                                color: AppTheme.dimGray.withOpacity(0.5),
-                                width: 1,
-                              )
-                            : null,
-                        borderRadius: BorderRadius.zero,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Иконка с бейджем для чатов (индекс 4)
-                          index == 4
-                              ? Consumer(
-                                  builder: (context, ref, child) {
-                                    final unreadCount = ref.watch(unreadCounterProvider);
-                                    return Stack(
-                                      clipBehavior: Clip.none,
-                                      children: [
-                                        Icon(
-                                          isSelected ? item.activeIcon : item.icon,
-                                          color: isSelected ? AppTheme.tombstoneWhite : AppTheme.mistGray,
-                                          size: isSelected ? 24 : 22,
-                                        ),
-                                        if (unreadCount > 0)
-                                          Positioned(
-                                            right: -8,
-                                            top: -4,
-                                            child: Container(
-                                              padding: const EdgeInsets.all(4),
-                                              decoration: BoxDecoration(
-                                                color: AppTheme.bloodRed,
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: AppTheme.voidBlack,
-                                                  width: 1.5,
-                                                ),
-                                              ),
-                                              constraints: const BoxConstraints(
-                                                minWidth: 18,
-                                                minHeight: 18,
-                                              ),
-                                              child: Center(
-                                                child: Text(
-                                                  unreadCount > 99 ? '99+' : unreadCount.toString(),
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    );
-                                  },
-                                )
-                              : Icon(
-                                  isSelected ? item.activeIcon : item.icon,
-                                  color: isSelected ? AppTheme.tombstoneWhite : AppTheme.mistGray,
-                                  size: isSelected ? 24 : 22,
-                                ),
-                          const SizedBox(height: 6),
-                          Text(
-                            item.label.toUpperCase(),
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: isSelected ? 9 : 8,
-                              fontWeight: FontWeight.w300,
-                              color: isSelected ? AppTheme.tombstoneWhite : AppTheme.mistGray,
-                              letterSpacing: isSelected ? 1.5 : 1.0,
-                              fontFamily: 'serif',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
+      );
+    }
+
+    return Scaffold(
+      body: content,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+        onDestinationSelected: _onItemTapped,
+        destinations: List.generate(_navigationItems.length, (index) {
+          final item = _navigationItems[index];
+          return NavigationDestination(
+            icon: _NavigationIcon(
+              icon: item.icon,
+              unreadCount: index == 4 ? unreadCount : 0,
             ),
-          ),
-        ),
+            selectedIcon: _NavigationIcon(
+              icon: item.activeIcon,
+              unreadCount: index == 4 ? unreadCount : 0,
+            ),
+            label: item.label,
+            tooltip: item.label,
+          );
+        }),
       ),
     );
   }
@@ -345,9 +268,226 @@ class NavigationItem {
   final IconData activeIcon;
   final String label;
 
-  NavigationItem({
+  const NavigationItem({
     required this.icon,
     required this.activeIcon,
     required this.label,
   });
+}
+
+class _DesktopNavigation extends StatelessWidget {
+  const _DesktopNavigation({
+    required this.selectedIndex,
+    required this.items,
+    required this.unreadCount,
+    required this.onSelected,
+  });
+
+  final int selectedIndex;
+  final List<NavigationItem> items;
+  final int unreadCount;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 224,
+      color: AppTheme.voidBlack,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 20, 14, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  children: [
+                    _BrandMark(),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'CREATIVE',
+                            style: TextStyle(
+                              color: AppTheme.ghostWhite,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Georgia',
+                            ),
+                          ),
+                          Text(
+                            'COLLECTIVE',
+                            style: TextStyle(
+                              color: AppTheme.goldenrod,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 28),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  'НАВИГАЦИЯ',
+                  style: TextStyle(
+                    color: AppTheme.mistGray,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              ...List.generate(items.length, (index) {
+                final item = items[index];
+                final selected = selectedIndex == index;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Material(
+                    color: selected
+                        ? AppTheme.subtleAccent.withOpacity(0.12)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(6),
+                    child: InkWell(
+                      onTap: () => onSelected(index),
+                      borderRadius: BorderRadius.circular(6),
+                      child: SizedBox(
+                        height: 44,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 3,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? AppTheme.subtleAccent
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(width: 11),
+                            _NavigationIcon(
+                              icon: selected ? item.activeIcon : item.icon,
+                              unreadCount: index == 4 ? unreadCount : 0,
+                              color: selected
+                                  ? AppTheme.subtleAccent
+                                  : AppTheme.mistGray,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              item.label,
+                              style: TextStyle(
+                                color: selected
+                                    ? AppTheme.tombstoneWhite
+                                    : AppTheme.ashGray,
+                                fontSize: 14,
+                                fontWeight: selected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+              const Spacer(),
+              const Divider(),
+              const SizedBox(height: 10),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  'EST. MMXXVI',
+                  style: TextStyle(
+                    color: AppTheme.goldenrod,
+                    fontSize: 11,
+                    fontFamily: 'Georgia',
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BrandMark extends StatelessWidget {
+  const _BrandMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: AppTheme.deepBlack,
+        border: Border.all(color: AppTheme.goldenrod),
+        borderRadius: BorderRadius.circular(2),
+      ),
+      alignment: Alignment.center,
+      child: const Text(
+        'CC',
+        style: TextStyle(
+          color: AppTheme.tombstoneWhite,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          fontFamily: 'Georgia',
+        ),
+      ),
+    );
+  }
+}
+
+class _NavigationIcon extends StatelessWidget {
+  const _NavigationIcon({
+    required this.icon,
+    this.unreadCount = 0,
+    this.color,
+  });
+
+  final IconData icon;
+  final int unreadCount;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(icon, color: color, size: 22),
+        if (unreadCount > 0)
+          Positioned(
+            right: -9,
+            top: -7,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: const BoxDecoration(
+                color: AppTheme.bloodRed,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                unreadCount > 99 ? '99+' : '$unreadCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 }
