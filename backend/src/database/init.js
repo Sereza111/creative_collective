@@ -4,6 +4,10 @@ const { pool, createDatabaseIfNotExists } = require('../config/database');
 const { runMigrations } = require('./migrations/run');
 const { seedLegalDocuments } = require('./seedLegalDocuments');
 
+function shouldSeedDemoData() {
+  return process.env.SEED_DEMO_DATA === 'true';
+}
+
 async function initializeDatabase() {
   try {
     console.log('🔄 Initializing database...');
@@ -28,7 +32,7 @@ async function initializeDatabase() {
     // Проверяем, есть ли уже данные
     const [users] = await pool.query('SELECT COUNT(*) as count FROM users');
     
-    if (users[0].count === 0) {
+    if (users[0].count === 0 && shouldSeedDemoData()) {
       console.log('📝 Seeding database with initial data...');
       const seedSQL = fs.readFileSync(
         path.join(__dirname, 'seed.sql'),
@@ -49,8 +53,10 @@ async function initializeDatabase() {
       }
       
       console.log('✅ Database seeded successfully');
-    } else {
+    } else if (users[0].count > 0) {
       console.log('ℹ️  Database already contains data, skipping seed');
+    } else {
+      console.log('ℹ️  Empty database left unseeded (SEED_DEMO_DATA is disabled)');
     }
     
     console.log('✅ Database initialization complete!');
@@ -74,5 +80,5 @@ if (require.main === module) {
     });
 }
 
-module.exports = { initializeDatabase };
+module.exports = { initializeDatabase, shouldSeedDemoData };
 

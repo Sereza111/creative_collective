@@ -44,6 +44,13 @@ async function query(sql, params) {
 
 // Функция для создания базы данных если не существует
 async function createDatabaseIfNotExists() {
+  const defaultValue = process.env.NODE_ENV === 'production' ? 'false' : 'true';
+  const shouldCreate = (process.env.DB_CREATE_DATABASE || defaultValue).toLowerCase() === 'true';
+
+  if (!shouldCreate) {
+    return;
+  }
+
   try {
     const tempConfig = { ...dbConfig };
     delete tempConfig.database;

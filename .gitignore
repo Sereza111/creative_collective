@@ -31,6 +31,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+/web-dist/
 /coverage/
 
 # Symbolication related
@@ -45,6 +46,9 @@ app.*.map.json
 /android/app/release
 
 # ===== BACKEND & SECURITY =====
+.env
+.env.*
+!.env.production.example
 backend/.env
 backend/.env.*
 !backend/.env.example

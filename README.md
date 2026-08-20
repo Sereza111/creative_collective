@@ -2,12 +2,14 @@
 
 [![CI](https://github.com/Sereza111/creative_collective/actions/workflows/ci.yml/badge.svg)](https://github.com/Sereza111/creative_collective/actions/workflows/ci.yml)
 [![Flutter](https://img.shields.io/badge/Flutter-3.19%2B-02569B?logo=flutter)](https://flutter.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+[Live demo](https://creative.yozik.ru/) | [API health](https://creative.yozik.ru/health)
 
 Full-stack freelance marketplace for clients, freelancers, and platform administrators. The project combines a Flutter application with an Express/MySQL API and covers the workflow from publishing an order to selecting a contractor, communicating, reviewing the result, and resolving disputes.
 
-> Project status: portfolio-ready alpha. The core marketplace flows are implemented, but production payments, real-time delivery, and deployment hardening are still required before commercial use.
+> Project status: deployed portfolio alpha. The core marketplace flows are implemented, but production payments and real-time delivery are still required before commercial use.
 
 ## What is implemented
 
@@ -50,7 +52,7 @@ The repository contains:
 ### Prerequisites
 
 - Flutter 3.19 or newer
-- Node.js 18 or newer
+- Node.js 20 or newer
 - MySQL 8
 
 ### Backend
@@ -82,6 +84,10 @@ For a release web build:
 ```bash
 flutter build web --release --dart-define=API_BASE_URL=/api/v1
 ```
+
+### Production with Docker Compose
+
+The production stack uses an external MySQL server and binds the API and web containers to localhost for a host-level Nginx reverse proxy. An optional Caddy profile is also included. See [`docs/DOCKER_COMPOSE_DEPLOY.md`](docs/DOCKER_COMPOSE_DEPLOY.md) for the server, DNS, database, and deployment steps.
 
 ## Verification
 
