@@ -46,6 +46,9 @@ app.*.map.json
 /android/app/release
 
 # ===== BACKEND & SECURITY =====
+.env
+.env.*
+!.env.production.example
 backend/.env
 backend/.env.*
 !backend/.env.example
