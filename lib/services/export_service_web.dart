@@ -32,7 +32,7 @@ class ExportService {
       rows.add([
         project.id,
         project.name,
-        project.description ?? '',
+        project.description,
         project.status,
         project.budget,
         project.spent,
@@ -58,7 +58,7 @@ class ExportService {
       rows.add([
         task.id,
         task.title,
-        task.description ?? '',
+        task.description,
         task.status,
         task.priority,
         task.projectId,

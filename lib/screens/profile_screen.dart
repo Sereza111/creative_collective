@@ -6,7 +6,6 @@ import '../providers/auth_provider.dart';
 import '../providers/finance_provider.dart';
 import '../providers/projects_provider.dart';
 import '../providers/tasks_provider.dart';
-import '../models/user.dart';
 import '../services/export_service.dart';
 import '../services/api_service.dart';
 import 'auth/login_screen.dart';

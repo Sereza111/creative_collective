@@ -28,6 +28,11 @@ const legalRoutes = require('./routes/legal.routes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const API_VERSION = process.env.API_VERSION || 'v1';
+const trustProxyHops = Number.parseInt(process.env.TRUST_PROXY_HOPS || '0', 10);
+
+if (trustProxyHops > 0) {
+  app.set('trust proxy', trustProxyHops);
+}
 
 // ===== MIDDLEWARE =====
 
@@ -42,7 +47,7 @@ const corsOrigin =
     : corsOriginEnv.split(',').map((s) => s.trim()).filter(Boolean);
 app.use(cors({
   origin: corsOrigin,
-  credentials: true
+  credentials: corsOrigin !== '*'
 }));
 
 // Логирование

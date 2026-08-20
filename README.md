@@ -1,375 +1,121 @@
-<div align="center">
+# Creative Collective
 
-# 🎨 Creative Collective
+[![CI](https://github.com/Sereza111/creative_collective/actions/workflows/ci.yml/badge.svg)](https://github.com/Sereza111/creative_collective/actions/workflows/ci.yml)
+[![Flutter](https://img.shields.io/badge/Flutter-3.19%2B-02569B?logo=flutter)](https://flutter.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js)](https://nodejs.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-### _Freelance Marketplace with Gothic Design_
+Full-stack freelance marketplace for clients, freelancers, and platform administrators. The project combines a Flutter application with an Express/MySQL API and covers the workflow from publishing an order to selecting a contractor, communicating, reviewing the result, and resolving disputes.
 
-<img src="https://img.shields.io/badge/Flutter-3.19+-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter">
-<img src="https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js">
-<img src="https://img.shields.io/badge/MySQL-8.0+-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL">
-<img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
+> Project status: portfolio-ready alpha. The core marketplace flows are implemented, but production payments, real-time delivery, and deployment hardening are still required before commercial use.
 
----
+## What is implemented
 
-**Биржа фриланса с уникальным готическим дизайном** | **Полнофункциональная платформа для работы**
+| Area | Capabilities |
+| --- | --- |
+| Marketplace | Orders, filtering, applications, contractor selection, favorites |
+| Collaboration | Chats, project and task management, notifications |
+| Reputation | Freelancer profiles, portfolios, ratings, reviews |
+| Operations | Admin panel, user verification, disputes, moderation |
+| Finance prototype | Internal balances, transaction ledger, withdrawal requests |
+| Platform | JWT authentication, role-based access, rate limiting, migrations, Docker |
 
-[Особенности](#-особенности) • [Технологии](#-технологический-стек) • [Установка](#-установка) • [Документация](#-документация)
+The finance module is an internal ledger prototype. It does not process real card or bank payments yet.
 
----
+## Architecture
 
-</div>
-
-## 📋 О проекте
-
-**Creative Collective** — это современная биржа фриланса, объединяющая заказчиков и исполнителей. Платформа предоставляет полный цикл работы: от создания заказа до получения оплаты и оставления отзывов.
-
-### ✨ Уникальные особенности
-
-- 🎭 **Готический дизайн** — минималистичный dark UI с готическими элементами
-- 💰 **Встроенная финансовая система** — внутренний баланс, транзакции, вывод средств
-- 💬 **Система чатов** — прямое общение между заказчиком и фрилансером
-- ⭐ **Рейтинги и отзывы** — 5-звездная система оценки работы
-- 🔍 **Продвинутый поиск** — фильтры по бюджету, дедлайну, категориям
-- 🛡️ **Система споров** — разрешение конфликтов через администратора
-- 📊 **Аналитика** — детальная статистика для всех участников
-- 👤 **Портфолио** — showcase работ фрилансеров
-- 🔔 **Уведомления** — real-time обновления о важных событиях
-
----
-
-## 🚀 Особенности
-
-<table>
-<tr>
-<td width="33%" valign="top">
-
-### 👥 Для заказчиков
-
-- ✅ Создание заказов
-- ✅ Просмотр откликов
-- ✅ Выбор исполнителя
-- ✅ Чат с фрилансером
-- ✅ Завершение заказа
-- ✅ Оставление отзывов
-- ✅ Управление финансами
-
-</td>
-<td width="33%" valign="top">
-
-### 💼 Для фрилансеров
-
-- ✅ Поиск заказов
-- ✅ Отклики на проекты
-- ✅ Портфолио работ
-- ✅ Чат с заказчиком
-- ✅ Получение оплаты
-- ✅ Вывод средств
-- ✅ Личная статистика
-
-</td>
-<td width="33%" valign="top">
-
-### 🛡️ Для администраторов
-
-- ✅ Статистика платформы
-- ✅ Управление пользователями
-- ✅ Верификация
-- ✅ Обработка выводов
-- ✅ Разрешение споров
-- ✅ Модерация контента
-
-</td>
-</tr>
-</table>
-
----
-
-## 🛠 Технологический стек
-
-### Frontend (Mobile & Desktop)
-
-```yaml
-Framework: Flutter 3.19+
-State Management: Riverpod
-UI/UX: Custom Gothic Theme
-Локализация: intl (ru_RU)
-Сборка: Windows, Android, iOS (планируется)
+```text
+Flutter app (Riverpod)
+        |
+        | REST / JWT
+        v
+Express API
+        |
+        +-- MySQL 8
+        +-- local upload storage
+        +-- scheduled background jobs
 ```
+
+The repository contains:
+
+- `lib/` - Flutter UI, providers, models, and API client;
+- `backend/src/` - Express routes, controllers, middleware, and jobs;
+- `backend/src/database/` - baseline schema and migration runner;
+- `backend/migrations_uuid/` - ordered marketplace migrations;
+- `site/` - web deployment configuration;
+- `.github/workflows/ci.yml` - backend and Flutter verification.
+
+## Local setup
+
+### Prerequisites
+
+- Flutter 3.19 or newer
+- Node.js 18 or newer
+- MySQL 8
 
 ### Backend
 
-```yaml
-Runtime: Node.js 18+
-Framework: Express.js
-База данных: MySQL 8.0+
-Аутентификация: JWT
-API: RESTful
-Контейнеризация: Docker
-```
-
-### Инфраструктура
-
-```yaml
-Deployment: Portainer
-Version Control: Git/GitHub
-Database: MySQL with triggers
-File Storage: Local (планируется S3)
-```
-
----
-
-## 📦 Установка
-
-### Требования
-
-- **Flutter SDK** ≥ 3.19.0
-- **Node.js** ≥ 18.0.0
-- **MySQL** ≥ 8.0
-- **Git**
-
-### 1️⃣ Клонирование репозитория
-
-```bash
-git clone https://github.com/Sereza111/creative_collective.git
-cd creative_collective
-```
-
-### 2️⃣ Настройка Backend
-
 ```bash
 cd backend
-npm install
-```
-
-Создайте `.env` файл:
-
-```env
-PORT=3000
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_password
-DB_NAME=creative_collective
-JWT_SECRET=your_super_secret_key_here
-NODE_ENV=development
-```
-
-Импортируйте базу данных:
-
-```bash
-mysql -u root -p creative_collective < backend/migrations/init_database.sql
-mysql -u root -p creative_collective < backend/migrations/create_chat_tables.sql
-mysql -u root -p creative_collective < backend/migrations/create_favorites_system.sql
-mysql -u root -p creative_collective < backend/migrations/create_notifications_system.sql
-mysql -u root -p creative_collective < backend/migrations/create_disputes_system.sql
-mysql -u root -p creative_collective < backend/migrations/create_finance_system.sql
-```
-
-Запустите backend:
-
-```bash
+cp .env.example .env
+npm ci
+npm run migrate
 npm start
 ```
 
-### 3️⃣ Настройка Flutter
+Set the database connection and replace both JWT secrets in `backend/.env` before starting the API. The migration command applies `backend/src/database/schema.sql` and the ordered migrations from `backend/migrations_uuid/`.
+
+API health endpoints:
+
+- `GET http://localhost:3000/`
+- `GET http://localhost:3000/health`
+
+### Flutter
 
 ```bash
 flutter pub get
-flutter run -d windows  # для Windows
-flutter run -d android  # для Android
+flutter run --dart-define=API_BASE_URL=http://localhost:3000/api/v1
 ```
 
----
+For a release web build:
 
-## 📱 Скриншоты
-
-<div align="center">
-
-| Маркетплейс | Детали заказа | Чат |
-|:-----------:|:-------------:|:---:|
-| _Поиск и фильтрация заказов_ | _Отклики и управление_ | _Общение в реальном времени_ |
-
-| Профиль | Финансы | Админ-панель |
-|:-------:|:-------:|:------------:|
-| _Портфолио и статистика_ | _Баланс и транзакции_ | _Управление платформой_ |
-
-</div>
-
----
-
-## 🎨 Дизайн-система
-
-### Цветовая палитра
-
-```css
-/* Primary Colors */
---charcoal: #1C1C1C;           /* Основной фон */
---darker-charcoal: #161616;     /* Темнее */
---deep-black: #0D0D0D;          /* Глубокий черный */
-
-/* Accent Colors */
---tombstone-white: #E8E8E8;     /* Основной текст */
---ghost-white: #F5F5F5;         /* Светлый текст */
---ash-gray: #B0B0B0;            /* Вторичный текст */
---mist-gray: #8A8A8A;           /* Приглушенный текст */
-
-/* Semantic Colors */
---blood-red: #8B0000;           /* Ошибки, опасность */
---gothic-green: #2D5016;        /* Успех, подтверждение */
---electric-blue: #6B8E9D;       /* Акцент, ссылки */
---goldenrod: #9D8B6B;           /* Премиум элементы */
+```bash
+flutter build web --release --dart-define=API_BASE_URL=/api/v1
 ```
 
-### Типографика
+## Verification
 
-```yaml
-Primary Font: Serif (Garamond-like)
-Secondary Font: Sans-serif
-Letter Spacing: 1.5-3.0
-Font Weights: 200 (Light), 300 (Regular), 500 (Medium)
+```bash
+# Backend
+cd backend
+npm test
+npm audit --omit=dev --audit-level=high
+
+# Flutter (from the repository root)
+flutter test
+flutter build web --release --dart-define=API_BASE_URL=/api/v1
 ```
 
----
+GitHub Actions runs these checks for every pull request and every push to `main`.
 
-## 📚 Документация
+## Security notes
 
-### API Endpoints
+- Public registration can create only `client` and `freelancer` accounts.
+- Administrative accounts must be provisioned through an operator-controlled workflow.
+- Compose configurations require explicit database and JWT secrets.
+- Configure `CORS_ORIGIN` and `TRUST_PROXY_HOPS` for the deployment environment.
 
-<details>
-<summary><b>Аутентификация</b></summary>
+Do not use development secrets or wildcard CORS settings in production.
 
-```http
-POST   /api/v1/auth/register    # Регистрация
-POST   /api/v1/auth/login        # Вход
-GET    /api/v1/auth/me           # Текущий пользователь
-```
+## Roadmap to SaaS
 
-</details>
+- Integrate a payment provider with webhooks and idempotent operations.
+- Add end-to-end tests against MySQL for the order and finance lifecycles.
+- Introduce WebSocket or managed real-time delivery for chat and notifications.
+- Move uploads to object storage and add malware/type validation.
+- Add observability, backups, recovery drills, and deployment documentation.
+- Complete legal, privacy, moderation, and payout compliance for the target market.
 
-<details>
-<summary><b>Заказы</b></summary>
+## License
 
-```http
-GET    /api/v1/orders                           # Все заказы
-GET    /api/v1/orders/:id                       # Детали заказа
-POST   /api/v1/orders                           # Создать заказ
-PUT    /api/v1/orders/:id                       # Обновить заказ
-POST   /api/v1/orders/:id/apply                 # Откликнуться
-POST   /api/v1/orders/:id/complete              # Завершить (с оплатой)
-POST   /api/v1/orders/:id/cancel                # Отменить
-```
-
-</details>
-
-<details>
-<summary><b>Финансы</b></summary>
-
-```http
-GET    /api/v1/finance/balance                  # Баланс пользователя
-GET    /api/v1/finance/transactions             # Транзакции
-POST   /api/v1/finance/withdrawal               # Запрос на вывод
-GET    /api/v1/finance/withdrawals              # Все запросы (admin)
-PUT    /api/v1/finance/withdrawals/:id/process  # Обработать (admin)
-```
-
-</details>
-
-<details>
-<summary><b>Чаты</b></summary>
-
-```http
-GET    /api/v1/chats                            # Список чатов
-GET    /api/v1/chats/:id/messages               # Сообщения
-POST   /api/v1/chats/:id/messages               # Отправить сообщение
-GET    /api/v1/chats/unread-count               # Непрочитанные
-```
-
-</details>
-
----
-
-## 🔒 Безопасность
-
-- ✅ JWT-токены для аутентификации
-- ✅ Bcrypt для хеширования паролей
-- ✅ SQL-инъекции защищены через prepared statements
-- ✅ CORS настроен для production
-- ✅ Rate limiting (планируется)
-- ✅ Input validation на всех endpoints
-
----
-
-## 🚧 Roadmap
-
-### В разработке
-
-- [ ] Интеграция платежных систем (ЮMoney, QIWI, СБП)
-- [ ] Real-time уведомления через WebSocket
-- [ ] Мобильные push-уведомления
-- [ ] Система достижений и бейджей
-- [ ] Экспорт данных в CSV/PDF
-- [ ] Двухфакторная аутентификация (2FA)
-
-### Планируется
-
-- [ ] iOS приложение
-- [ ] Web-версия (React)
-- [ ] Интеграция с Telegram Bot
-- [ ] Автоматические напоминания о дедлайнах
-- [ ] Видео-звонки в чатах
-- [ ] AI-рекомендации для заказов
-
----
-
-## 🤝 Вклад в проект
-
-Мы приветствуем вклад в развитие проекта! 
-
-### Как помочь:
-
-1. 🐛 **Сообщить о баге** — создайте Issue
-2. 💡 **Предложить фичу** — опишите в Discussions
-3. 🔧 **Исправить код** — создайте Pull Request
-
-### Правила:
-
-- Следуйте существующему стилю кода
-- Добавляйте комментарии для сложной логики
-- Тестируйте изменения перед PR
-- Описывайте изменения в commit messages
-
----
-
-## 📄 Лицензия
-
-Этот проект создан в образовательных целях.
-
----
-
-## 👨‍💻 Команда
-
-<div align="center">
-
-**Creative Collective** создан с ❤️ и ☕
-
-Если проект вам понравился, поставьте ⭐!
-
----
-
-### 📞 Контакты
-
-[![GitHub](https://img.shields.io/badge/GitHub-Sereza111-181717?style=for-the-badge&logo=github)](https://github.com/Sereza111)
-
-</div>
-
----
-
-<div align="center">
-
-### 🎯 Статистика проекта
-
-![GitHub last commit](https://img.shields.io/github/last-commit/Sereza111/creative_collective?style=flat-square)
-![GitHub issues](https://img.shields.io/github/issues/Sereza111/creative_collective?style=flat-square)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/Sereza111/creative_collective?style=flat-square)
-![GitHub](https://img.shields.io/github/license/Sereza111/creative_collective?style=flat-square)
-
-</div>
+Released under the [MIT License](LICENSE).

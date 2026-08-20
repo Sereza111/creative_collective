@@ -38,7 +38,17 @@ const getUniqueUsername = async (email) => {
 // Регистрация нового пользователя
 exports.register = async (req, res) => {
   try {
-    const { email, password, full_name, role = 'member', user_role = 'freelancer' } = req.body;
+    const { email, password, full_name } = req.body;
+    const requestedUserRole = req.body.user_role || 'freelancer';
+
+    // Public registration must never assign either administrative role.
+    // Admin accounts are provisioned through the database/operator workflow.
+    if (!['client', 'freelancer'].includes(requestedUserRole)) {
+      return errorResponse(res, 'Некорректная роль пользователя', 400);
+    }
+
+    const role = 'member';
+    const user_role = requestedUserRole;
 
     if (!email || !password) {
       return errorResponse(res, 'Email и пароль обязательны', 400);

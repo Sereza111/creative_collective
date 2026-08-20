@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/order.dart';
-import '../models/order_application.dart';
 import '../services/api_service.dart';
 import 'notifications_provider.dart';
 

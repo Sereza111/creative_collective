@@ -250,7 +250,6 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     final currencyFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
     
     final isFreelancer = user?.userRole == 'freelancer';
-    final isClient = user?.userRole == 'client';
     final isOwner = user?.id == widget.order.clientId;
 
     return Scaffold(
@@ -446,6 +445,11 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
               _buildReviewButton(user.id),
             ],
             
+            if (_isLoadingReviews) ...[
+              const SizedBox(height: 24),
+              const Center(child: CircularProgressIndicator()),
+            ],
+
             // Отзывы
             if (_reviews != null && _reviews!.isNotEmpty) ...[
               const SizedBox(height: 24),

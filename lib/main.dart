@@ -12,10 +12,8 @@ import 'screens/team_screen.dart';
 import 'screens/marketplace_screen.dart';
 import 'screens/my_orders_screen.dart';
 import 'screens/my_applications_screen.dart';
-import 'screens/chats_list_screen.dart';
 import 'screens/chats_list_with_search_screen.dart';
 import 'screens/freelancers_search_screen.dart';
-import 'screens/user_profile_screen.dart';
 import 'screens/my_stats_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'screens/withdrawal_screen.dart';
@@ -24,7 +22,6 @@ import 'screens/auth/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
-import 'providers/chat_provider.dart';
 import 'providers/unread_counter_provider.dart';
 
 void main() async {

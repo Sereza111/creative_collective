@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
-import '../providers/auth_provider.dart';
 import 'user_profile_screen.dart';
 
 class FreelancersSearchScreen extends ConsumerStatefulWidget {
@@ -238,8 +237,6 @@ class _FreelancersSearchScreenState extends ConsumerState<FreelancersSearchScree
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authProvider).user;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('ПОИСК ФРИЛАНСЕРОВ'),
