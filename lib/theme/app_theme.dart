@@ -1,337 +1,336 @@
-// lib/theme/app_theme.dart
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // ===== КЛАССИЧЕСКАЯ ГОТИЧЕСКАЯ ПАЛИТРА =====
-  // Как камень на старом кладбище - элегантно и минималистично
-  
-  static const Color deepBlack = Color(0xFF0D0D0D);        // Глубокий чёрный
-  static const Color voidBlack = Color(0xFF1A1A1A);        // Чёрная бездна
-  static const Color shadowGray = Color(0xFF2A2A2A);       // Тень
-  static const Color charcoal = Color(0xFF1A1A1A);         // Угольный (алиас для voidBlack)
-  static const Color darkerCharcoal = Color(0xFF0D0D0D);   // Темнее угольного (алиас для deepBlack)
-  
-  static const Color tombstoneWhite = Color(0xFFD4D4D4);   // Белый как камень
-  static const Color ashGray = Color(0xFFA8A8A8);          // Пепельно-серый
-  static const Color mistGray = Color(0xFF7A7A7A);         // Туманно-серый
-  static const Color dimGray = Color(0xFF4A4A4A);          // Тусклый серый
-  
-  // Очень приглушенные акценты (едва заметные)
-  static const Color subtleAccent = Color(0xFF8A8A8A);     // Еле заметный акцент
-  static const Color ghostWhite = Color(0xFFEEEEEE);       // Призрачно-белый
-  static const Color bloodRed = Color(0xFF8B0000);         // Темно-красный для ошибок
-  
-  // Дополнительные цвета для новых экранов
-  static const Color midnightBlack = deepBlack;             // Алиас для deepBlack
-  static const Color charcoalGray = shadowGray;             // Алиас для shadowGray
-  static const Color electricBlue = Color(0xFF6B8E9D);      // Приглушенный синий
-  static const Color goldenrod = Color(0xFF9D8B6B);         // Приглушенный золотой
-  
-  // ===== LEGACY COLORS (для совместимости) =====
-  static const Color cyberBlue = subtleAccent;
+  static const Color deepBlack = Color(0xFF101317);
+  static const Color voidBlack = Color(0xFF171B20);
+  static const Color shadowGray = Color(0xFF20262D);
+  static const Color charcoal = voidBlack;
+  static const Color darkerCharcoal = deepBlack;
+
+  static const Color tombstoneWhite = Color(0xFFF3F5F7);
+  static const Color ashGray = Color(0xFFC4CAD1);
+  static const Color mistGray = Color(0xFF8E98A3);
+  static const Color dimGray = Color(0xFF343C45);
+
+  static const Color subtleAccent = Color(0xFF58C2AA);
+  static const Color ghostWhite = Color(0xFFF8FAFB);
+  static const Color bloodRed = Color(0xFFE26767);
+  static const Color electricBlue = Color(0xFF70A7F8);
+  static const Color goldenrod = Color(0xFFE6B566);
+
+  static const Color midnightBlack = deepBlack;
+  static const Color charcoalGray = shadowGray;
+
+  // Compatibility aliases used by the existing screens.
+  static const Color cyberBlue = electricBlue;
   static const Color bgPrimary = deepBlack;
   static const Color bgSecondary = voidBlack;
   static const Color textPrimary = tombstoneWhite;
   static const Color textSecondary = ashGray;
   static const Color textMuted = mistGray;
   static const Color borderDark = dimGray;
-  static const Color accentGold = subtleAccent;
+  static const Color accentGold = goldenrod;
   static const Color offWhite = tombstoneWhite;
   static const Color darkBlack = deepBlack;
   static const Color richBlack = voidBlack;
   static const Color darkGray = shadowGray;
   static const Color silverGray = ashGray;
-  static const Color crimsonRed = Color(0xFF666666);
-  static const Color deepPurple = Color(0xFF6A6A6A);
-  static const Color gothicGreen = Color(0xFF707070);
-  static const Color gothicOrange = Color(0xFF757575);
-  static const Color gothicBlue = Color(0xFF656565);
+  static const Color crimsonRed = bloodRed;
+  static const Color deepPurple = Color(0xFF8B7CC8);
+  static const Color gothicGreen = subtleAccent;
+  static const Color gothicOrange = goldenrod;
+  static const Color gothicBlue = electricBlue;
 
   static final ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    primaryColor: tombstoneWhite,
     scaffoldBackgroundColor: deepBlack,
+    colorScheme: const ColorScheme.dark(
+      primary: subtleAccent,
+      onPrimary: deepBlack,
+      secondary: electricBlue,
+      onSecondary: deepBlack,
+      surface: voidBlack,
+      onSurface: tombstoneWhite,
+      error: bloodRed,
+      onError: ghostWhite,
+      outline: dimGray,
+    ),
+    dividerColor: dimGray,
+    splashColor: subtleAccent.withOpacity(0.08),
+    highlightColor: subtleAccent.withOpacity(0.05),
     appBarTheme: const AppBarTheme(
       backgroundColor: voidBlack,
+      foregroundColor: tombstoneWhite,
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
-      centerTitle: true,
+      centerTitle: false,
+      toolbarHeight: 64,
+      titleSpacing: 24,
       titleTextStyle: TextStyle(
         fontSize: 18,
-        fontWeight: FontWeight.w300,
+        fontWeight: FontWeight.w600,
         color: tombstoneWhite,
-        letterSpacing: 4.0,
-        fontFamily: 'serif',
       ),
-      iconTheme: IconThemeData(color: ashGray),
+      iconTheme: IconThemeData(color: ashGray, size: 21),
     ),
     textTheme: const TextTheme(
       displayLarge: TextStyle(
         fontSize: 32,
-        fontWeight: FontWeight.w200,
+        fontWeight: FontWeight.w700,
         color: ghostWhite,
-        letterSpacing: 3.0,
-        fontFamily: 'serif',
         height: 1.2,
       ),
       displayMedium: TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.w300,
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
         color: tombstoneWhite,
-        letterSpacing: 2.0,
+        height: 1.25,
+      ),
+      headlineSmall: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: tombstoneWhite,
+      ),
+      titleLarge: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: tombstoneWhite,
+      ),
+      titleMedium: TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        color: tombstoneWhite,
       ),
       bodyLarge: TextStyle(
         fontSize: 15,
-        fontWeight: FontWeight.w300,
+        fontWeight: FontWeight.w400,
         color: ashGray,
-        height: 1.6,
-        letterSpacing: 0.5,
+        height: 1.5,
       ),
       bodyMedium: TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w300,
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: ashGray,
+        height: 1.45,
+      ),
+      bodySmall: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
         color: mistGray,
-        letterSpacing: 0.3,
+        height: 1.4,
+      ),
+      labelLarge: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
-      fillColor: voidBlack,
       filled: true,
+      fillColor: shadowGray,
+      hintStyle: const TextStyle(color: mistGray, fontSize: 14),
+      labelStyle: const TextStyle(color: mistGray, fontSize: 13),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.zero,
-        borderSide: const BorderSide(color: dimGray, width: 1),
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(color: dimGray),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.zero,
-        borderSide: const BorderSide(color: dimGray, width: 1),
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(color: dimGray),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.zero,
-        borderSide: const BorderSide(color: ashGray, width: 1),
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(color: subtleAccent, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(color: bloodRed),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.transparent,
-        foregroundColor: tombstoneWhite,
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-        ),
+        backgroundColor: subtleAccent,
+        foregroundColor: deepBlack,
         elevation: 0,
-        side: const BorderSide(color: dimGray, width: 1),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
       ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: ashGray,
+        side: const BorderSide(color: dimGray),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      ),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: shadowGray,
+      contentTextStyle: const TextStyle(color: tombstoneWhite),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: voidBlack,
+      indicatorColor: subtleAccent.withOpacity(0.16),
+      height: 68,
+      labelTextStyle: const MaterialStatePropertyAll(
+        TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+      ),
+    ),
+    progressIndicatorTheme: const ProgressIndicatorThemeData(
+      color: subtleAccent,
+      linearTrackColor: dimGray,
     ),
   );
 
-  // ===== МИНИМАЛИСТИЧНЫЕ АНИМАЦИИ =====
-  
-  /// Деликатная анимация появления
   static Widget fadeInAnimation({
     required Widget child,
-    Duration duration = const Duration(milliseconds: 1200),
+    Duration duration = const Duration(milliseconds: 300),
     Duration delay = Duration.zero,
   }) {
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: duration,
-      curve: Curves.easeInOut,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value,
-          child: child,
-        );
-      },
+      tween: Tween(begin: 0, end: 1),
+      duration: duration + delay,
+      curve: Curves.easeOut,
+      builder: (context, value, child) => Opacity(opacity: value, child: child),
       child: child,
     );
   }
 
-  /// Тонкая анимация скольжения
   static Widget slideUpAnimation({
     required Widget child,
-    Duration duration = const Duration(milliseconds: 800),
-    double offset = 20.0,
+    Duration duration = const Duration(milliseconds: 280),
+    double offset = 12,
   }) {
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: offset, end: 0.0),
+      tween: Tween(begin: offset, end: 0),
       duration: duration,
-      curve: Curves.easeOut,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(0, value),
-          child: Opacity(
-            opacity: 1.0 - (value / offset) * 0.5,
-            child: child,
-          ),
-        );
-      },
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Transform.translate(
+        offset: Offset(0, value),
+        child: Opacity(
+          opacity: offset == 0 ? 1 : (1 - value / offset).clamp(0, 1),
+          child: child,
+        ),
+      ),
       child: child,
     );
   }
 
-  /// Элегантная готическая карточка
   static Widget animatedGothicCard({
     required Widget child,
     Color? borderColor,
     Duration delay = Duration.zero,
   }) {
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 1000),
-      curve: Curves.easeInOut,
-      builder: (context, value, _) {
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, 10 * (1 - value)),
-            child: Container(
-              decoration: BoxDecoration(
-                color: voidBlack,
-                border: Border.all(
-                  color: (borderColor ?? dimGray).withOpacity(0.3 + value * 0.2),
-                  width: 1,
-                ),
-                borderRadius: BorderRadius.zero,
-              ),
-              child: child,
-            ),
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 260) + delay,
+      curve: Curves.easeOut,
+      builder: (context, value, _) => Opacity(
+        opacity: value,
+        child: Container(
+          decoration: BoxDecoration(
+            color: voidBlack,
+            border: Border.all(color: borderColor ?? dimGray),
+            borderRadius: BorderRadius.circular(6),
           ),
-        );
-      },
-    );
-  }
-
-  // ===== ЭЛЕГАНТНЫЕ UI ЭЛЕМЕНТЫ =====
-  
-  /// Элегантный заголовок
-  static Widget gothicTitle(String text, {Color? color}) {
-    return Text(
-      text.toUpperCase(),
-      style: TextStyle(
-        fontSize: 24,
-        fontWeight: FontWeight.w200,
-        color: color ?? ghostWhite,
-        letterSpacing: 6.0,
-        fontFamily: 'serif',
-        height: 1.4,
+          child: child,
+        ),
       ),
     );
   }
 
-  /// Минималистичная карточка
+  static Widget gothicTitle(String text, {Color? color}) {
+    return Text(
+      text.toUpperCase(),
+      style: TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+        color: color ?? ghostWhite,
+        height: 1.25,
+      ),
+    );
+  }
+
   static Widget gothicCard({
     required String title,
     required Widget child,
     Color? borderColor,
-    EdgeInsets padding = const EdgeInsets.all(24),
+    EdgeInsets padding = const EdgeInsets.all(20),
   }) {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
         color: voidBlack,
-        border: Border.all(
-          color: borderColor ?? dimGray,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.zero,
+        border: Border.all(color: borderColor ?? dimGray),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title.toUpperCase(),
+            title,
             style: const TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w300,
+              fontWeight: FontWeight.w600,
               color: ashGray,
-              letterSpacing: 3.0,
-              fontFamily: 'serif',
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           child,
         ],
       ),
     );
   }
 
-  /// Минималистичная кнопка
   static Widget gothicButton({
     required String text,
     required VoidCallback onPressed,
     bool isPrimary = true,
     Color? accentColor,
   }) {
-    return InkWell(
-      onTap: onPressed,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        decoration: BoxDecoration(
-          color: isPrimary ? shadowGray.withOpacity(0.3) : Colors.transparent,
-          border: Border.all(
-            color: accentColor ?? dimGray,
-            width: 1,
-          ),
-          borderRadius: BorderRadius.zero,
-        ),
-        child: Center(
-          child: Text(
-            text.toUpperCase(),
-            style: TextStyle(
-              fontWeight: FontWeight.w300,
-              letterSpacing: 3.0,
-              fontSize: 12,
-              color: accentColor ?? tombstoneWhite,
-              fontFamily: 'serif',
+    final color = accentColor ?? subtleAccent;
+    return isPrimary
+        ? ElevatedButton(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: color,
+              foregroundColor: deepBlack,
             ),
-          ),
-        ),
-      ),
-    );
+            child: Text(text),
+          )
+        : OutlinedButton(
+            onPressed: onPressed,
+            style: OutlinedButton.styleFrom(foregroundColor: color),
+            child: Text(text),
+          );
   }
 
-  /// Тонкий статус бейдж
   static Widget gothicBadge(String text, {Color? color}) {
     final badgeColor = color ?? subtleAccent;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.transparent,
-        border: Border.all(
-          color: badgeColor.withOpacity(0.5),
-          width: 1,
-        ),
-        borderRadius: BorderRadius.zero,
+        color: badgeColor.withOpacity(0.12),
+        border: Border.all(color: badgeColor.withOpacity(0.35)),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        text.toUpperCase(),
+        text,
         style: TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.w400,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
           color: badgeColor,
-          letterSpacing: 2.0,
-          fontFamily: 'serif',
         ),
       ),
     );
   }
 
-  /// Элегантный разделитель
   static Widget gothicDivider({Color? color}) {
-    return Container(
-      height: 1,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.transparent,
-            (color ?? dimGray).withOpacity(0.3),
-            (color ?? dimGray).withOpacity(0.5),
-            (color ?? dimGray).withOpacity(0.3),
-            Colors.transparent,
-          ],
-        ),
-      ),
-    );
+    return Divider(height: 1, thickness: 1, color: color ?? dimGray);
   }
 
   static Widget gothicTextField({
@@ -352,62 +351,12 @@ class AppTheme {
       keyboardType: keyboardType,
       validator: validator,
       onChanged: onChanged,
-      style: const TextStyle(
-        color: tombstoneWhite,
-        fontSize: 14,
-        fontWeight: FontWeight.w300,
-      ),
+      style: const TextStyle(color: tombstoneWhite, fontSize: 14),
       decoration: InputDecoration(
         labelText: labelText,
-        labelStyle: TextStyle(
-          color: mistGray,
-          fontSize: 12,
-          fontWeight: FontWeight.w300,
-          letterSpacing: 1.5,
-        ),
         hintText: hintText,
-        hintStyle: TextStyle(
-          color: mistGray,
-          fontSize: 14,
-          fontWeight: FontWeight.w300,
-        ),
-        prefixIcon: icon != null 
-            ? Icon(icon, color: mistGray)
-            : (prefixIcon != null
-                ? IconTheme(
-                    data: IconThemeData(color: mistGray),
-                    child: prefixIcon,
-                  )
-                : null),
-        suffixIcon: suffixIcon != null
-            ? IconTheme(
-                data: IconThemeData(color: mistGray),
-                child: suffixIcon,
-              )
-            : null,
-        filled: true,
-        fillColor: shadowGray,
-        border: OutlineInputBorder(
-          borderSide: BorderSide(color: dimGray),
-          borderRadius: BorderRadius.zero,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: dimGray),
-          borderRadius: BorderRadius.zero,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: tombstoneWhite, width: 1),
-          borderRadius: BorderRadius.zero,
-        ),
-        errorBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: bloodRed),
-          borderRadius: BorderRadius.zero,
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: bloodRed, width: 1),
-          borderRadius: BorderRadius.zero,
-        ),
-        contentPadding: const EdgeInsets.all(16),
+        prefixIcon: icon != null ? Icon(icon) : prefixIcon,
+        suffixIcon: suffixIcon,
       ),
     );
   }
@@ -423,38 +372,11 @@ class AppTheme {
       value: value,
       items: items,
       onChanged: onChanged,
-      style: const TextStyle(
-        color: tombstoneWhite,
-        fontSize: 14,
-        fontWeight: FontWeight.w300,
-      ),
       dropdownColor: shadowGray,
       decoration: InputDecoration(
         labelText: labelText,
-        labelStyle: TextStyle(
-          color: mistGray,
-          fontSize: 12,
-          fontWeight: FontWeight.w300,
-          letterSpacing: 1.5,
-        ),
-        prefixIcon: icon != null ? Icon(icon, color: mistGray) : null,
-        filled: true,
-        fillColor: shadowGray,
-        border: OutlineInputBorder(
-          borderSide: BorderSide(color: dimGray),
-          borderRadius: BorderRadius.zero,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: dimGray),
-          borderRadius: BorderRadius.zero,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: tombstoneWhite, width: 1),
-          borderRadius: BorderRadius.zero,
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        prefixIcon: icon != null ? Icon(icon) : null,
       ),
-      icon: Icon(Icons.arrow_drop_down, color: mistGray),
     );
   }
 }
