@@ -1,16 +1,16 @@
 # Деплой через Docker Compose с внешней MySQL
 
-Эта схема запускает три контейнера на приложенческом сервере:
+По умолчанию схема запускает два контейнера на приложенческом сервере:
 
 - `api` - Express API;
 - `web` - release-сборка Flutter Web;
-- `caddy` - HTTPS и reverse proxy.
+- системный Nginx сервера принимает HTTPS и проксирует запросы в контейнеры.
 
 MySQL в compose не запускается. Приложение подключается к существующему серверу БД.
 
 ## 1. Подготовка DNS и firewall
 
-Создайте A-записи `arc303.ru` и `api.arc303.ru`, указывающие на публичный IP нового сервера. Откройте входящие TCP-порты `22`, `80`, `443` и UDP-порт `443`.
+Создайте A-запись `creative.yozik.ru`, указывающую на публичный IP нового сервера. Откройте входящие TCP-порты `22`, `80` и `443`.
 
 На сервере MySQL разрешите подключения с IP приложенческого сервера. Не открывайте MySQL для всего интернета. Пользователю приложения нужны права на выбранную базу, включая DDL для миграций (`CREATE`, `ALTER`, `INDEX`), но не глобальные административные права.
 
@@ -44,7 +44,7 @@ nano .env
 - `ACME_EMAIL`;
 - все `DB_*` значения;
 - `JWT_SECRET` и `JWT_REFRESH_SECRET`;
-- домены, если используются не `arc303.ru` и `api.arc303.ru`.
+- домен, если используется не `creative.yozik.ru`.
 
 Сгенерировать JWT-секреты можно командой:
 
@@ -73,22 +73,57 @@ mysql -h DB_HOST -P DB_PORT -u DB_USER -p DB_NAME -e "SELECT 1"
 ```bash
 docker compose config
 docker compose build --pull
-docker compose up -d
+docker compose up -d api web
 docker compose ps
 docker compose logs --tail=100 api
-docker compose logs --tail=100 caddy
 ```
 
-Caddy автоматически запросит TLS-сертификаты после того, как DNS начнёт указывать на сервер и порты `80/443` станут доступны снаружи.
+Контейнеры доступны только локально на `127.0.0.1:3080` (API) и `127.0.0.1:3081` (Flutter Web). Добавьте virtual host в системный Nginx:
+
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name creative.yozik.ru;
+
+    location /api/ {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://127.0.0.1:3080;
+    }
+
+    location = /health {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://127.0.0.1:3080/health;
+    }
+
+    location / {
+        proxy_set_header Host $host;
+        proxy_pass http://127.0.0.1:3081;
+    }
+}
+```
+
+Проверьте конфигурацию и получите сертификат:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+sudo certbot --nginx -d creative.yozik.ru
+```
 
 ## 6. Проверка
 
 ```bash
-curl --fail https://arc303.ru/health
-curl --fail https://api.arc303.ru/health
+curl --fail https://creative.yozik.ru/health
 ```
 
-Оба запроса должны вернуть `success: true`, `status: healthy` и `database: connected`.
+Запрос должен вернуть `success: true`, `status: healthy` и `database: connected`.
 
 Проверьте миграции:
 
@@ -113,7 +148,6 @@ docker compose up -d
 docker compose ps
 docker compose logs --tail=200 api
 docker compose logs --tail=200 web
-docker compose logs --tail=200 caddy
 ```
 
-Если `api` остаётся unhealthy, сначала проверьте доступ к внешней MySQL и значения `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_NAME`. Если Caddy не получает сертификат, проверьте DNS и доступность портов `80/443`.
+Если `api` остаётся unhealthy, сначала проверьте доступ к внешней MySQL и значения `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_NAME`. Если Certbot не получает сертификат, проверьте DNS и доступность портов `80/443`.

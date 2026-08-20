@@ -85,7 +85,7 @@ flutter build web --release --dart-define=API_BASE_URL=/api/v1
 
 ### Production with Docker Compose
 
-The production stack uses an external MySQL server and includes Caddy for automatic HTTPS. See [`docs/DOCKER_COMPOSE_DEPLOY.md`](docs/DOCKER_COMPOSE_DEPLOY.md) for the server, DNS, database, and deployment steps.
+The production stack uses an external MySQL server and binds the API and web containers to localhost for a host-level Nginx reverse proxy. An optional Caddy profile is also included. See [`docs/DOCKER_COMPOSE_DEPLOY.md`](docs/DOCKER_COMPOSE_DEPLOY.md) for the server, DNS, database, and deployment steps.
 
 ## Verification
 
