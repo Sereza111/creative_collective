@@ -3,11 +3,11 @@ FROM node:18-alpine
 # Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем package.json
-COPY package.json ./
+# Копируем манифест и lock-файл отдельно для кеширования слоя зависимостей
+COPY package.json package-lock.json ./
 
-# Устанавливаем зависимости (используем npm install, т.к. package-lock.json в .gitignore)
-RUN npm install --only=production
+# Воспроизводимая production-установка зависимостей
+RUN npm ci --omit=dev
 
 # Копируем исходный код
 COPY . .

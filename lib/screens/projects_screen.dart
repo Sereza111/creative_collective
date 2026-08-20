@@ -84,7 +84,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
     if (_searchQuery.isNotEmpty) {
       filteredProjects = filteredProjects.where((project) {
         return project.name.toLowerCase().contains(_searchQuery) ||
-               (project.description?.toLowerCase().contains(_searchQuery) ?? false);
+               project.description.toLowerCase().contains(_searchQuery);
       }).toList();
     }
 

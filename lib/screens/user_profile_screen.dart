@@ -4,8 +4,6 @@ import '../theme/app_theme.dart';
 import '../services/api_service.dart';
 import '../models/portfolio_item.dart';
 import '../providers/auth_provider.dart';
-import '../providers/chat_provider.dart';
-import 'chat_screen.dart';
 
 class UserProfileScreen extends ConsumerStatefulWidget {
   final String userId;

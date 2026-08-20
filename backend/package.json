@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "jest --watchAll",
+    "test": "jest --runInBand",
+    "test:coverage": "jest --runInBand --coverage",
     "migrate": "node src/database/migrations/run.js",
     "db:reset": "node src/database/migrations/run.js reset",
     "verify-schema": "node scripts/verify-schema.js"
@@ -17,7 +18,7 @@
     "management",
     "api"
   ],
-  "author": "",
+  "author": "Sereza111",
   "license": "MIT",
   "dependencies": {
     "bcryptjs": "^2.4.3",

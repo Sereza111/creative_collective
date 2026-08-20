@@ -67,7 +67,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     if (_searchQuery.isNotEmpty) {
       filteredTasks = filteredTasks.where((task) {
         return task.title.toLowerCase().contains(_searchQuery) ||
-               (task.description?.toLowerCase().contains(_searchQuery) ?? false);
+               task.description.toLowerCase().contains(_searchQuery);
       }).toList();
     }
 

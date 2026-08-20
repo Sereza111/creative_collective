@@ -29,11 +29,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final user = authState.user;
     final tasksState = ref.watch(tasksProvider);
     final projectsState = ref.watch(projectsProvider);
-    final activeProjects = ref.watch(activeProjectsProvider) ?? [];
-    final activeTasks = (tasksState.tasks ?? []).where((t) => 
+    final activeProjects = ref.watch(activeProjectsProvider);
+    final activeTasks = tasksState.tasks.where((t) =>
       t.status == 'todo' || t.status == 'in_progress'
     ).length;
 
@@ -160,7 +159,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: _buildCircularStatCard(
                           'АКТИВНЫЕ\nЗАДАЧИ',
                           activeTasks,
-                          (tasksState.tasks ?? []).length,
+                          tasksState.tasks.length,
                           Icons.trending_up,
                           AppTheme.gothicGreen,
                         ),
@@ -186,8 +185,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Expanded(
                         child: _buildCircularStatCard(
                           'ВСЕГО\nЗАДАЧ',
-                          (tasksState.tasks ?? []).length,
-                          (tasksState.tasks ?? []).length,
+                          tasksState.tasks.length,
+                          tasksState.tasks.length,
                           Icons.assignment_turned_in,
                           AppTheme.goldenrod,
                         ),

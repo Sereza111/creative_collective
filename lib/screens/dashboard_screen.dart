@@ -32,8 +32,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final projectsState = ref.watch(projectsProvider);
     final tasksState = ref.watch(tasksProvider);
     final financeAsync = ref.watch(balanceProvider);
-    final currencyFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('DASHBOARD'),
