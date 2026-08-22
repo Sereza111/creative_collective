@@ -1,34 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../theme/app_theme.dart';
-import '../providers/projects_provider.dart';
-import 'forms/add_project_screen.dart';
-import 'project_detail_screen.dart';
 import 'package:intl/intl.dart';
 
+import '../models/project.dart';
+import '../providers/projects_provider.dart';
+import '../theme/app_theme.dart';
+import '../widgets/workspace_components.dart';
+import 'forms/add_project_screen.dart';
+import 'project_detail_screen.dart';
+
 class ProjectsScreen extends ConsumerStatefulWidget {
-  const ProjectsScreen({Key? key}) : super(key: key);
+  const ProjectsScreen({super.key});
 
   @override
   ConsumerState<ProjectsScreen> createState() => _ProjectsScreenState();
 }
 
 class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
+  final _searchController = TextEditingController();
   String _selectedFilter = 'all';
-  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.toLowerCase();
-      });
-    });
-    Future.microtask(() {
-      ref.read(projectsProvider.notifier).loadProjects();
-    });
+    Future.microtask(() => ref.read(projectsProvider.notifier).loadProjects());
   }
 
   @override
@@ -37,452 +33,355 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
     super.dispose();
   }
 
-  String _getStatusText(String status) {
-    switch (status) {
-      case 'planning':
-        return 'Планирование';
-      case 'active':
-        return 'Активен';
-      case 'on_hold':
-        return 'Приостановлен';
-      case 'completed':
-        return 'Завершен';
-      case 'cancelled':
-        return 'Отменен';
-      default:
-        return status;
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'planning':
-        return AppTheme.mistGray;
-      case 'active':
-        return AppTheme.ashGray;
-      case 'on_hold':
-        return Colors.orange;
-      case 'completed':
-        return Colors.green;
-      case 'cancelled':
-        return AppTheme.bloodRed;
-      default:
-        return AppTheme.mistGray;
+  Future<void> _openCreateProject() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AddProjectScreen()),
+    );
+    if (mounted) {
+      await ref.read(projectsProvider.notifier).loadProjects();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final projectsState = ref.watch(projectsProvider);
-    
-    // Filter projects based on selected filter and search query
-    var filteredProjects = _selectedFilter == 'all'
-        ? projectsState.projects
-        : projectsState.projects.where((project) => project.status == _selectedFilter).toList();
-    
-    // Apply search filter
-    if (_searchQuery.isNotEmpty) {
-      filteredProjects = filteredProjects.where((project) {
-        return project.name.toLowerCase().contains(_searchQuery) ||
-               project.description.toLowerCase().contains(_searchQuery);
-      }).toList();
-    }
+    final state = ref.watch(projectsProvider);
+    final projects = state.projects.where((project) {
+      final matchesStatus =
+          _selectedFilter == 'all' || project.status == _selectedFilter;
+      final query = _searchQuery.trim().toLowerCase();
+      final matchesSearch = query.isEmpty ||
+          project.name.toLowerCase().contains(query) ||
+          project.description.toLowerCase().contains(query);
+      return matchesStatus && matchesSearch;
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ПРОЕКТЫ'),
+        title: const Text('Проекты'),
         actions: [
           IconButton(
+            tooltip: 'Обновить проекты',
+            onPressed: () => ref.read(projectsProvider.notifier).loadProjects(),
             icon: const Icon(Icons.refresh),
-            onPressed: () {
-              ref.read(projectsProvider.notifier).loadProjects();
-            },
           ),
           IconButton(
+            tooltip: 'Создать проект',
+            onPressed: _openCreateProject,
             icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AddProjectScreen(),
-                ),
-              );
-            },
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Search field
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: AppTheme.gothicTextField(
-              controller: _searchController,
-              hintText: 'Поиск проектов...',
-              prefixIcon: const Icon(Icons.search, size: 20),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: 20),
-                      onPressed: () {
-                        _searchController.clear();
-                      },
-                    )
-                  : null,
-            ),
-          ),
-          
-          // Filter chips
-          Container(
-            height: 60,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                _buildFilterChip('all', 'Все'),
-                const SizedBox(width: 10),
-                _buildFilterChip('planning', 'Планирование'),
-                const SizedBox(width: 10),
-                _buildFilterChip('active', 'Активные'),
-                const SizedBox(width: 10),
-                _buildFilterChip('completed', 'Завершенные'),
-              ],
-            ),
-          ),
-          
-          Expanded(
-            child: projectsState.isLoading
-                ? Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppTheme.tombstoneWhite,
-                      ),
-                    ),
-                  )
-                : projectsState.error != null
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                size: 64,
-                                color: AppTheme.bloodRed,
-                              ),
-                              const SizedBox(height: 20),
-                              Text(
-                                'Ошибка загрузки проектов',
-                                style: TextStyle(
-                                  color: AppTheme.tombstoneWhite,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w300,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                projectsState.error!,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: AppTheme.mistGray,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              AppTheme.gothicButton(
-                                text: 'Повторить',
-                                onPressed: () {
-                                  ref.read(projectsProvider.notifier).loadProjects();
-                                },
-                                isPrimary: true,
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : filteredProjects.isEmpty
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(20.0),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.folder_outlined,
-                                    size: 64,
-                                    color: AppTheme.mistGray,
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Text(
-                                    'Нет проектов',
-                                    style: TextStyle(
-                                      color: AppTheme.tombstoneWhite,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w300,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    _selectedFilter == 'all'
-                                        ? 'Создайте первый проект'
-                                        : 'Нет проектов с выбранным статусом',
-                                    style: TextStyle(
-                                      color: AppTheme.mistGray,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: () async {
-                              await ref.read(projectsProvider.notifier).loadProjects();
-                            },
-                            backgroundColor: AppTheme.shadowGray,
-                            color: AppTheme.tombstoneWhite,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(20),
-                              itemCount: filteredProjects.length,
-                              itemBuilder: (context, index) {
-                                final project = filteredProjects[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: AppTheme.slideUpAnimation(
-                                    offset: 15,
-                                    duration: Duration(
-                                      milliseconds: 800 + (index * 100),
-                                    ),
-                                    child: _buildProjectCard(context, project),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String value, String label) {
-    final isSelected = _selectedFilter == value;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedFilter = value;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.tombstoneWhite : AppTheme.shadowGray,
-          border: Border.all(
-            color: isSelected ? AppTheme.tombstoneWhite : AppTheme.dimGray,
-          ),
-          borderRadius: BorderRadius.zero,
-        ),
-        child: Text(
-          label.toUpperCase(),
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
-            color: isSelected ? AppTheme.voidBlack : AppTheme.mistGray,
-            letterSpacing: 1.5,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProjectCard(BuildContext context, project) {
-    final dateFormat = DateFormat('dd.MM.yyyy');
-    final budgetFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
-    
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProjectDetailScreen(project: project),
-          ),
-        );
-      },
-      child: AppTheme.animatedGothicCard(
-        child: Padding(
-        padding: const EdgeInsets.all(24),
+      body: WorkspaceContent(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    project.name.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: AppTheme.tombstoneWhite,
-                      letterSpacing: 1.5,
-                      fontFamily: 'serif',
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: _getStatusColor(project.status),
-                    ),
-                    borderRadius: BorderRadius.zero,
-                  ),
-                  child: Text(
-                    _getStatusText(project.status).toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w400,
-                      color: _getStatusColor(project.status),
-                      letterSpacing: 1.5,
-                    ),
-                  ),
+            WorkspacePageIntro(
+              eyebrow: 'Рабочий контур',
+              title: 'Проекты и ответственность',
+              description:
+                  'Собирайте этапы, команду и бюджет в едином пространстве.',
+              actions: [
+                ElevatedButton.icon(
+                  onPressed: _openCreateProject,
+                  icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+                  label: const Text('Новый проект'),
                 ),
               ],
             ),
-            
-            if (project.description.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text(
-                project.description,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppTheme.mistGray,
-                  height: 1.5,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            
-            const SizedBox(height: 20),
-            Container(
-              height: 1,
-              color: AppTheme.dimGray.withOpacity(0.3),
+            const SizedBox(height: 22),
+            WorkspaceSearchField(
+              controller: _searchController,
+              hintText: 'Найти проект по названию или описанию',
+              onChanged: (value) => setState(() => _searchQuery = value),
+              onClear: () {
+                _searchController.clear();
+                setState(() => _searchQuery = '');
+              },
             ),
-            const SizedBox(height: 20),
-            
-            // Progress bar
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'ПРОГРЕСС',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w300,
-                        color: AppTheme.mistGray,
-                        letterSpacing: 2.0,
-                        fontFamily: 'serif',
-                      ),
-                    ),
-                    Text(
-                      '${project.progress}%',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w300,
-                        color: AppTheme.ashGray,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  height: 2,
-                  decoration: BoxDecoration(
-                    color: AppTheme.shadowGray.withOpacity(0.3),
-                    borderRadius: BorderRadius.zero,
-                  ),
-                  child: FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: project.progress / 100,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: AppTheme.ashGray,
-                        borderRadius: BorderRadius.zero,
-                      ),
-                    ),
-                  ),
-                ),
+                _filterChip(state, 'all', 'Все'),
+                _filterChip(state, 'planning', 'Планирование'),
+                _filterChip(state, 'active', 'Активные'),
+                _filterChip(state, 'completed', 'Завершенные'),
               ],
             ),
-            
-            const SizedBox(height: 20),
-            
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildInfoItem(
-                  'Дата начала', 
-                  dateFormat.format(project.startDate),
-                ),
-                _buildInfoItem(
-                  'Дата окончания', 
-                  dateFormat.format(project.endDate),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 16),
-            
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildInfoItem(
-                  'Бюджет', 
-                  budgetFormat.format(project.budget),
-                ),
-                _buildInfoItem(
-                  'Потрачено', 
-                  budgetFormat.format(project.spent),
-                ),
-              ],
-            ),
+            const SizedBox(height: 18),
+            Expanded(child: _buildContent(state, projects)),
           ],
         ),
       ),
-      ),
     );
   }
 
-  Widget _buildInfoItem(String label, String value) {
+  Widget _filterChip(ProjectsState state, String value, String label) {
+    final count = value == 'all'
+        ? state.projects.length
+        : state.projects.where((project) => project.status == value).length;
+    return WorkspaceFilterChip(
+      label: label,
+      count: count,
+      selected: _selectedFilter == value,
+      onTap: () => setState(() => _selectedFilter = value),
+    );
+  }
+
+  Widget _buildContent(ProjectsState state, List<Project> projects) {
+    if (state.isLoading && state.projects.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (state.error != null && state.projects.isEmpty) {
+      return WorkspaceErrorState(
+        message: state.error!,
+        onRetry: () => ref.read(projectsProvider.notifier).loadProjects(),
+      );
+    }
+    if (projects.isEmpty) {
+      final isSearching = _searchQuery.trim().isNotEmpty;
+      return WorkspaceEmptyState(
+        icon: isSearching ? Icons.search_off : Icons.folder_open_outlined,
+        title: isSearching ? 'Ничего не найдено' : 'Проектов пока нет',
+        message: isSearching
+            ? 'Измените запрос или выберите другую группу.'
+            : _selectedFilter == 'all'
+                ? 'Создайте первый проект, добавьте сроки и соберите команду.'
+                : 'В этой группе проектов пока нет.',
+        action: _selectedFilter == 'all' && !isSearching
+            ? ElevatedButton.icon(
+                onPressed: _openCreateProject,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Создать проект'),
+              )
+            : null,
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => ref.read(projectsProvider.notifier).loadProjects(),
+      color: AppTheme.goldenrod,
+      backgroundColor: AppTheme.shadowGray,
+      child: GridView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 20),
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 620,
+          mainAxisExtent: 276,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+        ),
+        itemCount: projects.length,
+        itemBuilder: (_, index) => _ProjectCard(project: projects[index]),
+      ),
+    );
+  }
+}
+
+class _ProjectCard extends StatelessWidget {
+  const _ProjectCard({required this.project});
+
+  final Project project;
+
+  String get _statusLabel => switch (project.status) {
+        'planning' => 'Планирование',
+        'active' => 'Активен',
+        'on_hold' => 'На паузе',
+        'completed' => 'Завершен',
+        'cancelled' => 'Отменен',
+        _ => project.status,
+      };
+
+  Color get _statusColor => switch (project.status) {
+        'planning' => AppTheme.goldenrod,
+        'active' => AppTheme.gothicGreen,
+        'on_hold' => AppTheme.deepPurple,
+        'completed' => AppTheme.electricBlue,
+        'cancelled' => AppTheme.bloodRed,
+        _ => AppTheme.ashGray,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final dateFormat = DateFormat('dd.MM.yyyy');
+    final money = NumberFormat.currency(
+      locale: 'ru_RU',
+      symbol: '₽',
+      decimalDigits: 0,
+    );
+    final progress = project.progress.clamp(0, 100);
+
+    return WorkspacePanel(
+      accent: _statusColor,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) => ProjectDetailScreen(project: project)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  project.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppTheme.tombstoneWhite,
+                    fontFamily: 'Georgia',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              _ProjectStatusBadge(label: _statusLabel, color: _statusColor),
+            ],
+          ),
+          const SizedBox(height: 9),
+          Text(
+            project.description.isEmpty
+                ? 'Описание проекта не добавлено'
+                : project.description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: project.description.isEmpty
+                  ? AppTheme.mistGray.withOpacity(0.65)
+                  : AppTheme.ashGray,
+              fontSize: 12,
+              height: 1.4,
+            ),
+          ),
+          const Spacer(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Прогресс',
+                style: TextStyle(color: AppTheme.mistGray, fontSize: 11),
+              ),
+              Text(
+                '$progress%',
+                style: const TextStyle(
+                  color: AppTheme.tombstoneWhite,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(1),
+            child: LinearProgressIndicator(
+              value: progress / 100,
+              minHeight: 4,
+              backgroundColor: AppTheme.dimGray,
+              valueColor: AlwaysStoppedAnimation(_statusColor),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 13),
+          Row(
+            children: [
+              Expanded(
+                child: _ProjectMeta(
+                  label: 'Период',
+                  value:
+                      '${dateFormat.format(project.startDate)} — ${dateFormat.format(project.endDate)}',
+                ),
+              ),
+              const SizedBox(width: 16),
+              _ProjectMeta(
+                label: 'Команда',
+                value: '${project.teamMembers.length} чел.',
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _ProjectMeta(
+                  label: 'Бюджет',
+                  value: money.format(project.budget),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _ProjectMeta(
+                  label: 'Потрачено',
+                  value: money.format(project.spent),
+                  valueColor: project.spent > project.budget
+                      ? AppTheme.bloodRed
+                      : AppTheme.ashGray,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProjectStatusBadge extends StatelessWidget {
+  const _ProjectStatusBadge({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.09),
+        border: Border.all(color: color.withOpacity(0.75)),
+        borderRadius: BorderRadius.circular(2),
+      ),
+      child: Text(
+        label,
+        style:
+            TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
+class _ProjectMeta extends StatelessWidget {
+  const _ProjectMeta({
+    required this.label,
+    required this.value,
+    this.valueColor = AppTheme.ashGray,
+  });
+
+  final String label;
+  final String value;
+  final Color valueColor;
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label.toUpperCase(),
-          style: const TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.w300,
-            color: AppTheme.mistGray,
-            letterSpacing: 1.5,
-            fontFamily: 'serif',
-          ),
+          style: const TextStyle(color: AppTheme.mistGray, fontSize: 9),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w300,
-            color: AppTheme.ashGray,
-            fontFamily: 'serif',
-          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: valueColor, fontSize: 11),
         ),
       ],
     );

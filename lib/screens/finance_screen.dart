@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../theme/app_theme.dart';
-import '../providers/finance_provider.dart';
+
 import '../models/transaction.dart';
+import '../models/user_balance.dart';
+import '../providers/finance_provider.dart';
+import '../theme/app_theme.dart';
+import '../widgets/workspace_components.dart';
 
 class FinanceScreen extends ConsumerStatefulWidget {
-  const FinanceScreen({Key? key}) : super(key: key);
+  const FinanceScreen({super.key});
 
   @override
   ConsumerState<FinanceScreen> createState() => _FinanceScreenState();
@@ -16,71 +19,75 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
   String? _filterType;
   String? _filterStatus;
 
+  bool get _hasFilters => _filterType != null || _filterStatus != null;
+
+  Future<void> _refresh() async {
+    await Future.wait([
+      ref.read(balanceProvider.notifier).refresh(),
+      ref.read(transactionsProvider.notifier).loadTransactions(
+            type: _filterType,
+            status: _filterStatus,
+          ),
+    ]);
+  }
+
+  void _selectFilter(String value) {
+    setState(() {
+      if (value.startsWith('type_')) {
+        _filterType = value == 'type_all' ? null : value.substring(5);
+      } else {
+        _filterStatus = value == 'status_all' ? null : value.substring(7);
+      }
+    });
+    ref.read(transactionsProvider.notifier).loadTransactions(
+          type: _filterType,
+          status: _filterStatus,
+        );
+  }
+
+  void _resetFilters() {
+    setState(() {
+      _filterType = null;
+      _filterStatus = null;
+    });
+    ref.read(transactionsProvider.notifier).loadTransactions();
+  }
+
   @override
   Widget build(BuildContext context) {
     final balanceState = ref.watch(balanceProvider);
     final transactionsState = ref.watch(transactionsProvider);
-    final currencyFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ФИНАНСЫ'),
+        title: const Text('Финансы'),
         actions: [
-          // Пополнить баланс
           IconButton(
-            icon: const Icon(Icons.add_circle_outline),
             tooltip: 'Пополнить баланс',
-            onPressed: () {
-              Navigator.pushNamed(context, '/add_balance');
-            },
+            onPressed: () => Navigator.pushNamed(context, '/add_balance'),
+            icon: const Icon(Icons.add_card_outlined),
           ),
-          // Вывести средства
           IconButton(
-            icon: const Icon(Icons.upload),
             tooltip: 'Вывести средства',
-            onPressed: () {
-              Navigator.pushNamed(context, '/withdrawal');
-            },
+            onPressed: () => Navigator.pushNamed(context, '/withdrawal'),
+            icon: const Icon(Icons.upload_outlined),
           ),
-          // Фильтры
           PopupMenuButton<String>(
-            icon: const Icon(Icons.filter_list),
-            onSelected: (value) {
-              setState(() {
-                if (value.startsWith('type_')) {
-                  _filterType = value == 'type_all' ? null : value.replaceFirst('type_', '');
-                } else if (value.startsWith('status_')) {
-                  _filterStatus = value == 'status_all' ? null : value.replaceFirst('status_', '');
-                }
-              });
-              ref.read(transactionsProvider.notifier).loadTransactions(
-                type: _filterType,
-                status: _filterStatus,
-              );
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'type_all',
-                child: Text('Все типы'),
-              ),
-              const PopupMenuItem(
-                value: 'type_income',
-                child: Text('Доходы'),
-              ),
-              const PopupMenuItem(
-                value: 'type_expense',
-                child: Text('Расходы'),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem(
-                value: 'status_all',
-                child: Text('Все статусы'),
-              ),
-              const PopupMenuItem(
+            tooltip: 'Фильтры транзакций',
+            icon: const Icon(Icons.tune),
+            onSelected: _selectFilter,
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'type_all', child: Text('Все типы')),
+              PopupMenuItem(value: 'type_income', child: Text('Доходы')),
+              PopupMenuItem(value: 'type_expense', child: Text('Расходы')),
+              PopupMenuItem(value: 'type_withdrawal', child: Text('Выводы')),
+              PopupMenuDivider(),
+              PopupMenuItem(value: 'status_all', child: Text('Все статусы')),
+              PopupMenuItem(
                 value: 'status_completed',
                 child: Text('Завершенные'),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'status_pending',
                 child: Text('В ожидании'),
               ),
@@ -89,364 +96,339 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          await ref.read(balanceProvider.notifier).refresh();
-          await ref.read(transactionsProvider.notifier).refresh();
-        },
+        onRefresh: _refresh,
+        color: AppTheme.goldenrod,
         backgroundColor: AppTheme.shadowGray,
-        color: AppTheme.tombstoneWhite,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Баланс
-              if (balanceState.isLoading)
-                Center(child: CircularProgressIndicator(color: AppTheme.tombstoneWhite))
-              else if (balanceState.balance != null)
-                _buildBalanceCard(balanceState.balance!, currencyFormat),
-
-              const SizedBox(height: 32),
-
-              // Заголовок транзакций
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  AppTheme.gothicTitle('ТРАНЗАКЦИИ'),
-                  if (_filterType != null || _filterStatus != null)
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _filterType = null;
-                          _filterStatus = null;
-                        });
-                        ref.read(transactionsProvider.notifier).loadTransactions();
-                      },
+          child: WorkspaceContent(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                WorkspacePageIntro(
+                  eyebrow: 'Расчеты пространства',
+                  title: 'Деньги под контролем',
+                  description:
+                      'Баланс, движение средств и операции по заказам.',
+                  actions: [
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          Navigator.pushNamed(context, '/withdrawal'),
+                      icon: const Icon(Icons.north_east, size: 17),
+                      label: const Text('Вывести'),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () =>
+                          Navigator.pushNamed(context, '/add_balance'),
+                      icon: const Icon(Icons.add, size: 17),
+                      label: const Text('Пополнить'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 22),
+                if (balanceState.isLoading && balanceState.balance == null)
+                  const SizedBox(
+                    height: 260,
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (balanceState.error != null &&
+                    balanceState.balance == null)
+                  WorkspaceErrorState(
+                    message: balanceState.error!,
+                    onRetry: () => ref.read(balanceProvider.notifier).refresh(),
+                  )
+                else if (balanceState.balance != null)
+                  _BalancePanel(balance: balanceState.balance!),
+                const SizedBox(height: 28),
+                Row(
+                  children: [
+                    const Expanded(
                       child: Text(
-                        'СБРОСИТЬ',
+                        'История операций',
                         style: TextStyle(
-                          fontSize: 10,
-                          color: AppTheme.mistGray,
-                          letterSpacing: 1.5,
+                          color: AppTheme.tombstoneWhite,
+                          fontFamily: 'Georgia',
+                          fontSize: 21,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Список транзакций
-              if (transactionsState.isLoading)
-                Center(child: CircularProgressIndicator(color: AppTheme.tombstoneWhite))
-              else if (transactionsState.transactions.isEmpty)
-                _buildEmptyState()
-              else
-                ...transactionsState.transactions.map((transaction) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildTransactionCard(transaction, currencyFormat),
-                  );
-                }).toList(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBalanceCard(balance, NumberFormat currencyFormat) {
-    final availableBalance = balance.balance - balance.pendingAmount;
-
-    return AppTheme.fadeInAnimation(
-      child: AppTheme.animatedGothicCard(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            children: [
-              // Основной баланс
-              Text(
-                'ДОСТУПНЫЙ БАЛАНС',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: AppTheme.mistGray,
-                  letterSpacing: 3.0,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                currencyFormat.format(availableBalance),
-                style: TextStyle(
-                  fontSize: 42,
-                  fontWeight: FontWeight.w200,
-                  color: AppTheme.tombstoneWhite,
-                  fontFamily: 'serif',
-                  letterSpacing: 2.0,
-                ),
-              ),
-              const SizedBox(height: 32),
-              AppTheme.gothicDivider(),
-              const SizedBox(height: 24),
-
-              // Статистика в два ряда
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatColumn(
-                      'ЗАРАБОТАНО',
-                      currencyFormat.format(balance.totalEarned),
-                      AppTheme.gothicGreen,
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    height: 40,
-                    color: AppTheme.dimGray.withOpacity(0.3),
-                  ),
-                  Expanded(
-                    child: _buildStatColumn(
-                      'ПОТРАЧЕНО',
-                      currencyFormat.format(balance.totalSpent),
-                      AppTheme.bloodRed,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatColumn(
-                      'ВЫВЕДЕНО',
-                      currencyFormat.format(balance.totalWithdrawn),
-                      AppTheme.goldenrod,
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    height: 40,
-                    color: AppTheme.dimGray.withOpacity(0.3),
-                  ),
-                  Expanded(
-                    child: _buildStatColumn(
-                      'В ОЖИДАНИИ',
-                      currencyFormat.format(balance.pendingAmount),
-                      AppTheme.electricBlue,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatColumn(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 9,
-            color: AppTheme.mistGray,
-            letterSpacing: 1.5,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w300,
-            color: color,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTransactionCard(TransactionModel transaction, NumberFormat currencyFormat) {
-    final isIncome = transaction.type == 'income' || transaction.type == 'refund';
-    final color = _getTransactionColor(transaction.type);
-
-    return AppTheme.animatedGothicCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // Иконка
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color.withOpacity(0.2),
-                border: Border.all(color: color, width: 2),
-              ),
-              child: Icon(
-                _getTransactionIcon(transaction.type),
-                color: color,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 16),
-            // Информация
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    transaction.typeLabel.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.tombstoneWhite,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  if (transaction.description != null)
-                    Text(
-                      transaction.description!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.ashGray,
+                    if (_hasFilters)
+                      TextButton.icon(
+                        onPressed: _resetFilters,
+                        icon: const Icon(Icons.close, size: 16),
+                        label: const Text('Сбросить фильтры'),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  const SizedBox(height: 4),
-                  Text(
-                    DateFormat('dd.MM.yyyy HH:mm', 'ru_RU').format(transaction.displayDate),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: AppTheme.dimGray,
+                  ],
+                ),
+                const SizedBox(height: 14),
+                if (transactionsState.isLoading &&
+                    transactionsState.transactions.isEmpty)
+                  const SizedBox(
+                    height: 180,
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (transactionsState.error != null &&
+                    transactionsState.transactions.isEmpty)
+                  WorkspaceErrorState(
+                    message: transactionsState.error!,
+                    onRetry: () => ref
+                        .read(transactionsProvider.notifier)
+                        .loadTransactions(
+                          type: _filterType,
+                          status: _filterStatus,
+                        ),
+                  )
+                else if (transactionsState.transactions.isEmpty)
+                  const WorkspaceEmptyState(
+                    icon: Icons.receipt_long_outlined,
+                    title: 'Транзакций пока нет',
+                    message: 'Все операции по счету появятся в этом разделе.',
+                  )
+                else
+                  ...transactionsState.transactions.map(
+                    (transaction) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _TransactionCard(transaction: transaction),
                     ),
                   ),
-                ],
-              ),
+              ],
             ),
-            const SizedBox(width: 12),
-            // Сумма
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BalancePanel extends StatelessWidget {
+  const _BalancePanel({required this.balance});
+
+  final UserBalance balance;
+
+  @override
+  Widget build(BuildContext context) {
+    final money =
+        NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
+    final available = balance.balance - balance.pendingAmount;
+
+    return WorkspacePanel(
+      accent: AppTheme.goldenrod,
+      padding: const EdgeInsets.all(24),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 680;
+          final balanceBlock = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'ДОСТУПНО',
+                style: TextStyle(
+                  color: AppTheme.goldenrod,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                money.format(available),
+                style: const TextStyle(
+                  color: AppTheme.tombstoneWhite,
+                  fontFamily: 'Georgia',
+                  fontSize: 38,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '${money.format(balance.pendingAmount)} ожидает завершения',
+                style: const TextStyle(color: AppTheme.mistGray, fontSize: 11),
+              ),
+            ],
+          );
+          final stats = Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _BalanceStat(
+                label: 'Заработано',
+                value: money.format(balance.totalEarned),
+                color: AppTheme.gothicGreen,
+              ),
+              _BalanceStat(
+                label: 'Потрачено',
+                value: money.format(balance.totalSpent),
+                color: AppTheme.bloodRed,
+              ),
+              _BalanceStat(
+                label: 'Выведено',
+                value: money.format(balance.totalWithdrawn),
+                color: AppTheme.electricBlue,
+              ),
+            ],
+          );
+          if (compact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [balanceBlock, const SizedBox(height: 22), stats],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(child: balanceBlock),
+              const SizedBox(width: 32),
+              Flexible(flex: 2, child: stats),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _BalanceStat extends StatelessWidget {
+  const _BalanceStat({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 150,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.deepBlack,
+        border: Border.all(color: AppTheme.dimGray),
+        borderRadius: BorderRadius.circular(2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: const TextStyle(color: AppTheme.mistGray, fontSize: 10)),
+          const SizedBox(height: 7),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+                color: color, fontSize: 14, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TransactionCard extends StatelessWidget {
+  const _TransactionCard({required this.transaction});
+
+  final TransactionModel transaction;
+
+  bool get _income =>
+      transaction.type == 'income' || transaction.type == 'refund';
+
+  Color get _typeColor => switch (transaction.type) {
+        'income' => AppTheme.gothicGreen,
+        'expense' => AppTheme.bloodRed,
+        'commission' => AppTheme.goldenrod,
+        'withdrawal' => AppTheme.electricBlue,
+        'refund' => AppTheme.deepPurple,
+        _ => AppTheme.ashGray,
+      };
+
+  IconData get _icon => switch (transaction.type) {
+        'income' => Icons.south_west,
+        'expense' => Icons.north_east,
+        'commission' => Icons.percent,
+        'withdrawal' => Icons.account_balance_outlined,
+        'refund' => Icons.replay,
+        _ => Icons.swap_horiz,
+      };
+
+  Color get _statusColor => switch (transaction.status) {
+        'completed' => AppTheme.gothicGreen,
+        'pending' => AppTheme.goldenrod,
+        'cancelled' || 'refunded' => AppTheme.bloodRed,
+        _ => AppTheme.ashGray,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final money =
+        NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
+    return WorkspacePanel(
+      accent: _typeColor,
+      padding: const EdgeInsets.fromLTRB(18, 15, 18, 15),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 42,
+            decoration: BoxDecoration(
+              color: _typeColor.withOpacity(0.1),
+              border: Border.all(color: _typeColor.withOpacity(0.7)),
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: Icon(_icon, color: _typeColor, size: 19),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${isIncome ? '+' : '-'}${currencyFormat.format(transaction.amount)}',
-                  style: TextStyle(
-                    fontSize: 16,
+                  transaction.description?.trim().isNotEmpty == true
+                      ? transaction.description!
+                      : transaction.typeLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppTheme.tombstoneWhite,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isIncome ? AppTheme.gothicGreen : AppTheme.bloodRed,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(transaction.status).withOpacity(0.2),
-                    border: Border.all(color: _getStatusColor(transaction.status)),
-                  ),
-                  child: Text(
-                    transaction.statusLabel,
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: _getStatusColor(transaction.status),
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                const SizedBox(height: 5),
+                Text(
+                  '${transaction.typeLabel} · ${DateFormat('dd.MM.yyyy HH:mm').format(transaction.displayDate)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      const TextStyle(color: AppTheme.mistGray, fontSize: 10),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${_income ? '+' : '-'}${money.format(transaction.amount)}',
+                style: TextStyle(
+                  color:
+                      _income ? AppTheme.gothicGreen : AppTheme.tombstoneWhite,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                transaction.statusLabel,
+                style: TextStyle(color: _statusColor, fontSize: 9),
+              ),
+            ],
+          ),
+        ],
       ),
     );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          children: [
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 80,
-              color: AppTheme.dimGray,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'НЕТ ТРАНЗАКЦИЙ',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppTheme.mistGray,
-                letterSpacing: 2.0,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Все транзакции отобразятся здесь',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppTheme.dimGray,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Color _getTransactionColor(String type) {
-    switch (type) {
-      case 'income':
-        return AppTheme.gothicGreen;
-      case 'expense':
-        return AppTheme.bloodRed;
-      case 'commission':
-        return AppTheme.goldenrod;
-      case 'withdrawal':
-        return AppTheme.electricBlue;
-      case 'refund':
-        return AppTheme.gothicBlue;
-      default:
-        return AppTheme.ashGray;
-    }
-  }
-
-  IconData _getTransactionIcon(String type) {
-    switch (type) {
-      case 'income':
-        return Icons.add_circle_outline;
-      case 'expense':
-        return Icons.remove_circle_outline;
-      case 'commission':
-        return Icons.percent;
-      case 'withdrawal':
-        return Icons.arrow_upward;
-      case 'refund':
-        return Icons.refresh;
-      default:
-        return Icons.swap_horiz;
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'completed':
-        return AppTheme.gothicGreen;
-      case 'pending':
-        return AppTheme.goldenrod;
-      case 'cancelled':
-      case 'refunded':
-        return AppTheme.bloodRed;
-      default:
-        return AppTheme.ashGray;
-    }
   }
 }
