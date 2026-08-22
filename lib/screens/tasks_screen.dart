@@ -1,34 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../theme/app_theme.dart';
-import '../providers/tasks_provider.dart';
-import 'forms/add_task_screen.dart';
-import 'task_detail_screen.dart';
 import 'package:intl/intl.dart';
 
+import '../models/task.dart';
+import '../providers/tasks_provider.dart';
+import '../theme/app_theme.dart';
+import '../widgets/workspace_components.dart';
+import 'forms/add_task_screen.dart';
+import 'task_detail_screen.dart';
+
 class TasksScreen extends ConsumerStatefulWidget {
-  const TasksScreen({Key? key}) : super(key: key);
+  const TasksScreen({super.key});
 
   @override
   ConsumerState<TasksScreen> createState() => _TasksScreenState();
 }
 
 class _TasksScreenState extends ConsumerState<TasksScreen> {
+  final _searchController = TextEditingController();
   String _selectedFilter = 'all';
-  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.toLowerCase();
-      });
-    });
-    Future.microtask(() {
-      ref.read(tasksProvider.notifier).loadTasks();
-    });
+    Future.microtask(() => ref.read(tasksProvider.notifier).loadTasks());
   }
 
   @override
@@ -37,342 +33,313 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     super.dispose();
   }
 
-  String _getStatusText(String status) {
-    switch (status) {
-      case 'todo':
-        return 'Ожидает';
-      case 'in_progress':
-        return 'В работе';
-      case 'review':
-        return 'На проверке';
-      case 'done':
-        return 'Завершено';
-      case 'cancelled':
-        return 'Отменено';
-      default:
-        return status;
+  Future<void> _openCreateTask() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AddTaskScreen()),
+    );
+    if (mounted) {
+      await ref.read(tasksProvider.notifier).loadTasks();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final tasksState = ref.watch(tasksProvider);
-    
-    // Filter tasks based on selected filter and search query
-    var filteredTasks = _selectedFilter == 'all'
-        ? tasksState.tasks
-        : tasksState.tasks.where((task) => task.status == _selectedFilter).toList();
-    
-    // Apply search filter
-    if (_searchQuery.isNotEmpty) {
-      filteredTasks = filteredTasks.where((task) {
-        return task.title.toLowerCase().contains(_searchQuery) ||
-               task.description.toLowerCase().contains(_searchQuery);
-      }).toList();
-    }
+    final state = ref.watch(tasksProvider);
+    final filteredTasks = state.tasks.where((task) {
+      final matchesStatus =
+          _selectedFilter == 'all' || task.status == _selectedFilter;
+      final query = _searchQuery.trim().toLowerCase();
+      final matchesSearch = query.isEmpty ||
+          task.title.toLowerCase().contains(query) ||
+          task.description.toLowerCase().contains(query);
+      return matchesStatus && matchesSearch;
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ЗАДАЧИ'),
+        title: const Text('Задачи'),
         actions: [
           IconButton(
+            tooltip: 'Обновить задачи',
+            onPressed: () => ref.read(tasksProvider.notifier).loadTasks(),
             icon: const Icon(Icons.refresh),
-            onPressed: () {
-              ref.read(tasksProvider.notifier).loadTasks();
-            },
           ),
           IconButton(
+            tooltip: 'Создать задачу',
+            onPressed: _openCreateTask,
             icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AddTaskScreen(),
-                ),
-              );
-            },
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Search field
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: AppTheme.gothicTextField(
-              controller: _searchController,
-              hintText: 'Поиск задач...',
-              prefixIcon: const Icon(Icons.search, size: 20),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: 20),
-                      onPressed: () {
-                        _searchController.clear();
-                      },
-                    )
-                  : null,
-            ),
-          ),
-          
-          // Filter chips
-          Container(
-            height: 60,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                _buildFilterChip('all', 'Все'),
-                const SizedBox(width: 10),
-                _buildFilterChip('todo', 'Ожидает'),
-                const SizedBox(width: 10),
-                _buildFilterChip('in_progress', 'В работе'),
-                const SizedBox(width: 10),
-                _buildFilterChip('done', 'Завершено'),
-              ],
-            ),
-          ),
-          
-          Expanded(
-            child: tasksState.isLoading
-                ? Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppTheme.tombstoneWhite,
-                      ),
-                    ),
-                  )
-                : tasksState.error != null
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                size: 64,
-                                color: AppTheme.bloodRed,
-                              ),
-                              const SizedBox(height: 20),
-                              Text(
-                                'Ошибка загрузки задач',
-                                style: TextStyle(
-                                  color: AppTheme.tombstoneWhite,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w300,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                tasksState.error!,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: AppTheme.mistGray,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              AppTheme.gothicButton(
-                                text: 'Повторить',
-                                onPressed: () {
-                                  ref.read(tasksProvider.notifier).loadTasks();
-                                },
-                                isPrimary: true,
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : filteredTasks.isEmpty
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(20.0),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.inbox_outlined,
-                                    size: 64,
-                                    color: AppTheme.mistGray,
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Text(
-                                    'Нет задач',
-                                    style: TextStyle(
-                                      color: AppTheme.tombstoneWhite,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w300,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    _selectedFilter == 'all'
-                                        ? 'Создайте первую задачу'
-                                        : 'Нет задач с выбранным статусом',
-                                    style: TextStyle(
-                                      color: AppTheme.mistGray,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: () async {
-                              await ref.read(tasksProvider.notifier).loadTasks();
-                            },
-                            backgroundColor: AppTheme.shadowGray,
-                            color: AppTheme.tombstoneWhite,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(20),
-                              itemCount: filteredTasks.length,
-                              itemBuilder: (context, index) {
-                                final task = filteredTasks[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: AppTheme.slideUpAnimation(
-                                    offset: 15,
-                                    duration: Duration(
-                                      milliseconds: 800 + (index * 100),
-                                    ),
-                                    child: _buildTaskCard(context, task),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String value, String label) {
-    final isSelected = _selectedFilter == value;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedFilter = value;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.tombstoneWhite : AppTheme.shadowGray,
-          border: Border.all(
-            color: isSelected ? AppTheme.tombstoneWhite : AppTheme.dimGray,
-          ),
-          borderRadius: BorderRadius.zero,
-        ),
-        child: Text(
-          label.toUpperCase(),
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
-            color: isSelected ? AppTheme.voidBlack : AppTheme.mistGray,
-            letterSpacing: 1.5,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTaskCard(BuildContext context, task) {
-    final dateFormat = DateFormat('dd.MM.yyyy');
-    
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => TaskDetailScreen(task: task),
-          ),
-        );
-      },
-      child: AppTheme.animatedGothicCard(
-        child: Padding(
-        padding: const EdgeInsets.all(24),
+      body: WorkspaceContent(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    task.title.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w300,
-                      color: AppTheme.tombstoneWhite,
-                      letterSpacing: 1.5,
-                      fontFamily: 'serif',
-                      height: 1.5,
-                    ),
-                  ),
+            WorkspacePageIntro(
+              eyebrow: 'Контроль исполнения',
+              title: 'Задачи без лишнего шума',
+              description:
+                  'Сроки, приоритеты и ответственные в одном рабочем списке.',
+              actions: [
+                ElevatedButton.icon(
+                  onPressed: _openCreateTask,
+                  icon: const Icon(Icons.add_task, size: 18),
+                  label: const Text('Новая задача'),
                 ),
-                const SizedBox(width: 12),
-                AppTheme.gothicBadge(_getStatusText(task.status)),
               ],
             ),
-            
-            if (task.description.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text(
-                task.description,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppTheme.mistGray,
-                  height: 1.5,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            
-            const SizedBox(height: 20),
-            Container(
-              height: 1,
-              color: AppTheme.dimGray.withOpacity(0.3),
+            const SizedBox(height: 22),
+            WorkspaceSearchField(
+              controller: _searchController,
+              hintText: 'Найти задачу по названию или описанию',
+              onChanged: (value) => setState(() => _searchQuery = value),
+              onClear: () {
+                _searchController.clear();
+                setState(() => _searchQuery = '');
+              },
             ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
-                _buildInfoItem('Дедлайн', dateFormat.format(task.dueDate)),
-                _buildInfoItem('Приоритет', task.priority.toString()),
+                _filterChip(state, 'all', 'Все'),
+                _filterChip(state, 'todo', 'Ожидают'),
+                _filterChip(state, 'in_progress', 'В работе'),
+                _filterChip(state, 'done', 'Завершены'),
               ],
             ),
+            const SizedBox(height: 18),
+            Expanded(child: _buildContent(state, filteredTasks)),
           ],
         ),
       ),
-      ),
     );
   }
 
-  Widget _buildInfoItem(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label.toUpperCase(),
-          style: const TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.w300,
-            color: AppTheme.mistGray,
-            letterSpacing: 1.5,
-            fontFamily: 'serif',
-          ),
+  Widget _filterChip(TasksState state, String value, String label) {
+    final count = value == 'all'
+        ? state.tasks.length
+        : state.tasks.where((task) => task.status == value).length;
+    return WorkspaceFilterChip(
+      label: label,
+      count: count,
+      selected: _selectedFilter == value,
+      onTap: () => setState(() => _selectedFilter = value),
+    );
+  }
+
+  Widget _buildContent(TasksState state, List<Task> tasks) {
+    if (state.isLoading && state.tasks.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (state.error != null && state.tasks.isEmpty) {
+      return WorkspaceErrorState(
+        message: state.error!,
+        onRetry: () => ref.read(tasksProvider.notifier).loadTasks(),
+      );
+    }
+    if (tasks.isEmpty) {
+      final isSearching = _searchQuery.trim().isNotEmpty;
+      return WorkspaceEmptyState(
+        icon: isSearching ? Icons.search_off : Icons.task_alt,
+        title: isSearching ? 'Ничего не найдено' : 'Задач пока нет',
+        message: isSearching
+            ? 'Измените запрос или сбросьте фильтр.'
+            : _selectedFilter == 'all'
+                ? 'Создайте первую задачу и зафиксируйте ответственного и срок.'
+                : 'В этой группе задач пока нет.',
+        action: _selectedFilter == 'all' && !isSearching
+            ? ElevatedButton.icon(
+                onPressed: _openCreateTask,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Создать задачу'),
+              )
+            : null,
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => ref.read(tasksProvider.notifier).loadTasks(),
+      color: AppTheme.goldenrod,
+      backgroundColor: AppTheme.shadowGray,
+      child: GridView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 20),
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 620,
+          mainAxisExtent: 204,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
         ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w300,
-            color: AppTheme.ashGray,
-            fontFamily: 'serif',
+        itemCount: tasks.length,
+        itemBuilder: (_, index) => _TaskCard(task: tasks[index]),
+      ),
+    );
+  }
+}
+
+class _TaskCard extends StatelessWidget {
+  const _TaskCard({required this.task});
+
+  final Task task;
+
+  String get _statusLabel => switch (task.status) {
+        'todo' => 'Ожидает',
+        'in_progress' => 'В работе',
+        'review' => 'На проверке',
+        'done' => 'Завершено',
+        'cancelled' => 'Отменено',
+        _ => task.status,
+      };
+
+  Color get _statusColor => switch (task.status) {
+        'in_progress' => AppTheme.electricBlue,
+        'review' => AppTheme.goldenrod,
+        'done' => AppTheme.gothicGreen,
+        'cancelled' => AppTheme.bloodRed,
+        _ => AppTheme.ashGray,
+      };
+
+  String get _priorityLabel => switch (task.priority) {
+        1 => 'Низкий',
+        2 => 'Обычный',
+        3 => 'Средний',
+        4 => 'Высокий',
+        5 => 'Критический',
+        _ => task.priority.toString(),
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final dueDate = DateFormat('dd.MM.yyyy').format(task.dueDate);
+    final overdue =
+        task.status != 'done' && task.dueDate.isBefore(DateTime.now());
+
+    return WorkspacePanel(
+      accent: _statusColor,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => TaskDetailScreen(task: task)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  task.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppTheme.tombstoneWhite,
+                    fontFamily: 'Georgia',
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              _StatusBadge(label: _statusLabel, color: _statusColor),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            task.description.isEmpty
+                ? 'Описание не добавлено'
+                : task.description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: task.description.isEmpty
+                  ? AppTheme.mistGray.withOpacity(0.65)
+                  : AppTheme.ashGray,
+              fontSize: 12,
+              height: 1.45,
+            ),
+          ),
+          const Spacer(),
+          const Divider(height: 1),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _MetaItem(
+                icon: Icons.event_outlined,
+                label: overdue ? 'Просрочено: $dueDate' : dueDate,
+                color: overdue ? AppTheme.bloodRed : AppTheme.ashGray,
+              ),
+              const SizedBox(width: 18),
+              Expanded(
+                child: _MetaItem(
+                  icon: Icons.person_outline,
+                  label: task.assignedFullName?.trim().isNotEmpty == true
+                      ? task.assignedFullName!
+                      : 'Не назначен',
+                ),
+              ),
+              _MetaItem(
+                icon: Icons.flag_outlined,
+                label: _priorityLabel,
+                color: task.priority >= 4
+                    ? AppTheme.subtleAccent
+                    : AppTheme.mistGray,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.09),
+        border: Border.all(color: color.withOpacity(0.75)),
+        borderRadius: BorderRadius.circular(2),
+      ),
+      child: Text(
+        label,
+        style:
+            TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
+class _MetaItem extends StatelessWidget {
+  const _MetaItem({required this.icon, required this.label, this.color});
+
+  final IconData icon;
+  final String label;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final itemColor = color ?? AppTheme.mistGray;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 15, color: itemColor),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: itemColor, fontSize: 11),
           ),
         ),
       ],

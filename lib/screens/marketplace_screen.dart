@@ -1,28 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../theme/app_theme.dart';
-import '../providers/orders_provider.dart';
+
+import '../models/order.dart';
 import '../providers/auth_provider.dart';
+import '../providers/orders_provider.dart';
+import '../theme/app_theme.dart';
+import '../widgets/workspace_components.dart';
 import 'forms/create_order_screen.dart';
 import 'order_detail_screen.dart';
 
 class MarketplaceScreen extends ConsumerStatefulWidget {
-  const MarketplaceScreen({Key? key}) : super(key: key);
+  const MarketplaceScreen({super.key});
 
   @override
   ConsumerState<MarketplaceScreen> createState() => _MarketplaceScreenState();
 }
 
 class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _sortBy = 'date_desc';
   String? _selectedStatus;
   String? _selectedCategory;
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
   double? _minBudget;
   double? _maxBudget;
-  DateTime? _maxDeadline; // Фильтр по дедлайну (до какой даты)
-  String _sortBy = 'date_desc'; // date_desc, date_asc, budget_desc, budget_asc, deadline_asc
+  DateTime? _maxDeadline;
+
+  int get _activeFilterCount => [
+        _selectedStatus,
+        _selectedCategory,
+        _minBudget,
+        _maxBudget,
+        _maxDeadline,
+      ].where((value) => value != null).length;
 
   @override
   void dispose() {
@@ -30,601 +42,492 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final ordersState = ref.watch(ordersProvider);
-    final user = ref.watch(authProvider).user;
-    final currencyFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
+  Future<void> _openCreateOrder() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CreateOrderScreen()),
+    );
+    if (result == true && mounted) {
+      await ref.read(ordersProvider.notifier).loadOrders();
+    }
+  }
 
-    final isClient = user?.userRole == 'client';
-    
-    // Фильтруем заказы по поисковому запросу и бюджету
-    var filteredOrders = ordersState.orders;
-    
-    // Поиск
-    if (_searchQuery.isNotEmpty) {
-      filteredOrders = filteredOrders.where((order) {
-        final query = _searchQuery.toLowerCase();
+  List<Order> _filterAndSort(List<Order> source) {
+    var orders = [...source];
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isNotEmpty) {
+      orders = orders.where((order) {
         return order.title.toLowerCase().contains(query) ||
             (order.description?.toLowerCase().contains(query) ?? false) ||
             (order.category?.toLowerCase().contains(query) ?? false);
       }).toList();
     }
-    
-    // Фильтр по бюджету
-    if (_minBudget != null || _maxBudget != null) {
-      filteredOrders = filteredOrders.where((order) {
-        if (order.budget == null) return false;
-        if (_minBudget != null && order.budget! < _minBudget!) return false;
-        if (_maxBudget != null && order.budget! > _maxBudget!) return false;
-        return true;
-      }).toList();
-    }
-
-    // Фильтр по дедлайну
-    if (_maxDeadline != null) {
-      filteredOrders = filteredOrders.where((order) {
+    orders = orders.where((order) {
+      if ((_minBudget != null || _maxBudget != null) && order.budget == null) {
+        return false;
+      }
+      if (_minBudget != null && order.budget! < _minBudget!) return false;
+      if (_maxBudget != null && order.budget! > _maxBudget!) return false;
+      if (_maxDeadline != null) {
         if (order.deadline == null) return false;
-        return order.deadline!.isBefore(_maxDeadline!) || order.deadline!.isAtSameMomentAs(_maxDeadline!);
-      }).toList();
-    }
+        if (order.deadline!.isAfter(_maxDeadline!)) return false;
+      }
+      return true;
+    }).toList();
 
-    // Сортировка
-    switch (_sortBy) {
-      case 'date_desc':
-        filteredOrders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        break;
-      case 'date_asc':
-        filteredOrders.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-        break;
-      case 'budget_desc':
-        filteredOrders.sort((a, b) => (b.budget ?? 0).compareTo(a.budget ?? 0));
-        break;
-      case 'budget_asc':
-        filteredOrders.sort((a, b) => (a.budget ?? 0).compareTo(b.budget ?? 0));
-        break;
-      case 'deadline_asc':
-        filteredOrders.sort((a, b) {
-          if (a.deadline == null && b.deadline == null) return 0;
-          if (a.deadline == null) return 1;
-          if (b.deadline == null) return -1;
-          return a.deadline!.compareTo(b.deadline!);
+    orders.sort((a, b) => switch (_sortBy) {
+          'date_asc' => a.createdAt.compareTo(b.createdAt),
+          'budget_desc' => (b.budget ?? 0).compareTo(a.budget ?? 0),
+          'budget_asc' => (a.budget ?? 0).compareTo(b.budget ?? 0),
+          'deadline_asc' => _compareDeadlines(a.deadline, b.deadline),
+          _ => b.createdAt.compareTo(a.createdAt),
         });
-        break;
-    }
+    return orders;
+  }
+
+  int _compareDeadlines(DateTime? a, DateTime? b) {
+    if (a == null && b == null) return 0;
+    if (a == null) return 1;
+    if (b == null) return -1;
+    return a.compareTo(b);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(ordersProvider);
+    final isClient = ref.watch(authProvider).user?.userRole == 'client';
+    final orders = _filterAndSort(state.orders);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('МАРКЕТПЛЕЙС'),
+        title: const Text('Маркет'),
         actions: [
-          // Сортировка
           PopupMenuButton<String>(
-            icon: const Icon(Icons.sort),
             tooltip: 'Сортировка',
-            onSelected: (value) {
-              setState(() {
-                _sortBy = value;
-              });
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'date_desc',
-                child: Row(
-                  children: [
-                    Icon(Icons.arrow_downward, size: 16, color: _sortBy == 'date_desc' ? AppTheme.electricBlue : AppTheme.ashGray),
-                    const SizedBox(width: 8),
-                    Text('Сначала новые', style: TextStyle(color: _sortBy == 'date_desc' ? AppTheme.electricBlue : AppTheme.ashGray)),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'date_asc',
-                child: Row(
-                  children: [
-                    Icon(Icons.arrow_upward, size: 16, color: _sortBy == 'date_asc' ? AppTheme.electricBlue : AppTheme.ashGray),
-                    const SizedBox(width: 8),
-                    Text('Сначала старые', style: TextStyle(color: _sortBy == 'date_asc' ? AppTheme.electricBlue : AppTheme.ashGray)),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'budget_desc',
-                child: Row(
-                  children: [
-                    Icon(Icons.arrow_downward, size: 16, color: _sortBy == 'budget_desc' ? AppTheme.electricBlue : AppTheme.ashGray),
-                    const SizedBox(width: 8),
-                    Text('Бюджет ↓', style: TextStyle(color: _sortBy == 'budget_desc' ? AppTheme.electricBlue : AppTheme.ashGray)),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'budget_asc',
-                child: Row(
-                  children: [
-                    Icon(Icons.arrow_upward, size: 16, color: _sortBy == 'budget_asc' ? AppTheme.electricBlue : AppTheme.ashGray),
-                    const SizedBox(width: 8),
-                    Text('Бюджет ↑', style: TextStyle(color: _sortBy == 'budget_asc' ? AppTheme.electricBlue : AppTheme.ashGray)),
-                  ],
-                ),
-              ),
+            icon: const Icon(Icons.sort),
+            initialValue: _sortBy,
+            onSelected: (value) => setState(() => _sortBy = value),
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'date_desc', child: Text('Сначала новые')),
+              PopupMenuItem(value: 'date_asc', child: Text('Сначала старые')),
+              PopupMenuItem(value: 'budget_desc', child: Text('Бюджет: выше')),
+              PopupMenuItem(value: 'budget_asc', child: Text('Бюджет: ниже')),
               PopupMenuItem(
                 value: 'deadline_asc',
-                child: Row(
-                  children: [
-                    Icon(Icons.schedule, size: 16, color: _sortBy == 'deadline_asc' ? AppTheme.electricBlue : AppTheme.ashGray),
-                    const SizedBox(width: 8),
-                    Text('Ближайший дедлайн', style: TextStyle(color: _sortBy == 'deadline_asc' ? AppTheme.electricBlue : AppTheme.ashGray)),
-                  ],
-                ),
+                child: Text('Ближайший срок'),
               ),
             ],
           ),
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilterDialog,
-            tooltip: 'Фильтры',
-          ),
-        ],
-      ),
-      floatingActionButton: isClient
-          ? FloatingActionButton.extended(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const CreateOrderScreen()),
-                );
-                if (result == true) {
-                  ref.read(ordersProvider.notifier).loadOrders();
-                }
-              },
-              icon: const Icon(Icons.add, color: AppTheme.charcoal),
-              label: const Text(
-                'СОЗДАТЬ ЗАКАЗ',
-                style: TextStyle(
-                  color: AppTheme.charcoal,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 1.5,
-                ),
-              ),
-              backgroundColor: AppTheme.tombstoneWhite,
-              elevation: 8,
-            )
-          : null,
-      body: Column(
-        children: [
-          // Поиск
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: AppTheme.gothicTextField(
-              controller: _searchController,
-              hintText: 'Поиск заказов...',
-              icon: Icons.search,
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
+          Badge(
+            isLabelVisible: _activeFilterCount > 0,
+            label: Text('$_activeFilterCount'),
+            child: IconButton(
+              tooltip: 'Фильтры',
+              onPressed: _showFilterDialog,
+              icon: const Icon(Icons.tune),
             ),
           ),
-          // Список заказов
-          Expanded(
-            child: ordersState.isLoading
-                ? Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.tombstoneWhite),
-                    ),
-                  )
-                : ordersState.error != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.error_outline, size: 64, color: AppTheme.bloodRed),
-                            const SizedBox(height: 20),
-                            Text(
-                              'Ошибка: ${ordersState.error}',
-                              style: TextStyle(color: AppTheme.tombstoneWhite),
-                            ),
-                            const SizedBox(height: 10),
-                            ElevatedButton(
-                              onPressed: () => ref.read(ordersProvider.notifier).loadOrders(),
-                              child: const Text('Повторить'),
-                            ),
-                          ],
-                        ),
-                      )
-                    : filteredOrders.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.shopping_bag_outlined, size: 64, color: AppTheme.mistGray),
-                                const SizedBox(height: 20),
-                                Text(
-                                  _searchQuery.isNotEmpty 
-                                      ? 'Ничего не найдено'
-                                      : 'Нет доступных заказов',
-                                  style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 18),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  _searchQuery.isNotEmpty
-                                      ? 'Попробуйте изменить запрос'
-                                      : (isClient ? 'Создайте свой первый заказ' : 'Пока нет заказов'),
-                                  style: TextStyle(color: AppTheme.mistGray),
-                                ),
-                              ],
-                            ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: () async {
-                              await ref.read(ordersProvider.notifier).loadOrders(
-                                status: _selectedStatus,
-                                category: _selectedCategory,
-                              );
-                            },
-                            backgroundColor: AppTheme.shadowGray,
-                            color: AppTheme.tombstoneWhite,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                              itemCount: filteredOrders.length,
-                              itemBuilder: (context, index) {
-                                final order = filteredOrders[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: AppTheme.slideUpAnimation(
-                                    offset: 15,
-                                    duration: Duration(milliseconds: 800 + (index * 100)),
-                                    child: GestureDetector(
-                                      onTap: () async {
-                                        final result = await Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => OrderDetailScreen(order: order),
-                                          ),
-                                        );
-                                        if (result == true) {
-                                          ref.read(ordersProvider.notifier).loadOrders();
-                                        }
-                                      },
-                                      child: _buildOrderCard(order, currencyFormat),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildOrderCard(order, NumberFormat currencyFormat) {
-    return AppTheme.animatedGothicCard(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+      body: WorkspaceContent(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    order.title.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w300,
-                      color: AppTheme.tombstoneWhite,
-                      letterSpacing: 2.5,
-                      fontFamily: 'serif',
-                    ),
+            WorkspacePageIntro(
+              eyebrow: 'Открытые предложения',
+              title: 'Работа на ваших условиях',
+              description: 'Заказы, бюджеты и сроки без перегруженной витрины.',
+              actions: [
+                if (isClient)
+                  ElevatedButton.icon(
+                    onPressed: _openCreateOrder,
+                    icon: const Icon(Icons.add_business_outlined, size: 18),
+                    label: const Text('Создать заказ'),
                   ),
-                ),
-                AppTheme.gothicBadge(order.getStatusLabel()),
               ],
             ),
-            const SizedBox(height: 16),
-            if (order.description != null && order.description!.isNotEmpty) ...[
-              Text(
-                order.description!,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppTheme.mistGray,
-                  height: 1.6,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 16),
-            ],
-            Container(
-              height: 1,
-              color: AppTheme.dimGray.withOpacity(0.3),
+            const SizedBox(height: 22),
+            WorkspaceSearchField(
+              controller: _searchController,
+              hintText: 'Найти заказ, направление или услугу',
+              onChanged: (value) => setState(() => _searchQuery = value),
+              onClear: () {
+                _searchController.clear();
+                setState(() => _searchQuery = '');
+              },
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                if (order.budget != null) ...[
-                  Icon(Icons.attach_money, size: 16, color: AppTheme.ashGray),
-                  const SizedBox(width: 6),
-                  Text(
-                    currencyFormat.format(order.budget),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.ashGray,
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                ],
-                if (order.deadline != null) ...[
-                  Icon(Icons.calendar_today, size: 14, color: AppTheme.mistGray),
-                  const SizedBox(width: 6),
-                  Text(
-                    DateFormat('dd.MM.yyyy').format(order.deadline!),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.mistGray,
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                ],
-                if (order.category != null) ...[
-                  Icon(Icons.category_outlined, size: 14, color: AppTheme.mistGray),
-                  const SizedBox(width: 6),
-                  Text(
-                    order.category!.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: AppTheme.mistGray,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            if (order.applicationsCount > 0) ...[
+            if (_activeFilterCount > 0) ...[
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.people_outline, size: 16, color: AppTheme.ashGray),
-                  const SizedBox(width: 6),
+                  const Icon(Icons.filter_alt_outlined,
+                      size: 16, color: AppTheme.goldenrod),
+                  const SizedBox(width: 7),
                   Text(
-                    '${order.applicationsCount} откликов',
+                    'Активных фильтров: $_activeFilterCount',
                     style: const TextStyle(
-                      fontSize: 11,
                       color: AppTheme.ashGray,
+                      fontSize: 11,
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  TextButton(
+                      onPressed: _resetFilters, child: const Text('Сбросить')),
                 ],
               ),
             ],
+            const SizedBox(height: 18),
+            Expanded(child: _buildContent(state, orders, isClient)),
           ],
         ),
       ),
     );
   }
 
-  void _showFilterDialog() {
-    final minBudgetController = TextEditingController(text: _minBudget?.toString() ?? '');
-    final maxBudgetController = TextEditingController(text: _maxBudget?.toString() ?? '');
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.darkerCharcoal,
-        title: Text(
-          'ФИЛЬТРЫ',
-          style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 14, letterSpacing: 2),
+  Widget _buildContent(OrdersState state, List<Order> orders, bool isClient) {
+    if (state.isLoading && state.orders.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (state.error != null && state.orders.isEmpty) {
+      return WorkspaceErrorState(
+        message: state.error!,
+        onRetry: () => ref.read(ordersProvider.notifier).loadOrders(),
+      );
+    }
+    if (orders.isEmpty) {
+      final narrowed = _searchQuery.trim().isNotEmpty || _activeFilterCount > 0;
+      return WorkspaceEmptyState(
+        icon: narrowed ? Icons.search_off : Icons.storefront_outlined,
+        title: narrowed ? 'Подходящих заказов нет' : 'Заказов пока нет',
+        message: narrowed
+            ? 'Измените запрос или параметры фильтра.'
+            : isClient
+                ? 'Опубликуйте задачу и начните собирать отклики.'
+                : 'Новые предложения появятся здесь.',
+        action: isClient && !narrowed
+            ? ElevatedButton.icon(
+                onPressed: _openCreateOrder,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Создать заказ'),
+              )
+            : null,
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: () => ref.read(ordersProvider.notifier).loadOrders(
+            status: _selectedStatus,
+            category: _selectedCategory,
+          ),
+      color: AppTheme.goldenrod,
+      backgroundColor: AppTheme.shadowGray,
+      child: GridView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 20),
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 620,
+          mainAxisExtent: 226,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
         ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Статус
-              DropdownButtonFormField<String>(
-                value: _selectedStatus,
-                decoration: InputDecoration(
-                  labelText: 'Статус',
-                  labelStyle: TextStyle(color: AppTheme.mistGray, fontSize: 12),
-                ),
-                dropdownColor: AppTheme.darkerCharcoal,
-                items: [
-                  DropdownMenuItem(value: null, child: Text('Все', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
-                  DropdownMenuItem(value: 'published', child: Text('Опубликован', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
-                  DropdownMenuItem(value: 'in_progress', child: Text('В работе', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
-                  DropdownMenuItem(value: 'completed', child: Text('Завершен', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedStatus = value;
-                  });
-                },
+        itemCount: orders.length,
+        itemBuilder: (_, index) => _OrderCard(
+          order: orders[index],
+          onOpen: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => OrderDetailScreen(order: orders[index]),
               ),
-              const SizedBox(height: 16),
-              // Категория
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: InputDecoration(
-                  labelText: 'Категория',
-                  labelStyle: TextStyle(color: AppTheme.mistGray, fontSize: 12),
-                ),
-                dropdownColor: AppTheme.darkerCharcoal,
-                items: [
-                  DropdownMenuItem(value: null, child: Text('Все', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
-                  DropdownMenuItem(value: 'design', child: Text('Дизайн', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
-                  DropdownMenuItem(value: 'development', child: Text('Разработка', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
-                  DropdownMenuItem(value: 'content', child: Text('Контент', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
-                  DropdownMenuItem(value: 'marketing', child: Text('Маркетинг', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13))),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedCategory = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 24),
-              // Бюджет
-              Text(
-                'БЮДЖЕТ (₽)',
-                style: TextStyle(
-                  color: AppTheme.mistGray,
-                  fontSize: 12,
-                  letterSpacing: 1.5,
-                  fontWeight: FontWeight.w300,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: minBudgetController,
-                      keyboardType: TextInputType.number,
-                      style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13),
-                      decoration: InputDecoration(
-                        labelText: 'От',
-                        labelStyle: TextStyle(color: AppTheme.mistGray, fontSize: 11),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.dimGray),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.dimGray),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.tombstoneWhite),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: maxBudgetController,
-                      keyboardType: TextInputType.number,
-                      style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 13),
-                      decoration: InputDecoration(
-                        labelText: 'До',
-                        labelStyle: TextStyle(color: AppTheme.mistGray, fontSize: 11),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.dimGray),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.dimGray),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.tombstoneWhite),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              // Дедлайн
-              Text(
-                'ДЕДЛАЙН',
-                style: TextStyle(
-                  color: AppTheme.mistGray,
-                  fontSize: 12,
-                  letterSpacing: 1.5,
-                  fontWeight: FontWeight.w300,
-                ),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () async {
-                  final DateTime? picked = await showDatePicker(
-                    context: context,
-                    initialDate: _maxDeadline ?? DateTime.now().add(Duration(days: 30)),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(Duration(days: 365)),
-                    builder: (context, child) {
-                      return Theme(
-                        data: ThemeData.dark().copyWith(
-                          colorScheme: ColorScheme.dark(
-                            primary: AppTheme.electricBlue,
-                            onPrimary: AppTheme.charcoal,
-                            surface: AppTheme.darkerCharcoal,
-                            onSurface: AppTheme.tombstoneWhite,
-                          ),
-                        ),
-                        child: child!,
-                      );
-                    },
-                  );
-                  if (picked != null) {
-                    setState(() {
-                      _maxDeadline = picked;
-                    });
-                  }
-                },
-                icon: Icon(Icons.calendar_today, size: 16, color: AppTheme.mistGray),
-                label: Text(
-                  _maxDeadline != null
-                      ? 'До ${DateFormat('dd.MM.yyyy').format(_maxDeadline!)}'
-                      : 'Выбрать дату',
-                  style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 12),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppTheme.dimGray),
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-              ),
-              if (_maxDeadline != null) ...[
-                const SizedBox(height: 8),
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _maxDeadline = null;
-                    });
-                  },
-                  icon: Icon(Icons.close, size: 14, color: AppTheme.bloodRed),
-                  label: Text('Сбросить дедлайн', style: TextStyle(color: AppTheme.bloodRed, fontSize: 11)),
-                ),
-              ],
-            ],
-          ),
+            );
+            if (result == true && mounted) {
+              await ref.read(ordersProvider.notifier).loadOrders();
+            }
+          },
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _selectedStatus = null;
-                _selectedCategory = null;
-                _minBudget = null;
-                _maxBudget = null;
-                _maxDeadline = null;
-              });
-              ref.read(ordersProvider.notifier).loadOrders();
-              Navigator.pop(context);
-            },
-            child: Text('СБРОСИТЬ', style: TextStyle(color: AppTheme.mistGray, fontSize: 11, letterSpacing: 1)),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _minBudget = double.tryParse(minBudgetController.text);
-                _maxBudget = double.tryParse(maxBudgetController.text);
-              });
-              ref.read(ordersProvider.notifier).loadOrders(
-                status: _selectedStatus,
-                category: _selectedCategory,
-              );
-              Navigator.pop(context);
-            },
-            child: Text('ПРИМЕНИТЬ', style: TextStyle(color: AppTheme.tombstoneWhite, fontSize: 11, letterSpacing: 1)),
-          ),
-        ],
       ),
-    ).then((_) {
-      minBudgetController.dispose();
-      maxBudgetController.dispose();
+    );
+  }
+
+  Future<void> _resetFilters() async {
+    setState(() {
+      _selectedStatus = null;
+      _selectedCategory = null;
+      _minBudget = null;
+      _maxBudget = null;
+      _maxDeadline = null;
     });
+    await ref.read(ordersProvider.notifier).loadOrders();
+  }
+
+  Future<void> _showFilterDialog() async {
+    final minController =
+        TextEditingController(text: _minBudget?.toString() ?? '');
+    final maxController =
+        TextEditingController(text: _maxBudget?.toString() ?? '');
+    var status = _selectedStatus;
+    var category = _selectedCategory;
+    var deadline = _maxDeadline;
+
+    final apply = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Фильтры заказов'),
+          content: SizedBox(
+            width: 420,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    value: status,
+                    decoration: const InputDecoration(labelText: 'Статус'),
+                    items: const [
+                      DropdownMenuItem(value: null, child: Text('Все статусы')),
+                      DropdownMenuItem(
+                          value: 'published', child: Text('Опубликован')),
+                      DropdownMenuItem(
+                          value: 'in_progress', child: Text('В работе')),
+                      DropdownMenuItem(
+                          value: 'completed', child: Text('Завершен')),
+                    ],
+                    onChanged: (value) => setDialogState(() => status = value),
+                  ),
+                  const SizedBox(height: 14),
+                  DropdownButtonFormField<String>(
+                    value: category,
+                    decoration: const InputDecoration(labelText: 'Категория'),
+                    items: const [
+                      DropdownMenuItem(
+                          value: null, child: Text('Все категории')),
+                      DropdownMenuItem(value: 'design', child: Text('Дизайн')),
+                      DropdownMenuItem(
+                          value: 'development', child: Text('Разработка')),
+                      DropdownMenuItem(
+                          value: 'content', child: Text('Контент')),
+                      DropdownMenuItem(
+                          value: 'marketing', child: Text('Маркетинг')),
+                    ],
+                    onChanged: (value) =>
+                        setDialogState(() => category = value),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: minController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                                RegExp(r'[0-9.,]')),
+                          ],
+                          decoration:
+                              const InputDecoration(labelText: 'Бюджет от'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: maxController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                                RegExp(r'[0-9.,]')),
+                          ],
+                          decoration:
+                              const InputDecoration(labelText: 'Бюджет до'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.event_outlined),
+                    title: const Text('Срок не позднее'),
+                    subtitle: Text(
+                      deadline == null
+                          ? 'Любая дата'
+                          : DateFormat('dd.MM.yyyy').format(deadline!),
+                    ),
+                    trailing: deadline == null
+                        ? const Icon(Icons.chevron_right)
+                        : IconButton(
+                            tooltip: 'Сбросить срок',
+                            onPressed: () =>
+                                setDialogState(() => deadline = null),
+                            icon: const Icon(Icons.close),
+                          ),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: deadline ??
+                            DateTime.now().add(const Duration(days: 30)),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(const Duration(days: 730)),
+                      );
+                      if (picked != null)
+                        setDialogState(() => deadline = picked);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Отмена'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Применить'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (apply == true && mounted) {
+      setState(() {
+        _selectedStatus = status;
+        _selectedCategory = category;
+        _minBudget = double.tryParse(minController.text.replaceAll(',', '.'));
+        _maxBudget = double.tryParse(maxController.text.replaceAll(',', '.'));
+        _maxDeadline = deadline;
+      });
+      await ref.read(ordersProvider.notifier).loadOrders(
+            status: status,
+            category: category,
+          );
+    }
+    minController.dispose();
+    maxController.dispose();
   }
 }
 
+class _OrderCard extends StatelessWidget {
+  const _OrderCard({required this.order, required this.onOpen});
+
+  final Order order;
+  final VoidCallback onOpen;
+
+  Color get _accent => switch (order.status) {
+        'published' => AppTheme.gothicGreen,
+        'in_progress' => AppTheme.electricBlue,
+        'review' => AppTheme.goldenrod,
+        'completed' => AppTheme.deepPurple,
+        'cancelled' => AppTheme.bloodRed,
+        _ => AppTheme.ashGray,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final money =
+        NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
+    return WorkspacePanel(
+      accent: _accent,
+      onTap: onOpen,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  order.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppTheme.tombstoneWhite,
+                    fontFamily: 'Georgia',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                decoration: BoxDecoration(
+                  color: _accent.withOpacity(0.09),
+                  border: Border.all(color: _accent),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+                child: Text(
+                  order.getStatusLabel(),
+                  style: TextStyle(color: _accent, fontSize: 10),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            order.description?.trim().isNotEmpty == true
+                ? order.description!
+                : 'Описание заказа не добавлено',
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppTheme.ashGray,
+              fontSize: 12,
+              height: 1.45,
+            ),
+          ),
+          const Spacer(),
+          const Divider(height: 1),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 18,
+            runSpacing: 8,
+            children: [
+              _OrderMeta(
+                icon: Icons.payments_outlined,
+                value: order.budget == null
+                    ? 'Бюджет не указан'
+                    : money.format(order.budget),
+                color: AppTheme.goldenrod,
+              ),
+              _OrderMeta(
+                icon: Icons.event_outlined,
+                value: order.deadline == null
+                    ? 'Срок не указан'
+                    : DateFormat('dd.MM.yyyy').format(order.deadline!),
+              ),
+              if (order.category != null)
+                _OrderMeta(
+                    icon: Icons.category_outlined, value: order.category!),
+              _OrderMeta(
+                icon: Icons.people_outline,
+                value: '${order.applicationsCount} откликов',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OrderMeta extends StatelessWidget {
+  const _OrderMeta({required this.icon, required this.value, this.color});
+
+  final IconData icon;
+  final String value;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final itemColor = color ?? AppTheme.mistGray;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 15, color: itemColor),
+        const SizedBox(width: 6),
+        Text(value, style: TextStyle(color: itemColor, fontSize: 11)),
+      ],
+    );
+  }
+}
