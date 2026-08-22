@@ -1,68 +1,60 @@
-# Build script for Creative Collective Android APK
-# Usage: .\build_android.ps1 1.0.0
-
 param(
-    [Parameter(Mandatory=$true)]
-    [string]$version
+    [string]$Version = '1.0.1',
+    [int]$BuildNumber = 2,
+    [string]$ApiBaseUrl = 'https://creative.yozik.ru/api/v1',
+    [switch]$AppBundle
 )
 
-Write-Host "Build Creative Collective Android APK v$version" -ForegroundColor Green
+$ErrorActionPreference = 'Stop'
+$projectRoot = $PSScriptRoot
+$jdkPath = 'C:\Program Files\Microsoft\jdk-21.0.12.101-hotspot'
+$keystoreProperties = Join-Path $projectRoot 'android\key.properties'
+$distPath = Join-Path $projectRoot "dist\android\$Version+$BuildNumber"
 
-# 1. Clean previous builds
-Write-Host "Cleaning old builds..." -ForegroundColor Yellow
-flutter clean
-
-# 2. Get dependencies
-Write-Host "Getting dependencies..." -ForegroundColor Yellow
-flutter pub get
-
-# 3. Build Android APK
-Write-Host "Building Android APK..." -ForegroundColor Yellow
-flutter build apk --release
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Build failed!" -ForegroundColor Red
-    exit 1
+if (-not (Test-Path -LiteralPath $jdkPath)) {
+    throw 'Microsoft OpenJDK 21 is required. Install package Microsoft.OpenJDK.21.'
 }
 
-# 4. Build Android App Bundle (for Google Play)
-Write-Host "Building Android App Bundle..." -ForegroundColor Yellow
-flutter build appbundle --release
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "App Bundle build failed!" -ForegroundColor Red
+if ($AppBundle -and -not (Test-Path -LiteralPath $keystoreProperties)) {
+    throw 'Google Play AAB requires android/key.properties and a private release keystore.'
 }
 
-# 5. Copy and rename files
-Write-Host "Organizing files..." -ForegroundColor Yellow
-$apkPath = "build\app\outputs\flutter-apk\app-release.apk"
-$aabPath = "build\app\outputs\bundle\release\app-release.aab"
-$outputApk = "creative_collective-v$version-android.apk"
-$outputAab = "creative_collective-v$version-android.aab"
+$env:JAVA_HOME = $jdkPath
+$env:Path = "$jdkPath\bin;$env:Path"
+flutter config --jdk-dir="$jdkPath" | Out-Null
+if ($LASTEXITCODE -ne 0) { throw 'Unable to configure Flutter to use OpenJDK 21.' }
 
-if (Test-Path $apkPath) {
-    Copy-Item $apkPath $outputApk -Force
-    $apkSize = (Get-Item $outputApk).Length / 1MB
-    Write-Host "APK created: $outputApk (${apkSize:N2} MB)" -ForegroundColor Green
+Write-Host "Building Creative Collective Android $Version+$BuildNumber" -ForegroundColor Cyan
+Write-Host "API: $ApiBaseUrl" -ForegroundColor DarkGray
+
+Push-Location $projectRoot
+try {
+    & (Join-Path $projectRoot 'scripts\generate_mobile_icon.ps1') -ProjectRoot $projectRoot
+
+    flutter build apk --release `
+        --build-name=$Version `
+        --build-number=$BuildNumber `
+        --dart-define=API_BASE_URL=$ApiBaseUrl
+    if ($LASTEXITCODE -ne 0) { throw 'Android APK build failed.' }
+
+    New-Item -ItemType Directory -Path $distPath -Force | Out-Null
+    $apkSource = Join-Path $projectRoot 'build\app\outputs\flutter-apk\app-release.apk'
+    $apkTarget = Join-Path $distPath "creative-collective-$Version+$BuildNumber.apk"
+    Copy-Item -LiteralPath $apkSource -Destination $apkTarget -Force
+    Write-Host "APK: $apkTarget" -ForegroundColor Green
+
+    if ($AppBundle) {
+        flutter build appbundle --release `
+            --build-name=$Version `
+            --build-number=$BuildNumber `
+            --dart-define=API_BASE_URL=$ApiBaseUrl
+        if ($LASTEXITCODE -ne 0) { throw 'Android App Bundle build failed.' }
+
+        $aabSource = Join-Path $projectRoot 'build\app\outputs\bundle\release\app-release.aab'
+        $aabTarget = Join-Path $distPath "creative-collective-$Version+$BuildNumber.aab"
+        Copy-Item -LiteralPath $aabSource -Destination $aabTarget -Force
+        Write-Host "AAB: $aabTarget" -ForegroundColor Green
+    }
+} finally {
+    Pop-Location
 }
-
-if (Test-Path $aabPath) {
-    Copy-Item $aabPath $outputAab -Force
-    $aabSize = (Get-Item $outputAab).Length / 1MB
-    Write-Host "AAB created: $outputAab (${aabSize:N2} MB)" -ForegroundColor Green
-}
-
-# 6. Create git tag
-Write-Host "Creating git tag v$version-android..." -ForegroundColor Yellow
-git tag -a "v$version-android" -m "Android Release v$version"
-git push origin "v$version-android"
-
-Write-Host ""
-Write-Host "DONE!" -ForegroundColor Green
-Write-Host ""
-Write-Host "Next steps:" -ForegroundColor Cyan
-Write-Host "1. Test APK: $outputApk"
-Write-Host "2. Upload AAB to Google Play Console: $outputAab"
-Write-Host "3. Or create GitHub Release with APK for direct download"
-Write-Host ""
-
