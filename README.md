@@ -5,11 +5,14 @@
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[Live demo](https://creative.yozik.ru/) | [API health](https://creative.yozik.ru/health)
+[Live demo](https://creative.yozik.ru/) | [Android beta APK](https://creative.yozik.ru/downloads/creative-collective-1.0.1-beta.apk) | [API health](https://creative.yozik.ru/health)
 
 Full-stack freelance marketplace for clients, freelancers, and platform administrators. The project combines a Flutter application with an Express/MySQL API and covers the workflow from publishing an order to selecting a contractor, communicating, reviewing the result, and resolving disputes.
 
 > Project status: deployed portfolio alpha. The core marketplace flows are implemented, but production payments and real-time delivery are still required before commercial use.
+
+The Android beta uses the production API and is intended for direct testing.
+It is debug-signed; a private release keystore is still required for Google Play.
 
 ## What is implemented
 
